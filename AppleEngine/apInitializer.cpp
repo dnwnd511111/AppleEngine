@@ -24,7 +24,7 @@ namespace ap::initializer
 		initializationStarted = true;
 
 		std::string ss;
-		ss += "\n[ap::initializer] Initializing Wicked Engine, please wait...\n";
+		ss += "\n[ap::initializer] Initializing Apple Engine, please wait...\n";
 		ss += "Version: ";
 		ss += ap::version::GetVersionString();
 		ap::backlog::post(ss);

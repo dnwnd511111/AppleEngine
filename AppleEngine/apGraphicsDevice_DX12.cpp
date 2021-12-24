@@ -1,6 +1,6 @@
 #include "apGraphicsDevice_DX12.h"
 
-#ifdef WICKEDENGINE_BUILD_DX12
+#ifdef APPLEENGINE_BUILD_DX12
 #include "apHelper.h"
 #include "apBacklog.h"
 #include "apTimer.h"
@@ -5786,4 +5786,4 @@ using namespace dx12_internal;
 
 }
 
-#endif // WICKEDENGINE_BUILD_DX12
+#endif // APPLEENGINE_BUILD_DX12

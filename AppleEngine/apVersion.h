@@ -1,5 +1,5 @@
-#ifndef WICKEDENGINE_VERSION_DEFINED
-#define WICKEDENGINE_VERSION_DEFINED
+#ifndef APPLEENGINE_VERSION_DEFINED
+#define APPLEENGINE_VERSION_DEFINED
 
 namespace ap::version
 {
@@ -12,4 +12,4 @@ namespace ap::version
 	const char* GetVersionString();
 }
 
-#endif // WICKEDENGINE_VERSION_DEFINED
+#endif // APPLEENGINE_VERSION_DEFINED

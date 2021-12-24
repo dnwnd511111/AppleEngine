@@ -3,10 +3,10 @@
 #include "apPlatform.h"
 
 #ifdef _WIN32
-#define WICKEDENGINE_BUILD_DX12
+#define APPLEENGINE_BUILD_DX12
 #endif // _WIN32
 
-#ifdef WICKEDENGINE_BUILD_DX12
+#ifdef APPLEENGINE_BUILD_DX12
 #include "apGraphicsDevice.h"
 #include "apUnorderedMap.h"
 #include "apVector.h"
@@ -459,4 +459,4 @@ namespace ap::graphics
 
 }
 
-#endif // WICKEDENGINE_BUILD_DX12
+#endif // APPLEENGINE_BUILD_DX12

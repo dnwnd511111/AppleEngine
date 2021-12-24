@@ -160,9 +160,7 @@ namespace ap
 		{
 			if (!denoiserResult.IsValid() && !ap::jobsystem::IsBusy(denoiserContext))
 			{
-				//ap::helper::saveTextureToFile(denoiserAlbedo, "C:/PROJECTS/WickedEngine/Editor/_albedo.png");
-				//ap::helper::saveTextureToFile(denoiserNormal, "C:/PROJECTS/WickedEngine/Editor/_normal.png");
-
+				
 				texturedata_src.clear();
 				texturedata_dst.clear();
 				texturedata_albedo.clear();

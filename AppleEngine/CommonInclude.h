@@ -1,5 +1,5 @@
-#ifndef WICKEDENGINE_COMMONINCLUDE_H
-#define WICKEDENGINE_COMMONINCLUDE_H
+#ifndef APPLEENGINE_COMMONINCLUDE_H
+#define APPLEENGINE_COMMONINCLUDE_H
 
 // This is a helper include file pasted into all engine headers, try to keep it minimal!
 // Do not include engine features in this file!
@@ -65,4 +65,4 @@ constexpr bool has_flag(E lhs, E rhs)
 	return (lhs & rhs) == rhs;
 }
 
-#endif //WICKEDENGINE_COMMONINCLUDE_H
+#endif //APPLEENGINE_COMMONINCLUDE_H

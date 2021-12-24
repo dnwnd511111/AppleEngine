@@ -51,7 +51,7 @@ GPUBuffer			resourceBuffers[RBTYPE_COUNT];
 Sampler				samplers[SAMPLER_COUNT];
 
 std::string SHADERPATH = "shaders/";
-std::string SHADERSOURCEPATH = "../WickedEngine/shaders/";
+std::string SHADERSOURCEPATH = "../AppleEngine/shaders/";
 
 // define this to use raytracing pipeline for raytraced reflections:
 //	Currently the DX12 device could crash for unknown reasons with the global root signature export

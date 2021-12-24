@@ -118,7 +118,7 @@ namespace ap::shadercompiler
 		{
 		case ShaderFormat::HLSL6:
 			args.push_back(L"-D"); args.push_back(L"HLSL6");
-			args.push_back(L"-rootsig-define"); args.push_back(L"WICKED_ENGINE_DEFAULT_ROOTSIGNATURE");
+			args.push_back(L"-rootsig-define"); args.push_back(L"APPLE_ENGINE_DEFAULT_ROOTSIGNATURE");
 			break;
 		case ShaderFormat::SPIRV:
 			args.push_back(L"-D"); args.push_back(L"SPIRV");

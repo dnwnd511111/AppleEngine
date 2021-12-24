@@ -271,7 +271,7 @@ namespace ap
 			infodisplay_str.clear();
 			if (infoDisplay.watermark)
 			{
-				infodisplay_str += "Wicked Engine ";
+				infodisplay_str += "Apple Engine ";
 				infodisplay_str += ap::version::GetVersionString();
 				infodisplay_str += " ";
 
@@ -287,13 +287,13 @@ namespace ap
 				infodisplay_str += "[UWP]";
 #endif
 
-#ifdef WICKEDENGINE_BUILD_DX12
+#ifdef APPLEENGINE_BUILD_DX12
 				if (dynamic_cast<GraphicsDevice_DX12*>(graphicsDevice.get()))
 				{
 					infodisplay_str += "[DX12]";
 				}
 #endif
-#ifdef WICKEDENGINE_BUILD_VULKAN
+#ifdef APPLEENGINE_BUILD_VULKAN
 				if (dynamic_cast<GraphicsDevice_Vulkan*>(graphicsDevice.get()))
 				{
 					infodisplay_str += "[Vulkan]";
@@ -399,13 +399,13 @@ namespace ap
 			bool use_dx12 = ap::arguments::HasArgument("dx12");
 			bool use_vulkan = ap::arguments::HasArgument("vulkan");
 
-#ifndef WICKEDENGINE_BUILD_DX12
+#ifndef APPLEENGINE_BUILD_DX12
 			if (use_dx12) {
 				ap::helper::messageBox("The engine was built without DX12 support!", "Error");
 				use_dx12 = false;
 			}
 #endif
-#ifndef WICKEDENGINE_BUILD_VULKAN
+#ifndef APPLEENGINE_BUILD_VULKAN
 			if (use_vulkan) {
 				ap::helper::messageBox("The engine was built without Vulkan support!", "Error");
 				use_vulkan = false;
@@ -414,9 +414,9 @@ namespace ap
 
 			if (!use_dx12 && !use_vulkan)
 			{
-#if defined(WICKEDENGINE_BUILD_DX12)
+#if defined(APPLEENGINE_BUILD_DX12)
 				use_dx12 = true;
-#elif defined(WICKEDENGINE_BUILD_VULKAN)
+#elif defined(APPLEENGINE_BUILD_VULKAN)
 				use_vulkan = true;
 #else
 				ap::backlog::post("No rendering backend is enabled! Please enable at least one so we can use it as default", ap::backlog::LogLevel::Error);
@@ -427,14 +427,14 @@ namespace ap
 
 			if (use_vulkan)
 			{
-#ifdef WICKEDENGINE_BUILD_VULKAN
+#ifdef APPLEENGINE_BUILD_VULKAN
 				ap::renderer::SetShaderPath(ap::renderer::GetShaderPath() + "spirv/");
 				graphicsDevice = std::make_unique<GraphicsDevice_Vulkan>(window, debugdevice);
 #endif
 			}
 			else if (use_dx12)
 			{
-#ifdef WICKEDENGINE_BUILD_DX12
+#ifdef APPLEENGINE_BUILD_DX12
 				ap::renderer::SetShaderPath(ap::renderer::GetShaderPath() + "hlsl6/");
 				graphicsDevice = std::make_unique<GraphicsDevice_DX12>(debugdevice, gpuvalidation);
 #endif
