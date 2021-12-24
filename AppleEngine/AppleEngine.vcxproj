@@ -55,10 +55,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\ImGui;$(ProjectDir)\vendor\Bullet;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\ImGui;$(ProjectDir)\vendor\Bullet;$(ProjectDir)\Utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -74,10 +74,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\ImGui;$(ProjectDir)\vendor\Bullet;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\ImGui;$(ProjectDir)\vendor\Bullet;$(ProjectDir)\Utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -88,14 +88,138 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="apApplication.h" />
+    <ClInclude Include="apArchive.h" />
+    <ClInclude Include="apArguments.h" />
+    <ClInclude Include="apAudio.h" />
+    <ClInclude Include="apBacklog.h" />
+    <ClInclude Include="apCanvas.h" />
+    <ClInclude Include="apColor.h" />
+    <ClInclude Include="apECS.h" />
+    <ClInclude Include="apEmittedParticle.h" />
+    <ClInclude Include="apEnums.h" />
+    <ClInclude Include="apEventHandler.h" />
+    <ClInclude Include="apFadeManager.h" />
+    <ClInclude Include="apFFTGenerator.h" />
+    <ClInclude Include="apGPUBVH.h" />
+    <ClInclude Include="apGPUSortLib.h" />
+    <ClInclude Include="apGraphics.h" />
+    <ClInclude Include="apGraphicsDevice.h" />
+    <ClInclude Include="apGraphicsDevice_DX12.h" />
+    <ClInclude Include="apGUI.h" />
+    <ClInclude Include="apHairParticle.h" />
+    <ClInclude Include="apHelper.h" />
+    <ClInclude Include="apImage.h" />
+    <ClInclude Include="apInitializer.h" />
+    <ClInclude Include="apInput.h" />
+    <ClInclude Include="apJobSystem.h" />
+    <ClInclude Include="apLoadingScreen.h" />
+    <ClInclude Include="apMath.h" />
+    <ClInclude Include="apOcean.h" />
+    <ClInclude Include="apPhysics.h" />
+    <ClInclude Include="apPlatform.h" />
+    <ClInclude Include="AppleEngine.h" />
+    <ClInclude Include="apPrimitive.h" />
+    <ClInclude Include="apProfiler.h" />
+    <ClInclude Include="apRandom.h" />
+    <ClInclude Include="apRawInput.h" />
+    <ClInclude Include="apRectPacker.h" />
+    <ClInclude Include="apRenderer.h" />
+    <ClInclude Include="apRenderPath.h" />
+    <ClInclude Include="apRenderPath2D.h" />
+    <ClInclude Include="apRenderPath3D.h" />
+    <ClInclude Include="apRenderPath3D_PathTracing.h" />
+    <ClInclude Include="apResourceManager.h" />
+    <ClInclude Include="apScene.h" />
+    <ClInclude Include="apScene_Decl.h" />
+    <ClInclude Include="apSDLInput.h" />
+    <ClInclude Include="apShaderCompiler.h" />
+    <ClInclude Include="apSpinLock.h" />
+    <ClInclude Include="apSprite.h" />
+    <ClInclude Include="apSpriteFont.h" />
+    <ClInclude Include="apTextureHelper.h" />
+    <ClInclude Include="apTimer.h" />
+    <ClInclude Include="apUnorderedMap.h" />
+    <ClInclude Include="apUnorderedSet.h" />
+    <ClInclude Include="apVector.h" />
+    <ClInclude Include="apVersion.h" />
+    <ClInclude Include="apXInput.h" />
+    <ClInclude Include="CommonInclude.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Utility\arial.h" />
+    <ClInclude Include="Utility\D3D12MemAlloc.h" />
+    <ClInclude Include="Utility\DirectXCollision.h" />
+    <ClInclude Include="Utility\DirectXColors.h" />
+    <ClInclude Include="Utility\DirectXMath.h" />
+    <ClInclude Include="Utility\DirectXMathCommon.h" />
+    <ClInclude Include="Utility\DirectXPackedVector.h" />
+    <ClInclude Include="Utility\dx12\d3dx12.h" />
+    <ClInclude Include="Utility\dxcapi.h" />
+    <ClInclude Include="Utility\flat_hash_map.hpp" />
+    <ClInclude Include="Utility\include\spirv\unified1\spirv.h" />
+    <ClInclude Include="Utility\portable-file-dialogs.h" />
+    <ClInclude Include="Utility\sal.h" />
+    <ClInclude Include="Utility\spirv_reflect.h" />
+    <ClInclude Include="Utility\stb_image.h" />
+    <ClInclude Include="Utility\stb_image_write.h" />
+    <ClInclude Include="Utility\stb_truetype.h" />
+    <ClInclude Include="Utility\tinyddsloader.h" />
+    <ClInclude Include="Utility\vk_mem_alloc.h" />
+    <ClInclude Include="Utility\volk.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="apApplication.cpp" />
+    <ClCompile Include="apArchive.cpp" />
+    <ClCompile Include="apArguments.cpp" />
+    <ClCompile Include="apAudio.cpp" />
+    <ClCompile Include="apBacklog.cpp" />
+    <ClCompile Include="apEmittedParticle.cpp" />
+    <ClCompile Include="apEventHandler.cpp" />
+    <ClCompile Include="apFadeManager.cpp" />
+    <ClCompile Include="apFFTGenerator.cpp" />
+    <ClCompile Include="apGPUBVH.cpp" />
+    <ClCompile Include="apGPUSortLib.cpp" />
+    <ClCompile Include="apGraphicsDevice_DX12.cpp" />
+    <ClCompile Include="apGUI.cpp" />
+    <ClCompile Include="apHairParticle.cpp" />
+    <ClCompile Include="apHelper.cpp" />
+    <ClCompile Include="apImage.cpp" />
+    <ClCompile Include="apInitializer.cpp" />
+    <ClCompile Include="apInput.cpp" />
+    <ClCompile Include="apJobSystem.cpp" />
+    <ClCompile Include="apLoadingScreen.cpp" />
+    <ClCompile Include="apMath.cpp" />
+    <ClCompile Include="apOcean.cpp" />
+    <ClCompile Include="apPhysics_Bullet.cpp" />
     <ClCompile Include="AppleEngine.cpp" />
+    <ClCompile Include="apPrimitive.cpp" />
+    <ClCompile Include="apProfiler.cpp" />
+    <ClCompile Include="apRandom.cpp" />
+    <ClCompile Include="apRawInput.cpp" />
+    <ClCompile Include="apRectPacker.cpp" />
+    <ClCompile Include="apRenderer.cpp" />
+    <ClCompile Include="apRenderPath2D.cpp" />
+    <ClCompile Include="apRenderPath3D.cpp" />
+    <ClCompile Include="apRenderPath3D_PathTracing.cpp" />
+    <ClCompile Include="apResourceManager.cpp" />
+    <ClCompile Include="apScene.cpp" />
+    <ClCompile Include="apScene_Serializers.cpp" />
+    <ClCompile Include="apSDLInput.cpp" />
+    <ClCompile Include="apShaderCompiler.cpp" />
+    <ClCompile Include="apSprite.cpp" />
+    <ClCompile Include="apSpriteFont.cpp" />
+    <ClCompile Include="apTextureHelper.cpp" />
+    <ClCompile Include="apVersion.cpp" />
+    <ClCompile Include="apXInput.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Utility\D3D12MemAlloc.cpp" />
+    <ClCompile Include="Utility\samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp.cpp" />
+    <ClCompile Include="Utility\spirv_reflect.c" />
+    <ClCompile Include="Utility\stb_vorbis.c" />
+    <ClCompile Include="Utility\utility_common.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="vendor\Bullet\Bullet.vcxproj">
@@ -104,6 +228,14 @@
     <ProjectReference Include="vendor\ImGui\ImGui.vcxproj">
       <Project>{5c3b1c0a-3ad7-4bdd-855f-a7178bac5570}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Utility\DirectXCollision.inl" />
+    <None Include="Utility\DirectXMathConvert.inl" />
+    <None Include="Utility\DirectXMathMatrix.inl" />
+    <None Include="Utility\DirectXMathMisc.inl" />
+    <None Include="Utility\DirectXMathVector.inl" />
+    <None Include="Utility\DirectXPackedVector.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
