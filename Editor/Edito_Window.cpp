@@ -174,14 +174,79 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_PAINT:
+    case WM_SIZE:
+    case WM_DPICHANGED:
+        if (editor.is_window_active)
+            editor.SetWindow(hWnd);
+        break;
+    case WM_HOTKEY:
+        switch (wParam)
         {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
+        case PRINTSCREEN:
+        {
+            ap::helper::screenshot(editor.swapChain);
         }
         break;
+        default:
+            break;
+        }
+        break;
+    case WM_CHAR:
+        switch (wParam)
+        {
+        case VK_BACK:
+            if (ap::backlog::isActive())
+                ap::backlog::deletefromInput();
+            ap::gui::TextInputField::DeleteFromInput();
+            break;
+        case VK_RETURN:
+            break;
+        default:
+        {
+            const char c = (const char)(TCHAR)wParam;
+            if (ap::backlog::isActive())
+            {
+                ap::backlog::input(c);
+            }
+            ap::gui::TextInputField::AddInput(c);
+        }
+        break;
+        }
+        break;
+    case WM_INPUT:
+        ap::input::rawinput::ParseMessage((void*)lParam);
+        break;
+    case WM_KILLFOCUS:
+        editor.is_window_active = false;
+        break;
+    case WM_SETFOCUS:
+        editor.is_window_active = true;
+        if (ap::shadercompiler::GetRegisteredShaderCount() > 0)
+        {
+            std::thread([] {
+                ap::backlog::post("[Shader check] Started checking " + std::to_string(ap::shadercompiler::GetRegisteredShaderCount()) + " registered shaders for changes...");
+                if (ap::shadercompiler::CheckRegisteredShadersOutdated())
+                {
+                    ap::backlog::post("[Shader check] Changes detected, initiating reload...");
+                    ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [](uint64_t userdata) {
+                        ap::renderer::ReloadShaders();
+                        });
+                }
+                else
+                {
+                    ap::backlog::post("[Shader check] All up to date");
+                }
+                }).detach();
+        }
+        break;
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        // TODO: Add any drawing code that uses hdc here...
+        EndPaint(hWnd, &ps);
+    }
+    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
