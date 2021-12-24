@@ -262,7 +262,7 @@ namespace ap::gui
 			float screenwidth = canvas.GetLogicalWidth();
 			float screenheight = canvas.GetLogicalHeight();
 
-			ap::font::Params fontProps = ap::font::Params(0, 0, ap::font::WIFONTSIZE_DEFAULT, ap::font::WIFALIGN_LEFT, ap::font::WIFALIGN_TOP);
+			ap::font::Params fontProps = ap::font::Params(0, 0, ap::font::APFONTSIZE_DEFAULT, ap::font::APFALIGN_LEFT, ap::font::APFALIGN_TOP);
 			fontProps.color = ap::Color(25, 25, 25, 255);
 			ap::SpriteFont tooltipFont = ap::SpriteFont(tooltip, fontProps);
 			if (!scriptTip.empty())
@@ -524,8 +524,8 @@ namespace ap::gui
 		OnDragEnd([](EventArgs args) {});
 		SetSize(XMFLOAT2(100, 30));
 
-		font.params.h_align = ap::font::WIFALIGN_CENTER;
-		font.params.v_align = ap::font::WIFALIGN_CENTER;
+		font.params.h_align = ap::font::APFALIGN_CENTER;
+		font.params.v_align = ap::font::APFALIGN_CENTER;
 	}
 	void Button::Update(const ap::Canvas& canvas, float dt)
 	{
@@ -621,26 +621,26 @@ namespace ap::gui
 
 		switch (font.params.h_align)
 		{
-		case ap::font::WIFALIGN_LEFT:
+		case ap::font::APFALIGN_LEFT:
 			font.params.posX = translation.x + 2;
 			break;
-		case ap::font::WIFALIGN_RIGHT:
+		case ap::font::APFALIGN_RIGHT:
 			font.params.posX = translation.x + scale.x - 2;
 			break;
-		case ap::font::WIFALIGN_CENTER:
+		case ap::font::APFALIGN_CENTER:
 		default:
 			font.params.posX = translation.x + scale.x * 0.5f;
 			break;
 		}
 		switch (font.params.v_align)
 		{
-		case ap::font::WIFALIGN_TOP:
+		case ap::font::APFALIGN_TOP:
 			font.params.posY = translation.y + 2;
 			break;
-		case ap::font::WIFALIGN_BOTTOM:
+		case ap::font::APFALIGN_BOTTOM:
 			font.params.posY = translation.y + scale.y - 2;
 			break;
-		case ap::font::WIFALIGN_CENTER:
+		case ap::font::APFALIGN_CENTER:
 		default:
 			font.params.posY = translation.y + scale.y * 0.5f;
 			break;
@@ -694,26 +694,26 @@ namespace ap::gui
 
 		switch (font.params.h_align)
 		{
-		case ap::font::WIFALIGN_LEFT:
+		case ap::font::APFALIGN_LEFT:
 			font.params.posX = translation.x + 2;
 			break;
-		case ap::font::WIFALIGN_RIGHT:
+		case ap::font::APFALIGN_RIGHT:
 			font.params.posX = translation.x + scale.x - 2;
 			break;
-		case ap::font::WIFALIGN_CENTER:
+		case ap::font::APFALIGN_CENTER:
 		default:
 			font.params.posX = translation.x + scale.x * 0.5f;
 			break;
 		}
 		switch (font.params.v_align)
 		{
-		case ap::font::WIFALIGN_TOP:
+		case ap::font::APFALIGN_TOP:
 			font.params.posY = translation.y + 2;
 			break;
-		case ap::font::WIFALIGN_BOTTOM:
+		case ap::font::APFALIGN_BOTTOM:
 			font.params.posY = translation.y + scale.y - 2;
 			break;
-		case ap::font::WIFALIGN_CENTER:
+		case ap::font::APFALIGN_CENTER:
 		default:
 			font.params.posY = translation.y + scale.y * 0.5f;
 			break;
@@ -745,10 +745,10 @@ namespace ap::gui
 		OnInputAccepted([](EventArgs args) {});
 		SetSize(XMFLOAT2(100, 30));
 
-		font.params.v_align = ap::font::WIFALIGN_CENTER;
+		font.params.v_align = ap::font::APFALIGN_CENTER;
 
 		font_description.params = font.params;
-		font_description.params.h_align = ap::font::WIFALIGN_RIGHT;
+		font_description.params.h_align = ap::font::APFALIGN_RIGHT;
 	}
 	void TextInputField::SetValue(const std::string& newValue)
 	{
@@ -963,8 +963,8 @@ namespace ap::gui
 		sprites[ACTIVE].params.color = ap::Color(50, 50, 50, 200);
 		sprites[DEACTIVATING].params.color = ap::Color(60, 60, 60, 200);
 
-		font.params.h_align = ap::font::WIFALIGN_RIGHT;
-		font.params.v_align = ap::font::WIFALIGN_CENTER;
+		font.params.h_align = ap::font::APFALIGN_RIGHT;
+		font.params.v_align = ap::font::APFALIGN_CENTER;
 	}
 	void Slider::SetValue(float value)
 	{
@@ -1135,8 +1135,8 @@ namespace ap::gui
 		OnClick([](EventArgs args) {});
 		SetSize(XMFLOAT2(20, 20));
 
-		font.params.h_align = ap::font::WIFALIGN_RIGHT;
-		font.params.v_align = ap::font::WIFALIGN_CENTER;
+		font.params.h_align = ap::font::APFALIGN_RIGHT;
+		font.params.v_align = ap::font::APFALIGN_CENTER;
 
 		for (int i = IDLE; i < WIDGETSTATE_COUNT; ++i)
 		{
@@ -1263,8 +1263,8 @@ namespace ap::gui
 		OnSelect([](EventArgs args) {});
 		SetSize(XMFLOAT2(100, 20));
 
-		font.params.h_align = ap::font::WIFALIGN_RIGHT;
-		font.params.v_align = ap::font::WIFALIGN_CENTER;
+		font.params.h_align = ap::font::APFALIGN_RIGHT;
+		font.params.v_align = ap::font::APFALIGN_CENTER;
 	}
 	float ComboBox::GetItemOffset(int index) const
 	{
@@ -1499,7 +1499,7 @@ namespace ap::gui
 
 		if (selected >= 0)
 		{
-			ap::font::Draw(items[selected].name, ap::font::Params(translation.x + scale.x * 0.5f, translation.y + scale.y * 0.5f, ap::font::WIFONTSIZE_DEFAULT, ap::font::WIFALIGN_CENTER, ap::font::WIFALIGN_CENTER,
+			ap::font::Draw(items[selected].name, ap::font::Params(translation.x + scale.x * 0.5f, translation.y + scale.y * 0.5f, ap::font::APFONTSIZE_DEFAULT, ap::font::APFALIGN_CENTER, ap::font::APFALIGN_CENTER,
 				font.params.color, font.params.shadowColor), cmd);
 		}
 
@@ -1566,7 +1566,7 @@ namespace ap::gui
 					}
 				}
 				ap::image::Draw(ap::texturehelper::getWhite(), fx, cmd);
-				ap::font::Draw(items[i].name, ap::font::Params(translation.x + scale.x * 0.5f, translation.y + scale.y * 0.5f + GetItemOffset(i), ap::font::WIFONTSIZE_DEFAULT, ap::font::WIFALIGN_CENTER, ap::font::WIFALIGN_CENTER,
+				ap::font::Draw(items[i].name, ap::font::Params(translation.x + scale.x * 0.5f, translation.y + scale.y * 0.5f + GetItemOffset(i), ap::font::APFONTSIZE_DEFAULT, ap::font::APFALIGN_CENTER, ap::font::APFALIGN_CENTER,
 					font.params.color, font.params.shadowColor), cmd);
 			}
 		}
@@ -1719,7 +1719,7 @@ namespace ap::gui
 			// Add a grabber onto the title bar
 			moveDragger.Create(name + "_move_dragger");
 			moveDragger.SetText(name);
-			moveDragger.font.params.h_align = ap::font::WIFALIGN_LEFT;
+			moveDragger.font.params.h_align = ap::font::APFALIGN_LEFT;
 			moveDragger.OnDrag([this](EventArgs args) {
 				auto saved_parent = this->parent;
 				this->Detach();
@@ -1751,7 +1751,7 @@ namespace ap::gui
 			// Simple title bar
 			label.Create(name);
 			label.SetText(name);
-			label.font.params.h_align = ap::font::WIFALIGN_LEFT;
+			label.font.params.h_align = ap::font::APFALIGN_LEFT;
 			AddWidget(&label);
 		}
 
@@ -2808,7 +2808,7 @@ namespace ap::gui
 		{
 			sprites[i].params.color = sprites[FOCUS].params.color;
 		}
-		font.params.v_align = ap::font::WIFALIGN_CENTER;
+		font.params.v_align = ap::font::APFALIGN_CENTER;
 	}
 	float TreeList::GetItemOffset(int index) const
 	{
@@ -3135,7 +3135,7 @@ namespace ap::gui
 			}
 
 			// Item name text:
-			ap::font::Draw(item.name, ap::font::Params(name_box.pos.x + 1, name_box.pos.y + name_box.siz.y * 0.5f, ap::font::WIFONTSIZE_DEFAULT, ap::font::WIFALIGN_LEFT, ap::font::WIFALIGN_CENTER,
+			ap::font::Draw(item.name, ap::font::Params(name_box.pos.x + 1, name_box.pos.y + name_box.siz.y * 0.5f, ap::font::APFONTSIZE_DEFAULT, ap::font::APFALIGN_LEFT, ap::font::APFALIGN_CENTER,
 				font.params.color, font.params.shadowColor), cmd);
 		}
 	}

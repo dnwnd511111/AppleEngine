@@ -332,7 +332,7 @@ namespace ap::profiler
 			x.second.total_time = 0;
 		}
 
-		ap::font::Params params = ap::font::Params(x, y, ap::font::WIFONTSIZE_DEFAULT - 4, ap::font::WIFALIGN_LEFT, ap::font::WIFALIGN_TOP, ap::Color(255, 255, 255, 255), ap::Color(0, 0, 0, 255));
+		ap::font::Params params = ap::font::Params(x, y, ap::font::APFONTSIZE_DEFAULT - 4, ap::font::APFALIGN_LEFT, ap::font::APFALIGN_TOP, ap::Color(255, 255, 255, 255), ap::Color(0, 0, 0, 255));
 
 		ap::image::Params fx;
 		fx.pos.x = (float)params.posX;

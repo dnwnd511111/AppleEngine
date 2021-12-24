@@ -371,7 +371,7 @@ namespace ap
 				infodisplay_str += "Warning: Graphics is in [debugdevice] mode, performance will be slow!\n";
 			}
 
-			ap::font::Draw(infodisplay_str, ap::font::Params(4, 4, infoDisplay.size, ap::font::WIFALIGN_LEFT, ap::font::WIFALIGN_TOP, ap::Color(255, 255, 255, 255), ap::Color(0, 0, 0, 255)), cmd);
+			ap::font::Draw(infodisplay_str, ap::font::Params(4, 4, infoDisplay.size, ap::font::APFALIGN_LEFT, ap::font::APFALIGN_TOP, ap::Color(255, 255, 255, 255), ap::Color(0, 0, 0, 255)), cmd);
 
 			if (infoDisplay.colorgrading_helper)
 			{

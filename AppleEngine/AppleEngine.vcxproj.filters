@@ -43,12 +43,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppleEngine.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
     <ClCompile Include="Utility\D3D12MemAlloc.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
@@ -190,11 +184,11 @@
     <ClCompile Include="apVersion.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="apFont.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\arial.h">
       <Filter>Utility</Filter>
     </ClInclude>
@@ -425,6 +419,9 @@
     </ClInclude>
     <ClInclude Include="apVersion.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="apFont.h">
+      <Filter>Engine\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -101,6 +101,7 @@
     <ClInclude Include="apEventHandler.h" />
     <ClInclude Include="apFadeManager.h" />
     <ClInclude Include="apFFTGenerator.h" />
+    <ClInclude Include="apFont.h" />
     <ClInclude Include="apGPUBVH.h" />
     <ClInclude Include="apGPUSortLib.h" />
     <ClInclude Include="apGraphics.h" />
@@ -145,7 +146,6 @@
     <ClInclude Include="apVersion.h" />
     <ClInclude Include="apXInput.h" />
     <ClInclude Include="CommonInclude.h" />
-    <ClInclude Include="pch.h" />
     <ClInclude Include="Utility\arial.h" />
     <ClInclude Include="Utility\D3D12MemAlloc.h" />
     <ClInclude Include="Utility\DirectXCollision.h" />
@@ -177,6 +177,7 @@
     <ClCompile Include="apEventHandler.cpp" />
     <ClCompile Include="apFadeManager.cpp" />
     <ClCompile Include="apFFTGenerator.cpp" />
+    <ClCompile Include="apFont.cpp" />
     <ClCompile Include="apGPUBVH.cpp" />
     <ClCompile Include="apGPUSortLib.cpp" />
     <ClCompile Include="apGraphicsDevice_DX12.cpp" />
@@ -191,7 +192,6 @@
     <ClCompile Include="apMath.cpp" />
     <ClCompile Include="apOcean.cpp" />
     <ClCompile Include="apPhysics_Bullet.cpp" />
-    <ClCompile Include="AppleEngine.cpp" />
     <ClCompile Include="apPrimitive.cpp" />
     <ClCompile Include="apProfiler.cpp" />
     <ClCompile Include="apRandom.cpp" />
@@ -211,10 +211,6 @@
     <ClCompile Include="apTextureHelper.cpp" />
     <ClCompile Include="apVersion.cpp" />
     <ClCompile Include="apXInput.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="Utility\D3D12MemAlloc.cpp" />
     <ClCompile Include="Utility\samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp.cpp" />
     <ClCompile Include="Utility\spirv_reflect.c" />

@@ -1,28 +1,28 @@
-#include "wiFont.h"
-#include "wiRenderer.h"
-#include "wiResourceManager.h"
-#include "wiHelper.h"
+#include "apFont.h"
+#include "apRenderer.h"
+#include "apResourceManager.h"
+#include "apHelper.h"
 #include "shaders/ShaderInterop_Font.h"
-#include "wiBacklog.h"
-#include "wiTextureHelper.h"
-#include "wiRectPacker.h"
-#include "wiSpinLock.h"
-#include "wiPlatform.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
-#include "wiUnorderedMap.h"
-#include "wiUnorderedSet.h"
-#include "wiVector.h"
+#include "apBacklog.h"
+#include "apTextureHelper.h"
+#include "apRectPacker.h"
+#include "apSpinLock.h"
+#include "apPlatform.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
+#include "apUnorderedMap.h"
+#include "apUnorderedSet.h"
+#include "apVector.h"
 
 #include "Utility/arial.h"
 #include "Utility/stb_truetype.h"
 
 #include <fstream>
 
-using namespace wi::graphics;
-using namespace wi::rectpacker;
+using namespace ap::graphics;
+using namespace ap::rectpacker;
 
-namespace wi::font
+namespace ap::font
 {
 #define WHITESPACE_SIZE ((float(params.size) + params.spacingX) * params.scaling * 0.25f)
 #define TAB_SIZE (WHITESPACE_SIZE * 4)
@@ -38,7 +38,7 @@ namespace wi::font
 		Shader				pixelShader;
 		PipelineState		PSO;
 
-		wi::Canvas canvases[COMMANDLIST_COUNT];
+		ap::Canvas canvases[COMMANDLIST_COUNT];
 
 		Texture texture;
 
@@ -53,8 +53,8 @@ namespace wi::font
 			float tc_top;
 			float tc_bottom;
 		};
-		wi::unordered_map<int32_t, Glyph> glyph_lookup;
-		wi::unordered_map<int32_t, rect_xywh> rect_lookup;
+		ap::unordered_map<int32_t, Glyph> glyph_lookup;
+		ap::unordered_map<int32_t, rect_xywh> rect_lookup;
 		// pack glyph identifiers to a 32-bit hash:
 		//	height:	10 bits	(height supported: 0 - 1023)
 		//	style:	6 bits	(number of font styles supported: 0 - 63)
@@ -63,13 +63,13 @@ namespace wi::font
 		constexpr int codefromhash(int64_t hash) { return int((hash >> 16) & 0xFFFF); }
 		constexpr int stylefromhash(int64_t hash) { return int((hash >> 10) & 0x3F); }
 		constexpr int heightfromhash(int64_t hash) { return int((hash >> 0) & 0x3FF); }
-		wi::unordered_set<int32_t> pendingGlyphs;
-		wi::SpinLock glyphLock;
+		ap::unordered_set<int32_t> pendingGlyphs;
+		ap::SpinLock glyphLock;
 
 		struct FontStyle
 		{
 			std::string name;
-			wi::vector<uint8_t> fontBuffer; // only used if loaded from file, need to keep alive
+			ap::vector<uint8_t> fontBuffer; // only used if loaded from file, need to keep alive
 			stbtt_fontinfo fontInfo;
 			int ascent, descent, lineGap;
 			void Create(const std::string& newName, const uint8_t* data, size_t size)
@@ -79,24 +79,24 @@ namespace wi::font
 
 				if (!stbtt_InitFont(&fontInfo, data, offset))
 				{
-					wi::backlog::post("Failed to load font: " + name + " (file was unrecognized, it must be a .ttf file)");
+					ap::backlog::post("Failed to load font: " + name + " (file was unrecognized, it must be a .ttf file)");
 				}
 
 				stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
 			}
 			void Create(const std::string& newName)
 			{
-				if (wi::helper::FileRead(newName, fontBuffer))
+				if (ap::helper::FileRead(newName, fontBuffer))
 				{
 					Create(newName, fontBuffer.data(), fontBuffer.size());
 				}
 				else
 				{
-					wi::backlog::post("Failed to load font: " + name + " (file could not be opened)");
+					ap::backlog::post("Failed to load font: " + name + " (file could not be opened)");
 				}
 			}
 		};
-		wi::vector<FontStyle> fontStyles;
+		ap::vector<FontStyle> fontStyles;
 
 		template<typename T>
 		uint32_t WriteVertices(FontVertex* vertexList, const T* text, Params params)
@@ -219,8 +219,8 @@ namespace wi::font
 
 	void LoadShaders()
 	{
-		wi::renderer::LoadShader(ShaderStage::VS, vertexShader, "fontVS.cso");
-		wi::renderer::LoadShader(ShaderStage::PS, pixelShader, "fontPS.cso");
+		ap::renderer::LoadShader(ShaderStage::VS, vertexShader, "fontVS.cso");
+		ap::renderer::LoadShader(ShaderStage::PS, pixelShader, "fontPS.cso");
 
 		PipelineStateDesc desc;
 		desc.vs = &vertexShader;
@@ -229,11 +229,11 @@ namespace wi::font
 		desc.dss = &depthStencilState;
 		desc.rs = &rasterizerState;
 		desc.pt = PrimitiveTopology::TRIANGLESTRIP;
-		wi::graphics::GetDevice()->CreatePipelineState(&desc, &PSO);
+		ap::graphics::GetDevice()->CreatePipelineState(&desc, &PSO);
 	}
 	void Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
 		// add default font if there is none yet:
 		if (fontStyles.empty())
@@ -241,7 +241,7 @@ namespace wi::font
 			AddFontStyle("arial", arial, sizeof(arial));
 		}
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		RasterizerState rs;
 		rs.fill_mode = FillMode::SOLID;
@@ -272,10 +272,10 @@ namespace wi::font
 		dsd.stencil_enable = false;
 		depthStencilState = dsd;
 
-		static wi::eventhandler::Handle handle1 = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
+		static ap::eventhandler::Handle handle1 = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
 		LoadShaders();
 
-		wi::backlog::post("wi::font Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::font Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 	void UpdatePendingGlyphs()
@@ -325,7 +325,7 @@ namespace wi::font
 			pendingGlyphs.clear();
 
 			// This reference array will be used for packing:
-			wi::vector<rect_xywh*> out_rects;
+			ap::vector<rect_xywh*> out_rects;
 			out_rects.reserve(rect_lookup.size());
 			for (auto& it : rect_lookup)
 			{
@@ -333,7 +333,7 @@ namespace wi::font
 			}
 
 			// Perform packing and process the result if successful:
-			wi::vector<bin> bins;
+			ap::vector<bin> bins;
 			if (pack(out_rects.data(), (int)out_rects.size(), 4096, bins))
 			{
 				assert(bins.size() == 1 && "The regions won't fit into one texture!");
@@ -345,7 +345,7 @@ namespace wi::font
 				const float inv_height = 1.0f / bitmapHeight;
 
 				// Create the CPU-side texture atlas and fill with transparency (0):
-				wi::vector<uint8_t> bitmap(size_t(bitmapWidth) * size_t(bitmapHeight));
+				ap::vector<uint8_t> bitmap(size_t(bitmapWidth) * size_t(bitmapHeight));
 				std::fill(bitmap.begin(), bitmap.end(), 0);
 
 				// Iterate all packed glyph rectangles:
@@ -384,7 +384,7 @@ namespace wi::font
 				}
 
 				// Upload the CPU-side texture atlas bitmap to the GPU:
-				wi::texturehelper::CreateTexture(texture, bitmap.data(), bitmapWidth, bitmapHeight, Format::R8_UNORM);
+				ap::texturehelper::CreateTexture(texture, bitmap.data(), bitmapWidth, bitmapHeight, Format::R8_UNORM);
 			}
 		}
 
@@ -503,16 +503,16 @@ namespace wi::font
 
 		Params newProps = params;
 
-		if (params.h_align == WIFALIGN_CENTER)
+		if (params.h_align == APFALIGN_CENTER)
 			newProps.posX -= TextWidth_internal(text, newProps) / 2;
-		else if (params.h_align == WIFALIGN_RIGHT)
+		else if (params.h_align == APFALIGN_RIGHT)
 			newProps.posX -= TextWidth_internal(text, newProps);
-		if (params.v_align == WIFALIGN_CENTER)
+		if (params.v_align == APFALIGN_CENTER)
 			newProps.posY -= TextHeight_internal(text, newProps) / 2;
-		else if (params.v_align == WIFALIGN_BOTTOM)
+		else if (params.v_align == APFALIGN_BOTTOM)
 			newProps.posY -= TextHeight_internal(text, newProps);
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		GraphicsDevice::GPUAllocation mem = device->AllocateGPU(sizeof(FontVertex) * text_length * 4, cmd);
 		if (!mem.IsValid())
@@ -534,8 +534,8 @@ namespace wi::font
 			font_push.buffer_offset = (uint32_t)mem.offset;
 			font_push.texture_index = device->GetDescriptorIndex(&texture, SubresourceType::SRV);
 
-			const wi::Canvas& canvas = canvases[cmd];
-			// Asserts will check that a proper canvas was set for this cmd with wi::image::SetCanvas()
+			const ap::Canvas& canvas = canvases[cmd];
+			// Asserts will check that a proper canvas was set for this cmd with ap::image::SetCanvas()
 			//	The canvas must be set to have dpi aware rendering
 			assert(canvas.width > 0);
 			assert(canvas.height > 0);
@@ -575,7 +575,7 @@ namespace wi::font
 		UpdatePendingGlyphs();
 	}
 
-	void SetCanvas(const wi::Canvas& canvas, wi::graphics::CommandList cmd)
+	void SetCanvas(const ap::Canvas& canvas, ap::graphics::CommandList cmd)
 	{
 		canvases[cmd] = canvas;
 	}

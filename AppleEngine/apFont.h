@@ -11,20 +11,20 @@ namespace ap::font
 	// Do not alter order because it is bound to lua manually
 	enum Alignment
 	{
-		WIFALIGN_LEFT,
-		WIFALIGN_CENTER,
-		WIFALIGN_RIGHT,
-		WIFALIGN_TOP,
-		WIFALIGN_BOTTOM
+		APFALIGN_LEFT,
+		APFALIGN_CENTER,
+		APFALIGN_RIGHT,
+		APFALIGN_TOP,
+		APFALIGN_BOTTOM
 	};
 
-	static constexpr int WIFONTSIZE_DEFAULT = 16;
+	static constexpr int APFONTSIZE_DEFAULT = 16;
 
 	struct Params
 	{
 		float posX = 0;
 		float posY = 0;
-		int size = WIFONTSIZE_DEFAULT; // line height in DPI scaled units
+		int size = APFONTSIZE_DEFAULT; // line height in DPI scaled units
 		float scaling = 1;
 		float spacingX = 1, spacingY = 1; // minimum spacing between characters
 		Alignment h_align, v_align;
@@ -36,9 +36,9 @@ namespace ap::font
 		Params(
 			float posX = 0,
 			float posY = 0,
-			int size = WIFONTSIZE_DEFAULT,
-			Alignment h_align = WIFALIGN_LEFT,
-			Alignment v_align = WIFALIGN_TOP,
+			int size = APFONTSIZE_DEFAULT,
+			Alignment h_align = APFALIGN_LEFT,
+			Alignment v_align = APFALIGN_TOP,
 			ap::Color color = ap::Color(255, 255, 255, 255),
 			ap::Color shadowColor = ap::Color(0, 0, 0, 0)
 		) :

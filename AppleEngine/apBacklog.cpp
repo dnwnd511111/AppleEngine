@@ -122,9 +122,9 @@ namespace ap::backlog
 			fx.opacity = ap::math::Lerp(1, 0, -pos / canvas.GetLogicalHeight());
 			ap::image::Draw(&backgroundTex, fx, cmd);
 
-			ap::font::Params params = ap::font::Params(10, canvas.GetLogicalHeight() - 10, ap::font::WIFONTSIZE_DEFAULT, ap::font::WIFALIGN_LEFT, ap::font::WIFALIGN_BOTTOM);
+			ap::font::Params params = ap::font::Params(10, canvas.GetLogicalHeight() - 10, ap::font::APFONTSIZE_DEFAULT, ap::font::APFALIGN_LEFT, ap::font::APFALIGN_BOTTOM);
 			params.h_wrap = canvas.GetLogicalWidth() - params.posX;
-			params.v_align = ap::font::WIFALIGN_BOTTOM;
+			params.v_align = ap::font::APFALIGN_BOTTOM;
 			ap::font::Draw(inputArea, params, cmd);
 
 			font.SetText(getText());
