@@ -1,17 +1,17 @@
 #ifndef WI_ENTITY_COMPONENT_SYSTEM_H
 #define WI_ENTITY_COMPONENT_SYSTEM_H
 
-#include "wiArchive.h"
-#include "wiJobSystem.h"
-#include "wiUnorderedMap.h"
-#include "wiVector.h"
+#include "apArchive.h"
+#include "apJobSystem.h"
+#include "apUnorderedMap.h"
+#include "apVector.h"
 
 #include <cstdint>
 #include <cassert>
 #include <atomic>
 
 // Entity-Component System
-namespace wi::ecs
+namespace ap::ecs
 {
 	// The Entity is a global unique persistent identifier within the entity-component system
 	//	It can be stored and used for the duration of the application
@@ -28,17 +28,17 @@ namespace wi::ecs
 
 	struct EntitySerializer
 	{
-		wi::jobsystem::context ctx; // allow components to spawn serialization subtasks
-		wi::unordered_map<uint64_t, Entity> remap;
+		ap::jobsystem::context ctx; // allow components to spawn serialization subtasks
+		ap::unordered_map<uint64_t, Entity> remap;
 		bool allow_remap = true;
 
 		~EntitySerializer()
 		{
-			wi::jobsystem::Wait(ctx); // automatically wait for all subtasks after serialization
+			ap::jobsystem::Wait(ctx); // automatically wait for all subtasks after serialization
 		}
 	};
 	// This is the safe way to serialize an entity
-	inline void SerializeEntity(wi::Archive& archive, Entity& entity, EntitySerializer& seri)
+	inline void SerializeEntity(ap::Archive& archive, Entity& entity, EntitySerializer& seri)
 	{
 		if (archive.IsReadMode())
 		{
@@ -123,7 +123,7 @@ namespace wi::ecs
 		}
 
 		// Read/Write everything to an archive depending on the archive state
-		inline void Serialize(wi::Archive& archive, EntitySerializer& seri)
+		inline void Serialize(ap::Archive& archive, EntitySerializer& seri)
 		{
 			if (archive.IsReadMode())
 			{
@@ -331,11 +331,11 @@ namespace wi::ecs
 
 	private:
 		// This is a linear array of alive components
-		wi::vector<Component> components;
+		ap::vector<Component> components;
 		// This is a linear array of entities corresponding to each alive component
-		wi::vector<Entity> entities;
+		ap::vector<Entity> entities;
 		// This is a lookup table for entities
-		wi::unordered_map<Entity, size_t> lookup;
+		ap::unordered_map<Entity, size_t> lookup;
 
 		// Disallow this to be copied by mistake
 		ComponentManager(const ComponentManager&) = delete;

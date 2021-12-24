@@ -42,7 +42,7 @@ typedef void* HMODULE;
 #endif
 
 
-namespace wi::platform
+namespace ap::platform
 {
 #ifdef _WIN32
 #ifdef PLATFORM_UWP

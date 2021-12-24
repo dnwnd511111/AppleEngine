@@ -1,8 +1,8 @@
-#include "wiVersion.h"
+#include "apVersion.h"
 
 #include <string>
 
-namespace wi::version
+namespace ap::version
 {
 	// main engine core
 	const int major = 0;

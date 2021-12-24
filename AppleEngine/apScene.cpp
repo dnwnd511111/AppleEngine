@@ -1,25 +1,25 @@
-#include "wiScene.h"
-#include "wiTextureHelper.h"
-#include "wiResourceManager.h"
-#include "wiPhysics.h"
-#include "wiArchive.h"
-#include "wiRenderer.h"
-#include "wiJobSystem.h"
-#include "wiSpinLock.h"
-#include "wiHelper.h"
-#include "wiRenderer.h"
-#include "wiBacklog.h"
-#include "wiTimer.h"
-#include "wiUnorderedMap.h"
+#include "apScene.h"
+#include "apTextureHelper.h"
+#include "apResourceManager.h"
+#include "apPhysics.h"
+#include "apArchive.h"
+#include "apRenderer.h"
+#include "apJobSystem.h"
+#include "apSpinLock.h"
+#include "apHelper.h"
+#include "apRenderer.h"
+#include "apBacklog.h"
+#include "apTimer.h"
+#include "apUnorderedMap.h"
 
 #include "shaders/ShaderInterop_SurfelGI.h"
 
-using namespace wi::ecs;
-using namespace wi::enums;
-using namespace wi::graphics;
-using namespace wi::primitive;
+using namespace ap::ecs;
+using namespace ap::enums;
+using namespace ap::graphics;
+using namespace ap::primitive;
 
-namespace wi::scene
+namespace ap::scene
 {
 
 	XMFLOAT3 TransformComponent::GetPosition() const
@@ -230,8 +230,8 @@ namespace wi::scene
 	void MaterialComponent::WriteShaderMaterial(ShaderMaterial* dest) const
 	{
 		dest->baseColor = baseColor;
-		dest->emissive_r11g11b10 = wi::math::Pack_R11G11B10_FLOAT(XMFLOAT3(emissiveColor.x * emissiveColor.w, emissiveColor.y * emissiveColor.w, emissiveColor.z * emissiveColor.w));
-		dest->specular_r11g11b10 = wi::math::Pack_R11G11B10_FLOAT(XMFLOAT3(specularColor.x * specularColor.w, specularColor.y * specularColor.w, specularColor.z * specularColor.w));
+		dest->emissive_r11g11b10 = ap::math::Pack_R11G11B10_FLOAT(XMFLOAT3(emissiveColor.x * emissiveColor.w, emissiveColor.y * emissiveColor.w, emissiveColor.z * emissiveColor.w));
+		dest->specular_r11g11b10 = ap::math::Pack_R11G11B10_FLOAT(XMFLOAT3(specularColor.x * specularColor.w, specularColor.y * specularColor.w, specularColor.z * specularColor.w));
 		dest->texMulAdd = texMulAdd;
 		dest->roughness = roughness;
 		dest->reflectance = reflectance;
@@ -265,7 +265,7 @@ namespace wi::scene
 		dest->uvset_clearcoatRoughnessMap = textures[CLEARCOATROUGHNESSMAP].GetUVSet();
 		dest->uvset_clearcoatNormalMap = textures[CLEARCOATNORMALMAP].GetUVSet();
 		dest->uvset_specularMap = textures[SPECULARMAP].GetUVSet();
-		dest->sheenColor_r11g11b10 = wi::math::Pack_R11G11B10_FLOAT(XMFLOAT3(sheenColor.x, sheenColor.y, sheenColor.z));
+		dest->sheenColor_r11g11b10 = ap::math::Pack_R11G11B10_FLOAT(XMFLOAT3(sheenColor.x, sheenColor.y, sheenColor.z));
 		dest->sheenRoughness = sheenRoughness;
 		dest->clearcoat = clearcoat;
 		dest->clearcoatRoughness = clearcoatRoughness;
@@ -320,7 +320,7 @@ namespace wi::scene
 		}
 		dest->options = options; // ensure that this memory is not read, so bitwise ORs also not performed with it!
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		dest->texture_basecolormap_index = device->GetDescriptorIndex(textures[BASECOLORMAP].GetGPUResource(), SubresourceType::SRV);
 		dest->texture_surfacemap_index = device->GetDescriptorIndex(textures[SURFACEMAP].GetGPUResource(), SubresourceType::SRV);
 		dest->texture_emissivemap_index = device->GetDescriptorIndex(textures[EMISSIVEMAP].GetGPUResource(), SubresourceType::SRV);
@@ -336,7 +336,7 @@ namespace wi::scene
 		dest->texture_specularmap_index = device->GetDescriptorIndex(textures[SPECULARMAP].GetGPUResource(), SubresourceType::SRV);
 
 	}
-	void MaterialComponent::WriteTextures(const wi::graphics::GPUResource** dest, int count) const
+	void MaterialComponent::WriteTextures(const ap::graphics::GPUResource** dest, int count) const
 	{
 		count = std::min(count, (int)TEXTURESLOT_COUNT);
 		for (int i = 0; i < count; ++i)
@@ -346,9 +346,9 @@ namespace wi::scene
 	}
 	uint32_t MaterialComponent::GetRenderTypes() const
 	{
-		if (IsCustomShader() && customShaderID < (int)wi::renderer::GetCustomShaders().size())
+		if (IsCustomShader() && customShaderID < (int)ap::renderer::GetCustomShaders().size())
 		{
-			auto& customShader = wi::renderer::GetCustomShaders()[customShaderID];
+			auto& customShader = ap::renderer::GetCustomShaders()[customShaderID];
 			return customShader.renderTypeFlags;
 		}
 		if (shaderType == SHADERTYPE_WATER)
@@ -371,18 +371,18 @@ namespace wi::scene
 		{
 			if (!x.name.empty())
 			{
-				x.resource = wi::resourcemanager::Load(x.name, wi::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+				x.resource = ap::resourcemanager::Load(x.name, ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
 			}
 		}
 	}
 	uint32_t MaterialComponent::GetStencilRef() const
 	{
-		return wi::renderer::CombineStencilrefs(engineStencilRef, userStencilRef);
+		return ap::renderer::CombineStencilrefs(engineStencilRef, userStencilRef);
 	}
 
 	void MeshComponent::CreateRenderData()
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		vertex_subsets.resize(vertex_positions.size());
 		uint32_t subsetCounter = 0;
@@ -423,7 +423,7 @@ namespace wi::scene
 				bd.format = Format::R16_UINT;
 				bd.size = uint32_t(sizeof(uint16_t) * indices.size());
 
-				wi::vector<uint16_t> gpuIndexData(indices.size());
+				ap::vector<uint16_t> gpuIndexData(indices.size());
 				std::copy(indices.begin(), indices.end(), gpuIndexData.begin());
 
 				device->CreateBuffer(&bd, gpuIndexData.data(), &indexBuffer);
@@ -443,7 +443,7 @@ namespace wi::scene
 				dirty_morph = true;
 		    }
 
-			wi::vector<Vertex_POS> vertices(vertex_positions.size());
+			ap::vector<Vertex_POS> vertices(vertex_positions.size());
 			for (size_t i = 0; i < vertices.size(); ++i)
 			{
 				const XMFLOAT3& pos = vertex_positions[i];
@@ -452,8 +452,8 @@ namespace wi::scene
 				const uint8_t wind = vertex_windweights.empty() ? 0xFF : vertex_windweights[i];
 				vertices[i].FromFULL(pos, nor, wind);
 
-				_min = wi::math::Min(_min, pos);
-				_max = wi::math::Max(_max, pos);
+				_min = ap::math::Min(_min, pos);
+				_max = ap::math::Max(_max, pos);
 			}
 
 			GPUBufferDesc bd;
@@ -545,7 +545,7 @@ namespace wi::scene
 
 			}
 
-			wi::vector<Vertex_TAN> vertices(vertex_tangents.size());
+			ap::vector<Vertex_TAN> vertices(vertex_tangents.size());
 			for (size_t i = 0; i < vertex_tangents.size(); ++i)
 			{
 				vertices[i].FromFULL(vertex_tangents[i]);
@@ -567,7 +567,7 @@ namespace wi::scene
 		// skinning buffers:
 		if (!vertex_boneindices.empty())
 		{
-			wi::vector<Vertex_BON> vertices(vertex_boneindices.size());
+			ap::vector<Vertex_BON> vertices(vertex_boneindices.size());
 			for (size_t i = 0; i < vertices.size(); ++i)
 			{
 				XMFLOAT4& wei = vertex_boneweights[i];
@@ -613,7 +613,7 @@ namespace wi::scene
 		// vertexBuffer - UV SET 0
 		if(!vertex_uvset_0.empty())
 		{
-			wi::vector<Vertex_TEX> vertices(vertex_uvset_0.size());
+			ap::vector<Vertex_TEX> vertices(vertex_uvset_0.size());
 			for (size_t i = 0; i < vertices.size(); ++i)
 			{
 				vertices[i].FromFULL(vertex_uvset_0[i]);
@@ -632,7 +632,7 @@ namespace wi::scene
 		// vertexBuffer - UV SET 1
 		if (!vertex_uvset_1.empty())
 		{
-			wi::vector<Vertex_TEX> vertices(vertex_uvset_1.size());
+			ap::vector<Vertex_TEX> vertices(vertex_uvset_1.size());
 			for (size_t i = 0; i < vertices.size(); ++i)
 			{
 				vertices[i].FromFULL(vertex_uvset_1[i]);
@@ -664,7 +664,7 @@ namespace wi::scene
 		// vertexBuffer - ATLAS
 		if (!vertex_atlas.empty())
 		{
-			wi::vector<Vertex_TEX> vertices(vertex_atlas.size());
+			ap::vector<Vertex_TEX> vertices(vertex_atlas.size());
 			for (size_t i = 0; i < vertices.size(); ++i)
 			{
 				vertices[i].FromFULL(vertex_atlas[i]);
@@ -733,7 +733,7 @@ namespace wi::scene
 	void MeshComponent::WriteShaderMesh(ShaderMesh* dest) const
 	{
 		dest->init();
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		dest->ib = device->GetDescriptorIndex(&indexBuffer, SubresourceType::SRV);
 		if (streamoutBuffer_POS.IsValid())
 		{
@@ -782,15 +782,15 @@ namespace wi::scene
 
 			// Right now they are always computed even before smooth setting
 
-			wi::vector<uint32_t> newIndexBuffer;
-			wi::vector<XMFLOAT3> newPositionsBuffer;
-			wi::vector<XMFLOAT3> newNormalsBuffer;
-			wi::vector<XMFLOAT2> newUV0Buffer;
-			wi::vector<XMFLOAT2> newUV1Buffer;
-			wi::vector<XMFLOAT2> newAtlasBuffer;
-			wi::vector<XMUINT4> newBoneIndicesBuffer;
-			wi::vector<XMFLOAT4> newBoneWeightsBuffer;
-			wi::vector<uint32_t> newColorsBuffer;
+			ap::vector<uint32_t> newIndexBuffer;
+			ap::vector<XMFLOAT3> newPositionsBuffer;
+			ap::vector<XMFLOAT3> newNormalsBuffer;
+			ap::vector<XMFLOAT2> newUV0Buffer;
+			ap::vector<XMFLOAT2> newUV1Buffer;
+			ap::vector<XMFLOAT2> newAtlasBuffer;
+			ap::vector<XMUINT4> newBoneIndicesBuffer;
+			ap::vector<XMFLOAT4> newBoneWeightsBuffer;
+			ap::vector<uint32_t> newColorsBuffer;
 
 			for (size_t face = 0; face < indices.size() / 3; face++)
 			{
@@ -1171,13 +1171,13 @@ namespace wi::scene
 		{
 			SetLightmapRenderRequest(false);
 
-			bool success = wi::helper::saveTextureToMemory(lightmap, lightmapTextureData);
+			bool success = ap::helper::saveTextureToMemory(lightmap, lightmapTextureData);
 			assert(success);
 
 #ifdef OPEN_IMAGE_DENOISE
 			if (success)
 			{
-				wi::vector<uint8_t> texturedata_dst(lightmapTextureData.size());
+				ap::vector<uint8_t> texturedata_dst(lightmapTextureData.size());
 
 				size_t width = (size_t)lightmapWidth;
 				size_t height = (size_t)lightmapHeight;
@@ -1207,7 +1207,7 @@ namespace wi::scene
 					auto error = device.getError(errorMessage);
 					if (error != oidn::Error::None && error != oidn::Error::Cancelled)
 					{
-						wi::backlog::post(std::string("[OpenImageDenoise error] ") + errorMessage);
+						ap::backlog::post(std::string("[OpenImageDenoise error] ") + errorMessage);
 					}
 				}
 
@@ -1217,8 +1217,8 @@ namespace wi::scene
 
 			CompressLightmap();
 
-			wi::texturehelper::CreateTexture(lightmap, lightmapTextureData.data(), lightmapWidth, lightmapHeight, lightmap.desc.format);
-			wi::graphics::GetDevice()->SetName(&lightmap, "lightmap");
+			ap::texturehelper::CreateTexture(lightmap, lightmapTextureData.data(), lightmapWidth, lightmapHeight, lightmap.desc.format);
+			ap::graphics::GetDevice()->SetName(&lightmap, "lightmap");
 		}
 	}
 	void ObjectComponent::CompressLightmap()
@@ -1226,18 +1226,18 @@ namespace wi::scene
 
 		// BC6 Block compression code that uses DirectXTex library, but it's not cross platform, so disabled:
 #if 0
-		wi::Timer timer;
-		wi::backlog::post("compressing lightmap...");
+		ap::Timer timer;
+		ap::backlog::post("compressing lightmap...");
 
 		lightmap.desc.Format = lightmap_block_format;
 		lightmap.desc.BindFlags = BindFlag::SHADER_RESOURCE;
 
-		static constexpr wi::graphics::FORMAT lightmap_block_format = wi::graphics::FORMAT_BC6H_UF16;
-		static constexpr uint32_t lightmap_blocksize = wi::graphics::GetFormatBlockSize(lightmap_block_format);
+		static constexpr ap::graphics::FORMAT lightmap_block_format = ap::graphics::FORMAT_BC6H_UF16;
+		static constexpr uint32_t lightmap_blocksize = ap::graphics::GetFormatBlockSize(lightmap_block_format);
 		static_assert(lightmap_blocksize == 4u);
 		const uint32_t bc6_width = lightmapWidth / lightmap_blocksize;
 		const uint32_t bc6_height = lightmapHeight / lightmap_blocksize;
-		wi::vector<uint8_t> bc6_data;
+		ap::vector<uint8_t> bc6_data;
 		bc6_data.resize(sizeof(XMFLOAT4) * bc6_width * bc6_height);
 		const XMFLOAT4* raw_data = (const XMFLOAT4*)lightmapTextureData.data();
 
@@ -1265,7 +1265,7 @@ namespace wi::scene
 
 		lightmapTextureData = std::move(bc6_data); // replace old (raw) data with compressed data
 
-		wi::backlog::post(
+		ap::backlog::post(
 			"compressing lightmap [" +
 			std::to_string(lightmapWidth) +
 			"x" +
@@ -1278,7 +1278,7 @@ namespace wi::scene
 
 		// Simple compression to R11G11B10_FLOAT format:
 		using namespace PackedVector;
-		wi::vector<uint8_t> packed_data;
+		ap::vector<uint8_t> packed_data;
 		packed_data.resize(sizeof(XMFLOAT3PK) * lightmapWidth * lightmapHeight);
 		XMFLOAT3PK* packed_ptr = (XMFLOAT3PK*)packed_data.data();
 		XMFLOAT4* raw_ptr = (XMFLOAT4*)lightmapTextureData.data();
@@ -1298,7 +1298,7 @@ namespace wi::scene
 
 	void ArmatureComponent::CreateRenderData()
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		GPUBufferDesc bd;
 		bd.size = sizeof(ShaderTransform) * (uint32_t)boneCollection.size();
@@ -1326,15 +1326,15 @@ namespace wi::scene
 			XMStoreFloat3(&nor, XMVector3Normalize(XMVector3TransformNormal(XMLoadFloat3(&nor), W)));
 			const uint8_t wind = mesh.vertex_windweights.empty() ? 0xFF : mesh.vertex_windweights[i];
 			vertex_positions_simulation[i].FromFULL(pos, nor, wind);
-			_min = wi::math::Min(_min, pos);
-			_max = wi::math::Max(_max, pos);
+			_min = ap::math::Min(_min, pos);
+			_max = ap::math::Max(_max, pos);
 		}
 		aabb = AABB(_min, _max);
 
 		if(physicsToGraphicsVertexMapping.empty())
 		{
 			// Create a mapping that maps unique vertex positions to all vertex indices that share that. Unique vertex positions will make up the physics mesh:
-			wi::unordered_map<size_t, uint32_t> uniquePositions;
+			ap::unordered_map<size_t, uint32_t> uniquePositions;
 			graphicsToPhysicsVertexMapping.resize(mesh.vertex_positions.size());
 			physicsToGraphicsVertexMapping.clear();
 			weights.clear();
@@ -1461,7 +1461,7 @@ namespace wi::scene
 	{
 		this->dt = dt;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		instanceArraySize = objects.GetCount() + hairs.GetCount() + emitters.GetCount();
 		if (instanceBuffer.desc.size < (instanceArraySize * sizeof(ShaderMeshInstance)))
@@ -1548,7 +1548,7 @@ namespace wi::scene
 		}
 
 		// Occlusion culling read:
-		if(wi::renderer::GetOcclusionCullingEnabled() && !wi::renderer::GetFreezeCullingCameraEnabled())
+		if(ap::renderer::GetOcclusionCullingEnabled() && !ap::renderer::GetFreezeCullingCameraEnabled())
 		{
 			uint32_t minQueryCount = uint32_t(objects.GetCount() + lights.GetCount());
 			if (queryHeap.desc.query_count < minQueryCount)
@@ -1585,9 +1585,9 @@ namespace wi::scene
 			queryAllocator.store(0);
 		}
 
-		wi::jobsystem::context ctx;
+		ap::jobsystem::context ctx;
 
-		wi::jobsystem::Execute(ctx, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Execute(ctx, [&](ap::jobsystem::JobArgs args) {
 			// Must not keep inactive TLAS instances, so zero them out for safety:
 			std::memset(TLAS_instancesMapped, 0, TLAS_instancesUpload->desc.size);
 		});
@@ -1598,7 +1598,7 @@ namespace wi::scene
 
 		RunTransformUpdateSystem(ctx);
 
-		wi::jobsystem::Wait(ctx); // dependencies
+		ap::jobsystem::Wait(ctx); // dependencies
 
 		RunHierarchyUpdateSystem(ctx);
 
@@ -1606,7 +1606,7 @@ namespace wi::scene
 
 		RunMaterialUpdateSystem(ctx);
 
-		wi::jobsystem::Wait(ctx); // dependencies
+		ap::jobsystem::Wait(ctx); // dependencies
 
 		RunSpringUpdateSystem(ctx);
 
@@ -1618,9 +1618,9 @@ namespace wi::scene
 
 		RunWeatherUpdateSystem(ctx);
 
-		wi::jobsystem::Wait(ctx); // dependencies
+		ap::jobsystem::Wait(ctx); // dependencies
 
-		wi::physics::RunPhysicsUpdateSystem(ctx, *this, dt);
+		ap::physics::RunPhysicsUpdateSystem(ctx, *this, dt);
 
 		RunObjectUpdateSystem(ctx);
 
@@ -1638,7 +1638,7 @@ namespace wi::scene
 
 		RunSoundUpdateSystem(ctx);
 
-		wi::jobsystem::Wait(ctx); // dependencies
+		ap::jobsystem::Wait(ctx); // dependencies
 
 		// Merge parallel bounds computation (depends on object update system):
 		bounds = AABB();
@@ -1694,7 +1694,7 @@ namespace wi::scene
 			}
 		}
 
-		if (wi::renderer::GetSurfelGIEnabled())
+		if (ap::renderer::GetSurfelGIEnabled())
 		{
 			if (!surfelBuffer.IsValid())
 			{
@@ -1720,7 +1720,7 @@ namespace wi::scene
 				device->CreateBuffer(&desc, nullptr, &surfelAliveBuffer[1]);
 				device->SetName(&surfelAliveBuffer[1], "surfelAliveBuffer[1]");
 
-				wi::vector<uint32_t> dead_indices(SURFEL_CAPACITY);
+				ap::vector<uint32_t> dead_indices(SURFEL_CAPACITY);
 				for (uint32_t i = 0; i < dead_indices.size(); ++i)
 				{
 					dead_indices[i] = uint32_t(dead_indices.size() - 1 - i);
@@ -1937,7 +1937,7 @@ namespace wi::scene
 	}
 	Entity Scene::Entity_Duplicate(Entity entity)
 	{
-		wi::Archive archive;
+		ap::Archive archive;
 
 		// First write the root entity to staging area:
 		archive.SetReadModeAndResetPos(false);
@@ -2158,8 +2158,8 @@ namespace wi::scene
 
 		SoundComponent& sound = sounds.Create(entity);
 		sound.filename = filename;
-		sound.soundResource = wi::resourcemanager::Load(filename, wi::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
-		wi::audio::CreateSoundInstance(&sound.soundResource.GetSound(), &sound.soundinstance);
+		sound.soundResource = ap::resourcemanager::Load(filename, ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+		ap::audio::CreateSoundInstance(&sound.soundResource.GetSound(), &sound.soundinstance);
 
 		TransformComponent& transform = transforms.Create(entity);
 		transform.Translate(position);
@@ -2251,9 +2251,9 @@ namespace wi::scene
 
 	const uint32_t small_subtask_groupsize = 64;
 
-	void Scene::RunPreviousFrameTransformUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunPreviousFrameTransformUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)prev_transforms.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)prev_transforms.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			PreviousFrameTransformComponent& prev_transform = prev_transforms[args.jobIndex];
 			Entity entity = prev_transforms.GetEntity(args.jobIndex);
@@ -2262,7 +2262,7 @@ namespace wi::scene
 			prev_transform.world_prev = transform.world;
 		});
 	}
-	void Scene::RunAnimationUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunAnimationUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		for (size_t i = 0; i < animations.GetCount(); ++i)
 		{
@@ -2430,7 +2430,7 @@ namespace wi::scene
 						{
 							float vLeft = animationdata->keyframe_data[keyLeft * animation.morph_weights_temp.size() + j];
 							float vRight = animationdata->keyframe_data[keyLeft * animation.morph_weights_temp.size() + j];
-							float vAnim = wi::math::Lerp(vLeft, vRight, t);
+							float vAnim = ap::math::Lerp(vLeft, vRight, t);
 							animation.morph_weights_temp[j] = vAnim;
 						}
 					}
@@ -2543,7 +2543,7 @@ namespace wi::scene
 
 					for (size_t j = 0; j < target_mesh->targets.size(); ++j)
 					{
-						target_mesh->targets[j].weight = wi::math::Lerp(target_mesh->targets[j].weight, animation.morph_weights_temp[j], t);
+						target_mesh->targets[j].weight = ap::math::Lerp(target_mesh->targets[j].weight, animation.morph_weights_temp[j], t);
 					}
 
 					target_mesh->dirty_morph = true;
@@ -2562,17 +2562,17 @@ namespace wi::scene
 			}
 		}
 	}
-	void Scene::RunTransformUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunTransformUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)transforms.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)transforms.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			TransformComponent& transform = transforms[args.jobIndex];
 			transform.UpdateTransform();
 		});
 	}
-	void Scene::RunHierarchyUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunHierarchyUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)hierarchy.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)hierarchy.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			HierarchyComponent& hier = hierarchy[args.jobIndex];
 			Entity entity = hierarchy.GetEntity(args.jobIndex);
@@ -2626,7 +2626,7 @@ namespace wi::scene
 
 		});
 	}
-	void Scene::RunSpringUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunSpringUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		static float time = 0;
 		time += dt;
@@ -2714,7 +2714,7 @@ namespace wi::scene
 			*((XMFLOAT3*)&transform->world._41) = spring.center_of_mass;
 		}
 	}
-	void Scene::RunInverseKinematicsUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunInverseKinematicsUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		bool recompute_hierarchy = false;
 		for (size_t i = 0; i < inverse_kinematics.GetCount(); ++i)
@@ -2813,9 +2813,9 @@ namespace wi::scene
 			}
 		}
 	}
-	void Scene::RunArmatureUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunArmatureUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)armatures.GetCount(), 1, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)armatures.GetCount(), 1, [&](ap::jobsystem::JobArgs args) {
 
 			ArmatureComponent& armature = armatures[args.jobIndex];
 			Entity entity = armatures.GetEntity(args.jobIndex);
@@ -2858,8 +2858,8 @@ namespace wi::scene
 				XMFLOAT3 bonepos = bone.GetPosition();
 				AABB boneAABB;
 				boneAABB.createFromHalfWidth(bonepos, XMFLOAT3(bone_radius, bone_radius, bone_radius));
-				_min = wi::math::Min(_min, boneAABB._min);
-				_max = wi::math::Max(_max, boneAABB._max);
+				_min = ap::math::Min(_min, boneAABB._min);
+				_max = ap::math::Max(_max, boneAABB._max);
 			}
 
 			armature.aabb = AABB(_min, _max);
@@ -2870,18 +2870,18 @@ namespace wi::scene
 			}
 		});
 	}
-	void Scene::RunMeshUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunMeshUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)meshes.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)meshes.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			Entity entity = meshes.GetEntity(args.jobIndex);
 			MeshComponent& mesh = meshes[args.jobIndex];
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			if (!mesh.vertexBuffer_PRE.IsValid())
 			{
 				const SoftBodyPhysicsComponent* softbody = softbodies.GetComponent(entity);
-				if (softbody != nullptr && wi::physics::IsSimulationEnabled())
+				if (softbody != nullptr && ap::physics::IsSimulationEnabled())
 				{
 					device->CreateBuffer(&mesh.vertexBuffer_POS.desc, nullptr, &mesh.streamoutBuffer_POS);
 					device->CreateBuffer(&mesh.vertexBuffer_POS.desc, nullptr, &mesh.vertexBuffer_PRE);
@@ -2983,8 +2983,8 @@ namespace wi::scene
 					XMStoreFloat3(&nor, XMVector3Normalize(XMLoadFloat3(&nor)));
 					mesh.vertex_positions_morphed[i].FromFULL(pos, nor, wind);
 
-					_min = wi::math::Min(_min, pos);
-					_max = wi::math::Max(_max, pos);
+					_min = ap::math::Min(_min, pos);
+					_max = ap::math::Max(_max, pos);
 			    }
 
 			    mesh.aabb = AABB(_min, _max);
@@ -2994,9 +2994,9 @@ namespace wi::scene
 
 		});
 	}
-	void Scene::RunMaterialUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunMaterialUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)materials.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)materials.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			MaterialComponent& material = materials[args.jobIndex];
 			Entity entity = materials.GetEntity(args.jobIndex);
@@ -3031,11 +3031,11 @@ namespace wi::scene
 
 		});
 	}
-	void Scene::RunImpostorUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunImpostorUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		if (impostors.GetCount() > 0 && !impostorArray.IsValid())
 		{
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			TextureDesc desc;
 			desc.width = impostorTextureDim;
@@ -3085,7 +3085,7 @@ namespace wi::scene
 			}
 		}
 
-		wi::jobsystem::Dispatch(ctx, (uint32_t)impostors.GetCount(), 1, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)impostors.GetCount(), 1, [&](ap::jobsystem::JobArgs args) {
 
 			ImpostorComponent& impostor = impostors[args.jobIndex];
 			impostor.aabb = AABB();
@@ -3098,21 +3098,21 @@ namespace wi::scene
 			}
 		});
 	}
-	void Scene::RunObjectUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunObjectUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		assert(objects.GetCount() == aabb_objects.GetCount());
 
 		parallel_bounds.clear();
-		parallel_bounds.resize((size_t)wi::jobsystem::DispatchGroupCount((uint32_t)objects.GetCount(), small_subtask_groupsize));
+		parallel_bounds.resize((size_t)ap::jobsystem::DispatchGroupCount((uint32_t)objects.GetCount(), small_subtask_groupsize));
 		
-		wi::jobsystem::Dispatch(ctx, (uint32_t)objects.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)objects.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			Entity entity = objects.GetEntity(args.jobIndex);
 			ObjectComponent& object = objects[args.jobIndex];
 			AABB& aabb = aabb_objects[args.jobIndex];
 
 			// Update occlusion culling status:
-			if (!wi::renderer::GetFreezeCullingCameraEnabled())
+			if (!ap::renderer::GetFreezeCullingCameraEnabled())
 			{
 				object.occlusionHistory <<= 1; // advance history by 1 frame
 				int query_id = object.occlusionQueries[queryheap_idx];
@@ -3237,8 +3237,8 @@ namespace wi::scene
 					}
 
 					// Create GPU instance data:
-					const XMFLOAT4X4& worldMatrix = object.transform_index >= 0 ? transforms[object.transform_index].world : wi::math::IDENTITY_MATRIX;
-					const XMFLOAT4X4& worldMatrixPrev = object.prev_transform_index >= 0 ? prev_transforms[object.prev_transform_index].world_prev : wi::math::IDENTITY_MATRIX;
+					const XMFLOAT4X4& worldMatrix = object.transform_index >= 0 ? transforms[object.transform_index].world : ap::math::IDENTITY_MATRIX;
+					const XMFLOAT4X4& worldMatrixPrev = object.prev_transform_index >= 0 ? prev_transforms[object.prev_transform_index].world_prev : ap::math::IDENTITY_MATRIX;
 
 					XMMATRIX worldMatrixInverseTranspose = XMLoadFloat4x4(&worldMatrix);
 					worldMatrixInverseTranspose = XMMatrixInverse(nullptr, worldMatrixInverseTranspose);
@@ -3246,7 +3246,7 @@ namespace wi::scene
 					XMFLOAT4X4 transformIT;
 					XMStoreFloat4x4(&transformIT, worldMatrixInverseTranspose);
 
-					GraphicsDevice* device = wi::graphics::GetDevice();
+					GraphicsDevice* device = ap::graphics::GetDevice();
 					ShaderMeshInstance& inst = instanceArrayMapped[args.jobIndex];
 					inst.init();
 					inst.transform.Create(worldMatrix);
@@ -3258,8 +3258,8 @@ namespace wi::scene
 					}
 					inst.uid = entity;
 					inst.layerMask = layerMask;
-					inst.color = wi::math::CompressColor(object.color);
-					inst.emissive = wi::math::Pack_R11G11B10_FLOAT(XMFLOAT3(object.emissiveColor.x * object.emissiveColor.w, object.emissiveColor.y * object.emissiveColor.w, object.emissiveColor.z * object.emissiveColor.w));
+					inst.color = ap::math::CompressColor(object.color);
+					inst.emissive = ap::math::Pack_R11G11B10_FLOAT(XMFLOAT3(object.emissiveColor.x * object.emissiveColor.w, object.emissiveColor.y * object.emissiveColor.w, object.emissiveColor.z * object.emissiveColor.w));
 					inst.meshIndex = (uint)meshes.GetIndex(object.meshID);
 
 					if (TLAS_instancesMapped != nullptr)
@@ -3298,8 +3298,8 @@ namespace wi::scene
 					{
 						if (!object.lightmap.IsValid())
 						{
-							object.lightmapWidth = wi::math::GetNextPowerOfTwo(object.lightmapWidth + 1) / 2;
-							object.lightmapHeight = wi::math::GetNextPowerOfTwo(object.lightmapHeight + 1) / 2;
+							object.lightmapWidth = ap::math::GetNextPowerOfTwo(object.lightmapWidth + 1) / 2;
+							object.lightmapHeight = ap::math::GetNextPowerOfTwo(object.lightmapHeight + 1) / 2;
 
 							TextureDesc desc;
 							desc.width = object.lightmapWidth;
@@ -3330,7 +3330,7 @@ namespace wi::scene
 					{
 						// Create a GPU-side per object lighmap if there is none yet, but the data exists already:
 						object.lightmap.desc.format = Format::R11G11B10_FLOAT;
-						wi::texturehelper::CreateTexture(object.lightmap, object.lightmapTextureData.data(), object.lightmapWidth, object.lightmapHeight, object.lightmap.desc.format);
+						ap::texturehelper::CreateTexture(object.lightmap, object.lightmapTextureData.data(), object.lightmapWidth, object.lightmapHeight, object.lightmap.desc.format);
 						device->SetName(&object.lightmap, "lightmap");
 					}
 				}
@@ -3355,9 +3355,9 @@ namespace wi::scene
 
 		}, sizeof(AABB));
 	}
-	void Scene::RunCameraUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunCameraUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)cameras.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)cameras.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			CameraComponent& camera = cameras[args.jobIndex];
 			Entity entity = cameras.GetEntity(args.jobIndex);
@@ -3369,7 +3369,7 @@ namespace wi::scene
 			camera.UpdateCamera();
 		});
 	}
-	void Scene::RunDecalUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunDecalUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		assert(decals.GetCount() == aabb_decals.GetCount());
 
@@ -3413,13 +3413,13 @@ namespace wi::scene
 			decal.normal = material.textures[MaterialComponent::NORMALMAP].resource;
 		}
 	}
-	void Scene::RunProbeUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunProbeUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		assert(probes.GetCount() == aabb_probes.GetCount());
 
 		if (!envmapArray.IsValid()) // even when zero probes, this will be created, since sometimes only the sky will be rendered into it
 		{
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			TextureDesc desc;
 			desc.array_size = 6;
@@ -3561,9 +3561,9 @@ namespace wi::scene
 			}
 		}
 	}
-	void Scene::RunForceUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunForceUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)forces.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)forces.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			ForceFieldComponent& force = forces[args.jobIndex];
 			Entity entity = forces.GetEntity(args.jobIndex);
@@ -3579,11 +3579,11 @@ namespace wi::scene
 			force.range_global = force.range_local * std::max(XMVectorGetX(S), std::max(XMVectorGetY(S), XMVectorGetZ(S)));
 		});
 	}
-	void Scene::RunLightUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunLightUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		assert(lights.GetCount() == aabb_lights.GetCount());
 
-		wi::jobsystem::Dispatch(ctx, (uint32_t)lights.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)lights.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			LightComponent& light = lights[args.jobIndex];
 			Entity entity = lights.GetEntity(args.jobIndex);
@@ -3638,9 +3638,9 @@ namespace wi::scene
 
 		});
 	}
-	void Scene::RunParticleUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunParticleUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		wi::jobsystem::Dispatch(ctx, (uint32_t)hairs.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)hairs.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			HairParticleSystem& hair = hairs[args.jobIndex];
 			Entity entity = hairs.GetEntity(args.jobIndex);
@@ -3661,7 +3661,7 @@ namespace wi::scene
 
 					hair.UpdateCPU(transform, *mesh, dt);
 
-					GraphicsDevice* device = wi::graphics::GetDevice();
+					GraphicsDevice* device = ap::graphics::GetDevice();
 
 					size_t meshIndex = meshes.GetCount() + args.jobIndex;
 					ShaderMesh& mesh = meshArrayMapped[meshIndex];
@@ -3679,8 +3679,8 @@ namespace wi::scene
 					inst.uid = entity;
 					inst.layerMask = hair.layerMask;
 					// every vertex is pretransformed and simulated in worldspace for hair particle:
-					inst.transform.Create(wi::math::IDENTITY_MATRIX);
-					inst.transformPrev.Create(wi::math::IDENTITY_MATRIX);
+					inst.transform.Create(ap::math::IDENTITY_MATRIX);
+					inst.transformPrev.Create(ap::math::IDENTITY_MATRIX);
 					inst.meshIndex = (uint)meshIndex;
 
 					if (TLAS_instancesMapped != nullptr && hair.BLAS.IsValid())
@@ -3691,7 +3691,7 @@ namespace wi::scene
 						{
 							for (int j = 0; j < arraysize(instance.transform[i]); ++j)
 							{
-								instance.transform[i][j] = wi::math::IDENTITY_MATRIX.m[j][i];
+								instance.transform[i][j] = ap::math::IDENTITY_MATRIX.m[j][i];
 							}
 						}
 						instance.instance_id = (uint32_t)instanceIndex;
@@ -3707,7 +3707,7 @@ namespace wi::scene
 
 		});
 
-		wi::jobsystem::Dispatch(ctx, (uint32_t)emitters.GetCount(), small_subtask_groupsize, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)emitters.GetCount(), small_subtask_groupsize, [&](ap::jobsystem::JobArgs args) {
 
 			EmittedParticleSystem& emitter = emitters[args.jobIndex];
 			Entity entity = emitters.GetEntity(args.jobIndex);
@@ -3738,7 +3738,7 @@ namespace wi::scene
 			const TransformComponent& transform = *transforms.GetComponent(entity);
 			emitter.UpdateCPU(transform, dt);
 
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			size_t meshIndex = meshes.GetCount() + hairs.GetCount() + args.jobIndex;
 			ShaderMesh& mesh = meshArrayMapped[meshIndex];
@@ -3757,8 +3757,8 @@ namespace wi::scene
 			inst.uid = entity;
 			inst.layerMask = emitter.layerMask;
 			// every vertex is pretransformed and simulated in worldspace for emitted particle:
-			inst.transform.Create(wi::math::IDENTITY_MATRIX);
-			inst.transformPrev.Create(wi::math::IDENTITY_MATRIX);
+			inst.transform.Create(ap::math::IDENTITY_MATRIX);
+			inst.transformPrev.Create(ap::math::IDENTITY_MATRIX);
 			inst.meshIndex = (uint)meshIndex;
 
 			if (TLAS_instancesMapped != nullptr && emitter.BLAS.IsValid())
@@ -3769,7 +3769,7 @@ namespace wi::scene
 				{
 					for (int j = 0; j < arraysize(instance.transform[i]); ++j)
 					{
-						instance.transform[i][j] = wi::math::IDENTITY_MATRIX.m[j][i];
+						instance.transform[i][j] = ap::math::IDENTITY_MATRIX.m[j][i];
 					}
 				}
 				instance.instance_id = (uint32_t)instanceIndex;
@@ -3783,7 +3783,7 @@ namespace wi::scene
 
 		});
 	}
-	void Scene::RunWeatherUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunWeatherUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		if (weathers.GetCount() > 0)
 		{
@@ -3796,10 +3796,10 @@ namespace wi::scene
 			}
 		}
 	}
-	void Scene::RunSoundUpdateSystem(wi::jobsystem::context& ctx)
+	void Scene::RunSoundUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		const CameraComponent& camera = GetCamera();
-		wi::audio::SoundInstance3D instance3D;
+		ap::audio::SoundInstance3D instance3D;
 		instance3D.listenerPos = camera.Eye;
 		instance3D.listenerUp = camera.Up;
 		instance3D.listenerFront = camera.At;
@@ -3815,37 +3815,37 @@ namespace wi::scene
 				if (transform != nullptr)
 				{
 					instance3D.emitterPos = transform->GetPosition();
-					wi::audio::Update3D(&sound.soundinstance, instance3D);
+					ap::audio::Update3D(&sound.soundinstance, instance3D);
 				}
 			}
 			if (sound.IsPlaying())
 			{
-				wi::audio::Play(&sound.soundinstance);
+				ap::audio::Play(&sound.soundinstance);
 			}
 			else
 			{
-				wi::audio::Stop(&sound.soundinstance);
+				ap::audio::Stop(&sound.soundinstance);
 			}
 			if (!sound.IsLooped())
 			{
-				wi::audio::ExitLoop(&sound.soundinstance);
+				ap::audio::ExitLoop(&sound.soundinstance);
 			}
-			wi::audio::SetVolume(sound.volume, &sound.soundinstance);
+			ap::audio::SetVolume(sound.volume, &sound.soundinstance);
 		}
 	}
 
 	void Scene::PutWaterRipple(const std::string& image, const XMFLOAT3& pos)
 	{
-		wi::Sprite img(image);
+		ap::Sprite img(image);
 		img.params.enableExtractNormalMap();
 		img.params.blendFlag = BLENDMODE_ADDITIVE;
 		img.anim.fad = 0.01f;
 		img.anim.scaleX = 0.2f;
 		img.anim.scaleY = 0.2f;
 		img.params.pos = pos;
-		img.params.rotation = (wi::random::GetRandom(0, 1000) * 0.001f) * 2 * 3.1415f;
+		img.params.rotation = (ap::random::GetRandom(0, 1000) * 0.001f) * 2 * 3.1415f;
 		img.params.siz = XMFLOAT2(1, 1);
-		img.params.quality = wi::image::QUALITY_ANISOTROPIC;
+		img.params.quality = ap::image::QUALITY_ANISOTROPIC;
 		img.params.pivot = XMFLOAT2(0.5f, 0.5f);
 		waterRipples.push_back(img);
 	}
@@ -3910,7 +3910,7 @@ namespace wi::scene
 
 	Entity LoadModel(Scene& scene, const std::string& fileName, const XMMATRIX& transformMatrix, bool attached)
 	{
-		wi::Archive archive(fileName, true);
+		ap::Archive archive(fileName, true);
 		if (archive.IsOpen())
 		{
 			// Serialize it from file:
@@ -4047,10 +4047,10 @@ namespace wi::scene
 
 						float distance;
 						XMFLOAT2 bary;
-						if (wi::math::RayTriangleIntersects(rayOrigin_local, rayDirection_local, p0, p1, p2, distance, bary))
+						if (ap::math::RayTriangleIntersects(rayOrigin_local, rayDirection_local, p0, p1, p2, distance, bary))
 						{
 							const XMVECTOR pos = XMVector3Transform(XMVectorAdd(rayOrigin_local, rayDirection_local*distance), objectMat);
-							distance = wi::math::Distance(pos, rayOrigin);
+							distance = ap::math::Distance(pos, rayOrigin);
 
 							if (distance < result.distance)
 							{
@@ -4427,13 +4427,13 @@ namespace wi::scene
 								// Find the nearest point on each edge.
 
 								// Edge 0,1
-								XMVECTOR Point1 = wi::math::ClosestPointOnLineSegment(p0, p1, LinePlaneIntersection);
+								XMVECTOR Point1 = ap::math::ClosestPointOnLineSegment(p0, p1, LinePlaneIntersection);
 
 								// Edge 1,2
-								XMVECTOR Point2 = wi::math::ClosestPointOnLineSegment(p1, p2, LinePlaneIntersection);
+								XMVECTOR Point2 = ap::math::ClosestPointOnLineSegment(p1, p2, LinePlaneIntersection);
 
 								// Edge 2,0
-								XMVECTOR Point3 = wi::math::ClosestPointOnLineSegment(p2, p0, LinePlaneIntersection);
+								XMVECTOR Point3 = ap::math::ClosestPointOnLineSegment(p2, p0, LinePlaneIntersection);
 
 								ReferencePoint = Point1;
 								float bestDist = XMVectorGetX(XMVector3LengthSq(Point1 - LinePlaneIntersection));
@@ -4455,7 +4455,7 @@ namespace wi::scene
 						}
 
 						// Place a sphere on closest point on line segment to intersection:
-						XMVECTOR Center = wi::math::ClosestPointOnLineSegment(A, B, ReferencePoint);
+						XMVECTOR Center = ap::math::ClosestPointOnLineSegment(A, B, ReferencePoint);
 
 						// Assert that the triangle is not degenerate.
 						assert(!XMVector3Equal(N, XMVectorZero()));
@@ -4501,21 +4501,21 @@ namespace wi::scene
 						// Find the nearest point on each edge.
 
 						// Edge 0,1
-						XMVECTOR Point1 = wi::math::ClosestPointOnLineSegment(p0, p1, Center);
+						XMVECTOR Point1 = ap::math::ClosestPointOnLineSegment(p0, p1, Center);
 
 						// If the distance to the center of the sphere to the point is less than 
 						// the radius of the sphere then it must intersect.
 						Intersection = XMVectorOrInt(Intersection, XMVectorLessOrEqual(XMVector3LengthSq(XMVectorSubtract(Center, Point1)), RadiusSq));
 
 						// Edge 1,2
-						XMVECTOR Point2 = wi::math::ClosestPointOnLineSegment(p1, p2, Center);
+						XMVECTOR Point2 = ap::math::ClosestPointOnLineSegment(p1, p2, Center);
 
 						// If the distance to the center of the sphere to the point is less than 
 						// the radius of the sphere then it must intersect.
 						Intersection = XMVectorOrInt(Intersection, XMVectorLessOrEqual(XMVector3LengthSq(XMVectorSubtract(Center, Point2)), RadiusSq));
 
 						// Edge 2,0
-						XMVECTOR Point3 = wi::math::ClosestPointOnLineSegment(p2, p0, Center);
+						XMVECTOR Point3 = ap::math::ClosestPointOnLineSegment(p2, p0, Center);
 
 						// If the distance to the center of the sphere to the point is less than 
 						// the radius of the sphere then it must intersect.

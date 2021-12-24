@@ -1,16 +1,16 @@
-#include "wiImage.h"
-#include "wiResourceManager.h"
-#include "wiRenderer.h"
-#include "wiHelper.h"
+#include "apImage.h"
+#include "apResourceManager.h"
+#include "apRenderer.h"
+#include "apHelper.h"
 #include "shaders/ShaderInterop_Image.h"
-#include "wiBacklog.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
+#include "apBacklog.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
 
-using namespace wi::graphics;
-using namespace wi::enums;
+using namespace ap::graphics;
+using namespace ap::enums;
 
-namespace wi::image
+namespace ap::image
 {
 	Sampler					samplers[SAMPLER_COUNT];
 	Shader					vertexShader;
@@ -20,27 +20,27 @@ namespace wi::image
 	DepthStencilState		depthStencilStates[STENCILMODE_COUNT][STENCILREFMODE_COUNT];
 	PipelineState			imagePSO[BLENDMODE_COUNT][STENCILMODE_COUNT][STENCILREFMODE_COUNT];
 	Texture					backgroundTextures[COMMANDLIST_COUNT];
-	wi::Canvas				canvases[COMMANDLIST_COUNT];
+	ap::Canvas				canvases[COMMANDLIST_COUNT];
 
 	void SetBackground(const Texture& texture, CommandList cmd)
 	{
 		backgroundTextures[cmd] = texture;
 	}
 
-	void SetCanvas(const wi::Canvas& canvas, wi::graphics::CommandList cmd)
+	void SetCanvas(const ap::Canvas& canvas, ap::graphics::CommandList cmd)
 	{
 		canvases[cmd] = canvas;
 	}
 
 	void Draw(const Texture* texture, const Params& params, CommandList cmd)
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		device->EventBegin("Image", cmd);
 
 		uint32_t stencilRef = params.stencilRef;
 		if (params.stencilRefMode == STENCILREFMODE_USER)
 		{
-			stencilRef = wi::renderer::CombineStencilrefs(STENCILREF_EMPTY, (uint8_t)stencilRef);
+			stencilRef = ap::renderer::CombineStencilrefs(STENCILREF_EMPTY, (uint8_t)stencilRef);
 		}
 		device->BindStencilRef(stencilRef, cmd);
 
@@ -151,8 +151,8 @@ namespace wi::image
 			}
 			else
 			{
-				const wi::Canvas& canvas = canvases[cmd];
-				// Asserts will check that a proper canvas was set for this cmd with wi::image::SetCanvas()
+				const ap::Canvas& canvas = canvases[cmd];
+				// Asserts will check that a proper canvas was set for this cmd with ap::image::SetCanvas()
 				//	The canvas must be set to have dpi aware rendering
 				assert(canvas.width > 0);
 				assert(canvas.height > 0);
@@ -251,10 +251,10 @@ namespace wi::image
 
 	void LoadShaders()
 	{
-		wi::renderer::LoadShader(ShaderStage::VS, vertexShader, "imageVS.cso");
-		wi::renderer::LoadShader(ShaderStage::PS, pixelShader, "imagePS.cso");
+		ap::renderer::LoadShader(ShaderStage::VS, vertexShader, "imageVS.cso");
+		ap::renderer::LoadShader(ShaderStage::PS, pixelShader, "imagePS.cso");
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		PipelineStateDesc desc;
 		desc.vs = &vertexShader;
@@ -280,9 +280,9 @@ namespace wi::image
 
 	void Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		RasterizerState rs;
 		rs.fill_mode = FillMode::SOLID;
@@ -472,10 +472,10 @@ namespace wi::image
 		samplerDesc.max_anisotropy = 16;
 		device->CreateSampler(&samplerDesc, &samplers[SAMPLER_ANISO_MIRROR]);
 
-		static wi::eventhandler::Handle handle = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
 		LoadShaders();
 
-		wi::backlog::post("wi::image Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::image Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 }

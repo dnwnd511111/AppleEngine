@@ -1,8 +1,8 @@
-#include "wiAudio.h"
-#include "wiBacklog.h"
-#include "wiHelper.h"
-#include "wiTimer.h"
-#include "wiVector.h"
+#include "apAudio.h"
+#include "apBacklog.h"
+#include "apHelper.h"
+#include "apTimer.h"
+#include "apVector.h"
 
 #define STB_VORBIS_HEADER_ONLY
 #include "Utility/stb_vorbis.c"
@@ -23,7 +23,7 @@
 #define fourccXWMA 'AMWX'
 #define fourccDPDS 'sdpd'
 
-namespace wi::audio
+namespace ap::audio
 {
 	static const XAUDIO2FX_REVERB_I3DL2_PARAMETERS reverbPresets[] =
 	{
@@ -72,7 +72,7 @@ namespace wi::audio
 
 		AudioInternal()
 		{
-			wi::Timer timer;
+			ap::Timer timer;
 
 			HRESULT hr;
 			hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -93,7 +93,7 @@ namespace wi::audio
 
 			if (masteringVoice == nullptr)
 			{
-				wi::backlog::post("Failed to create XAudio2 mastering voice!");
+				ap::backlog::post("Failed to create XAudio2 mastering voice!");
 				return;
 			}
 
@@ -140,7 +140,7 @@ namespace wi::audio
 
 			if (SUCCEEDED(hr))
 			{
-				wi::backlog::post("wi::audio Initialized [XAudio2] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+				ap::backlog::post("ap::audio Initialized [XAudio2] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 			}
 		}
 		~AudioInternal()
@@ -174,7 +174,7 @@ namespace wi::audio
 	{
 		std::shared_ptr<AudioInternal> audio;
 		WAVEFORMATEX wfx = {};
-		wi::vector<uint8_t> audioData;
+		ap::vector<uint8_t> audioData;
 	};
 	struct SoundInstanceInternal
 	{
@@ -182,8 +182,8 @@ namespace wi::audio
 		std::shared_ptr<SoundInternal> soundinternal;
 		IXAudio2SourceVoice* sourceVoice = nullptr;
 		XAUDIO2_VOICE_DETAILS voiceDetails = {};
-		wi::vector<float> outputMatrix;
-		wi::vector<float> channelAzimuths;
+		ap::vector<float> outputMatrix;
+		ap::vector<float> channelAzimuths;
 		XAUDIO2_BUFFER buffer = {};
 
 		~SoundInstanceInternal()
@@ -253,8 +253,8 @@ namespace wi::audio
 
 	bool CreateSound(const std::string& filename, Sound* sound)
 	{
-		wi::vector<uint8_t> filedata;
-		bool success = wi::helper::FileRead(filename, filedata);
+		ap::vector<uint8_t> filedata;
+		bool success = ap::helper::FileRead(filename, filedata);
 		if (!success)
 		{
 			return false;
@@ -560,7 +560,7 @@ namespace wi::audio
 #define fourccFMT 0x20746d66
 #define fourccDATA 0x61746164
 
-namespace wi::audio
+namespace ap::audio
 {
 	static const FAudioFXReverbI3DL2Parameters reverbPresets[] = {
 		FAUDIOFX_I3DL2_PRESET_DEFAULT,
@@ -606,7 +606,7 @@ namespace wi::audio
 		FAudioSubmixVoice* reverbSubmix = nullptr;
 
 		AudioInternal(){
-			wi::Timer timer;
+			ap::Timer timer;
 
 			uint32_t res;
 			res = FAudioCreate(&audioEngine, 0, FAUDIO_DEFAULT_PROCESSOR);
@@ -659,7 +659,7 @@ namespace wi::audio
 
 			if (success)
 			{
-				wi::backlog::post("wi::audio Initialized [FAudio] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+				ap::backlog::post("ap::audio Initialized [FAudio] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 			}
 		}
 		~AudioInternal(){
@@ -687,15 +687,15 @@ namespace wi::audio
 	struct SoundInternal{
 		std::shared_ptr<AudioInternal> audio;
 		FAudioWaveFormatEx wfx = {};
-		wi::vector<uint8_t> audioData;
+		ap::vector<uint8_t> audioData;
 	};
 	struct SoundInstanceInternal{
 		std::shared_ptr<AudioInternal> audio;
 		std::shared_ptr<SoundInternal> soundinternal;
 		FAudioSourceVoice* sourceVoice = nullptr;
 		FAudioVoiceDetails voiceDetails = {};
-		wi::vector<float> outputMatrix;
-		wi::vector<float> channelAzimuths;
+		ap::vector<float> outputMatrix;
+		ap::vector<float> channelAzimuths;
 		FAudioBuffer buffer = {};
 
 		~SoundInstanceInternal(){
@@ -764,8 +764,8 @@ namespace wi::audio
 	}
 
 	bool CreateSound(const std::string& filename, Sound* sound) { 
-		wi::vector<uint8_t> filedata;
-		bool success = wi::helper::FileRead(filename, filedata);
+		ap::vector<uint8_t> filedata;
+		bool success = ap::helper::FileRead(filename, filedata);
 		if (!success)
 		{
 			return false;
@@ -1036,7 +1036,7 @@ namespace wi::audio
 
 #else
 
-namespace wi::audio
+namespace ap::audio
 {
 	bool CreateSound(const std::string& filename, Sound* sound) { return false; }
 	bool CreateSound(const uint8_t* data, size_t size, Sound* sound) { return false; }

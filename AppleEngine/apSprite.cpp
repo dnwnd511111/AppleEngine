@@ -1,11 +1,11 @@
-#include "wiSprite.h"
-#include "wiImage.h"
-#include "wiRandom.h"
-#include "wiTextureHelper.h"
+#include "apSprite.h"
+#include "apImage.h"
+#include "apRandom.h"
+#include "apTextureHelper.h"
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi
+namespace ap
 {
 
 	Sprite::Sprite(const std::string& newTexture, const std::string& newMask)
@@ -13,12 +13,12 @@ namespace wi
 		if (!newTexture.empty())
 		{
 			textureName = newTexture;
-			textureResource = wi::resourcemanager::Load(newTexture);
+			textureResource = ap::resourcemanager::Load(newTexture);
 		}
 		if (!newMask.empty())
 		{
 			maskName = newMask;
-			maskResource = wi::resourcemanager::Load(newMask);
+			maskResource = ap::resourcemanager::Load(newMask);
 			params.setMaskMap(&maskResource.GetTexture());
 		}
 	}
@@ -27,7 +27,7 @@ namespace wi
 	{
 		if (IsHidden())
 			return;
-		wi::image::Draw(textureResource.IsValid() ? &textureResource.GetTexture() : wi::texturehelper::getWhite(), params, cmd);
+		ap::image::Draw(textureResource.IsValid() ? &textureResource.GetTexture() : ap::texturehelper::getWhite(), params, cmd);
 	}
 
 	void Sprite::FixedUpdate()
@@ -118,7 +118,7 @@ namespace wi
 			// Rotate each corner on a scaled circle (ellipsoid):
 			//	Since the rotations are randomized, it will look like a wobble effect
 			//	Also use two circles on each other to achieve more random look
-			wi::image::Params default_params; // contains corners in idle positions
+			ap::image::Params default_params; // contains corners in idle positions
 			for (int i = 0; i < 4; ++i)
 			{
 				anim.wobbleAnim.corner_angles[i] += XM_2PI * anim.wobbleAnim.speed * anim.wobbleAnim.corner_speeds[i] * dt;

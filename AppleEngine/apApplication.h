@@ -1,17 +1,17 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiPlatform.h"
-#include "wiResourceManager.h"
-#include "wiColor.h"
-#include "wiFadeManager.h"
-#include "wiGraphics.h"
-#include "wiEventHandler.h"
-#include "wiCanvas.h"
+#include "apPlatform.h"
+#include "apResourceManager.h"
+#include "apColor.h"
+#include "apFadeManager.h"
+#include "apGraphics.h"
+#include "apEventHandler.h"
+#include "apCanvas.h"
 
 #include <memory>
 #include <string>
 
-namespace wi
+namespace ap
 {
 	class RenderPath;
 
@@ -21,8 +21,8 @@ namespace wi
 	class Application
 	{
 	protected:
-		std::unique_ptr<wi::graphics::GraphicsDevice> graphicsDevice;
-		wi::eventhandler::Handle swapChainVsyncChangeEvent;
+		std::unique_ptr<ap::graphics::GraphicsDevice> graphicsDevice;
+		ap::eventhandler::Handle swapChainVsyncChangeEvent;
 
 		RenderPath* activePath = nullptr;
 		float targetFrameRate = 60;
@@ -30,19 +30,19 @@ namespace wi
 		bool framerate_lock = false;
 		bool initialized = false;
 
-		wi::FadeManager fadeManager;
+		ap::FadeManager fadeManager;
 
 		float deltaTime = 0;
 		float deltaTimeAccumulator = 0;
-		wi::Timer timer;
+		ap::Timer timer;
 
 		float deltatimes[20] = {};
 		int fps_avg_counter = 0;
 
 		// These are used when HDR10 color space is active:
 		//	Because we want to blend in linear color space, but HDR10 is non-linear
-		wi::graphics::Texture rendertarget;
-		wi::graphics::RenderPass renderpass;
+		ap::graphics::Texture rendertarget;
+		ap::graphics::RenderPass renderpass;
 
 		std::string infodisplay_str;
 
@@ -51,16 +51,16 @@ namespace wi
 
 		bool is_window_active = true;
 		bool allow_hdr = true;
-		wi::graphics::SwapChain swapChain;
-		wi::Canvas canvas;
-		wi::platform::window_type window;
+		ap::graphics::SwapChain swapChain;
+		ap::Canvas canvas;
+		ap::platform::window_type window;
 
 		// Runs the main engine loop
 		void Run();
 
 		// This will activate a RenderPath as the active one, so it will run its Update, FixedUpdate, Render and Compose functions
 		//	You can set a fade time and fade screen color so that switching components will happen when the screen is faded out. Then it will fade back to the new component
-		void ActivatePath(RenderPath* component, float fadeSeconds = 0, wi::Color fadeColor = wi::Color(0, 0, 0, 255));
+		void ActivatePath(RenderPath* component, float fadeSeconds = 0, ap::Color fadeColor = ap::Color(0, 0, 0, 255));
 		inline RenderPath* GetActivePath() { return activePath; }
 
 		// Set the desired target framerate for the FixedUpdate() loop (default = 60)
@@ -85,10 +85,10 @@ namespace wi
 		//  RenderPath::Render is also called from here for the active component
 		virtual void Render();
 		// This is where the application will render to the screen (backbuffer). It must render to the provided command list.
-		virtual void Compose(wi::graphics::CommandList cmd);
+		virtual void Compose(ap::graphics::CommandList cmd);
 
 		// You need to call this before calling Run() or Initialize() if you want to render
-		void SetWindow(wi::platform::window_type, bool fullscreen = false);
+		void SetWindow(ap::platform::window_type, bool fullscreen = false);
 
 
 		struct InfoDisplayer

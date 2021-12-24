@@ -1,8 +1,8 @@
-#include "wiRandom.h"
+#include "apRandom.h"
 
 #include <random>
 
-namespace wi::random
+namespace ap::random
 {
 	inline static std::mt19937 &generator()
 	{

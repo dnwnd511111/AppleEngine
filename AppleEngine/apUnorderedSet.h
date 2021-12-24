@@ -12,7 +12,7 @@
 #include <unordered_set>
 #endif // WI_UNORDERED_SET_TYPE
 
-namespace wi
+namespace ap
 {
 	template<typename T>
 #if WI_UNORDERED_SET_TYPE == 1

@@ -1,21 +1,21 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiPrimitive.h"
+#include "apGraphicsDevice.h"
+#include "apPrimitive.h"
 #include "shaders/ShaderInterop_EmittedParticle.h"
-#include "wiEnums.h"
-#include "wiMath.h"
-#include "wiECS.h"
-#include "wiScene_Decl.h"
+#include "apEnums.h"
+#include "apMath.h"
+#include "apECS.h"
+#include "apScene_Decl.h"
 
 #include <memory>
 
-namespace wi
+namespace ap
 {
 	class Archive;
 }
 
-namespace wi
+namespace ap
 {
 	class EmittedParticleSystem
 	{
@@ -33,28 +33,28 @@ namespace wi
 		};
 
 		ParticleCounters statistics = {};
-		wi::graphics::GPUBuffer statisticsReadbackBuffer[wi::graphics::GraphicsDevice::GetBufferCount() + 1];
+		ap::graphics::GPUBuffer statisticsReadbackBuffer[ap::graphics::GraphicsDevice::GetBufferCount() + 1];
 
-		wi::graphics::GPUBuffer particleBuffer;
-		wi::graphics::GPUBuffer aliveList[2];
-		wi::graphics::GPUBuffer deadList;
-		wi::graphics::GPUBuffer distanceBuffer; // for sorting
-		wi::graphics::GPUBuffer sphPartitionCellIndices; // for SPH
-		wi::graphics::GPUBuffer sphPartitionCellOffsets; // for SPH
-		wi::graphics::GPUBuffer densityBuffer; // for SPH
-		wi::graphics::GPUBuffer counterBuffer;
-		wi::graphics::GPUBuffer indirectBuffers; // kickoffUpdate, simulation, draw
-		wi::graphics::GPUBuffer constantBuffer;
-		wi::graphics::GPUBuffer vertexBuffer_POS;
-		wi::graphics::GPUBuffer vertexBuffer_TEX;
-		wi::graphics::GPUBuffer vertexBuffer_TEX2;
-		wi::graphics::GPUBuffer vertexBuffer_COL;
-		wi::graphics::GPUBuffer primitiveBuffer; // raytracing
-		wi::graphics::GPUBuffer culledIndirectionBuffer; // rasterization
-		wi::graphics::GPUBuffer culledIndirectionBuffer2; // rasterization
-		wi::graphics::GPUBuffer subsetBuffer;
+		ap::graphics::GPUBuffer particleBuffer;
+		ap::graphics::GPUBuffer aliveList[2];
+		ap::graphics::GPUBuffer deadList;
+		ap::graphics::GPUBuffer distanceBuffer; // for sorting
+		ap::graphics::GPUBuffer sphPartitionCellIndices; // for SPH
+		ap::graphics::GPUBuffer sphPartitionCellOffsets; // for SPH
+		ap::graphics::GPUBuffer densityBuffer; // for SPH
+		ap::graphics::GPUBuffer counterBuffer;
+		ap::graphics::GPUBuffer indirectBuffers; // kickoffUpdate, simulation, draw
+		ap::graphics::GPUBuffer constantBuffer;
+		ap::graphics::GPUBuffer vertexBuffer_POS;
+		ap::graphics::GPUBuffer vertexBuffer_TEX;
+		ap::graphics::GPUBuffer vertexBuffer_TEX2;
+		ap::graphics::GPUBuffer vertexBuffer_COL;
+		ap::graphics::GPUBuffer primitiveBuffer; // raytracing
+		ap::graphics::GPUBuffer culledIndirectionBuffer; // rasterization
+		ap::graphics::GPUBuffer culledIndirectionBuffer2; // rasterization
+		ap::graphics::GPUBuffer subsetBuffer;
 
-		wi::graphics::RaytracingAccelerationStructure BLAS;
+		ap::graphics::RaytracingAccelerationStructure BLAS;
 
 	private:
 		void CreateSelfBuffers();
@@ -65,13 +65,13 @@ namespace wi
 		uint32_t MAX_PARTICLES = 1000;
 
 	public:
-		void UpdateCPU(const wi::scene::TransformComponent& transform, float dt);
+		void UpdateCPU(const ap::scene::TransformComponent& transform, float dt);
 		void Burst(int num);
 		void Restart();
 
 		// Must have a transform and material component, but mesh is optional
-		void UpdateGPU(uint32_t instanceIndex, uint32_t materialIndex, const wi::scene::TransformComponent& transform, const wi::scene::MeshComponent* mesh, wi::graphics::CommandList cmd) const;
-		void Draw(const wi::scene::MaterialComponent& material, wi::graphics::CommandList cmd) const;
+		void UpdateGPU(uint32_t instanceIndex, uint32_t materialIndex, const ap::scene::TransformComponent& transform, const ap::scene::MeshComponent* mesh, ap::graphics::CommandList cmd) const;
+		void Draw(const ap::scene::MaterialComponent& material, ap::graphics::CommandList cmd) const;
 
 		ParticleCounters GetStatistics() { return statistics; }
 
@@ -90,7 +90,7 @@ namespace wi
 
 		PARTICLESHADERTYPE shaderType = SOFT;
 
-		wi::ecs::Entity meshID = wi::ecs::INVALID_ENTITY;
+		ap::ecs::Entity meshID = ap::ecs::INVALID_ENTITY;
 
 		float FIXED_TIMESTEP = -1.0f; // -1 : variable timestep; >=0 : fixed timestep
 
@@ -148,7 +148,7 @@ namespace wi
 		inline void SetVolumeEnabled(bool value) { if (value) { _flags |= FLAG_HAS_VOLUME; } else { _flags &= ~FLAG_HAS_VOLUME; } }
 		inline void SetFrameBlendingEnabled(bool value) { if (value) { _flags |= FLAG_FRAME_BLENDING; } else { _flags &= ~FLAG_FRAME_BLENDING; } }
 
-		void Serialize(wi::Archive& archive, wi::ecs::EntitySerializer& seri);
+		void Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri);
 
 		static void Initialize();
 	};

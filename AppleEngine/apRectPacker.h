@@ -11,7 +11,7 @@ members:
 int x, y, w, h;
 
 2. bin - structure representing resultant bin object
-3. bool pack(rect_xywh* const * v, int n, int max_side, wi::vector<bin>& bins) - actual packing function
+3. bool pack(rect_xywh* const * v, int n, int max_side, ap::vector<bin>& bins) - actual packing function
 Arguments:
 input/output: v - pointer to array of pointers to your rectangles (const here means that the pointers will point to the same rectangles after the call)
 input: n - rectangles count
@@ -36,9 +36,9 @@ For description how to tune the algorithm and how it actually works see the .cpp
 
 */
 
-#include "wiVector.h"
+#include "apVector.h"
 
-namespace wi::rectpacker
+namespace ap::rectpacker
 {
 
 	struct rect_ltrb;
@@ -74,9 +74,9 @@ namespace wi::rectpacker
 
 	struct bin {
 		rect_wh size;
-		wi::vector<rect_xywh*> rects;
+		ap::vector<rect_xywh*> rects;
 	};
 
-	bool pack(rect_xywh* const * v, int n, int max_side, wi::vector<bin>& bins);
+	bool pack(rect_xywh* const * v, int n, int max_side, ap::vector<bin>& bins);
 
 }

@@ -1,8 +1,8 @@
-#include "wiHelper.h"
-#include "wiPlatform.h"
-#include "wiBacklog.h"
-#include "wiEventHandler.h"
-#include "wiMath.h"
+#include "apHelper.h"
+#include "apPlatform.h"
+#include "apBacklog.h"
+#include "apEventHandler.h"
+#include "apMath.h"
 
 #include "Utility/stb_image_write.h"
 #include "Utility/basis_universal/encoder/basisu_comp.h"
@@ -38,7 +38,7 @@ extern basist::etc1_global_selector_codebook g_basis_global_codebook;
 #endif // _WIN32
 
 
-namespace wi::helper
+namespace ap::helper
 {
 
 	std::string toUpper(const std::string& s)
@@ -62,7 +62,7 @@ namespace wi::helper
 		StringConvert(msg, wmessage);
 		StringConvert(caption, wcaption);
 		// UWP can only show message box on main thread:
-		wi::eventhandler::Subscribe_Once(wi::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+		ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
 			winrt::Windows::UI::Popups::MessageDialog(wmessage, wcaption).ShowAsync();
 		});
 #endif // PLATFORM_UWP
@@ -71,7 +71,7 @@ namespace wi::helper
 #endif // _WIN32
 	}
 
-	void screenshot(const wi::graphics::SwapChain& swapchain, const std::string& name)
+	void screenshot(const ap::graphics::SwapChain& swapchain, const std::string& name)
 	{
 		std::string directory;
 		if (name.empty())
@@ -91,20 +91,20 @@ namespace wi::helper
 			filename = directory + "/sc_" + getCurrentDateTimeAsString() + ".jpg";
 		}
 
-		bool result = saveTextureToFile(wi::graphics::GetDevice()->GetBackBuffer(&swapchain), filename);
+		bool result = saveTextureToFile(ap::graphics::GetDevice()->GetBackBuffer(&swapchain), filename);
 		assert(result);
 
 		if (result)
 		{
-			wi::backlog::post("Screenshot saved: " + filename);
+			ap::backlog::post("Screenshot saved: " + filename);
 		}
 	}
 
-	bool saveTextureToMemory(const wi::graphics::Texture& texture, wi::vector<uint8_t>& texturedata)
+	bool saveTextureToMemory(const ap::graphics::Texture& texture, ap::vector<uint8_t>& texturedata)
 	{
-		using namespace wi::graphics;
+		using namespace ap::graphics;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		TextureDesc desc = texture.GetDesc();
 
@@ -175,11 +175,11 @@ namespace wi::helper
 		return stagingTex.mapped_data != nullptr;
 	}
 
-	bool saveTextureToMemoryFile(const wi::graphics::Texture& texture, const std::string& fileExtension, wi::vector<uint8_t>& filedata)
+	bool saveTextureToMemoryFile(const ap::graphics::Texture& texture, const std::string& fileExtension, ap::vector<uint8_t>& filedata)
 	{
-		using namespace wi::graphics;
+		using namespace ap::graphics;
 		TextureDesc desc = texture.GetDesc();
-		wi::vector<uint8_t> texturedata;
+		ap::vector<uint8_t> texturedata;
 		if (saveTextureToMemory(texture, texturedata))
 		{
 			return saveTextureToMemoryFile(texturedata, desc, fileExtension, filedata);
@@ -187,12 +187,12 @@ namespace wi::helper
 		return false;
 	}
 
-	bool saveTextureToMemoryFile(const wi::vector<uint8_t>& texturedata, const wi::graphics::TextureDesc& desc, const std::string& fileExtension, wi::vector<uint8_t>& filedata)
+	bool saveTextureToMemoryFile(const ap::vector<uint8_t>& texturedata, const ap::graphics::TextureDesc& desc, const std::string& fileExtension, ap::vector<uint8_t>& filedata)
 	{
-		using namespace wi::graphics;
+		using namespace ap::graphics;
 		uint32_t data_count = desc.width * desc.height;
 
-		std::string extension = wi::helper::toUpper(fileExtension);
+		std::string extension = ap::helper::toUpper(fileExtension);
 		bool basis = !extension.compare("BASIS");
 		bool ktx2 = !extension.compare("KTX2");
 		basisu::image basis_image;
@@ -385,7 +385,7 @@ namespace wi::helper
 
 		filedata.clear();
 		stbi_write_func* func = [](void* context, void* data, int size) {
-			wi::vector<uint8_t>& filedata = *(wi::vector<uint8_t>*)context;
+			ap::vector<uint8_t>& filedata = *(ap::vector<uint8_t>*)context;
 			for (int i = 0; i < size; ++i)
 			{
 				filedata.push_back(*((uint8_t*)data + i));
@@ -422,11 +422,11 @@ namespace wi::helper
 		return write_result != 0;
 	}
 
-	bool saveTextureToFile(const wi::graphics::Texture& texture, const std::string& fileName)
+	bool saveTextureToFile(const ap::graphics::Texture& texture, const std::string& fileName)
 	{
-		using namespace wi::graphics;
+		using namespace ap::graphics;
 		TextureDesc desc = texture.GetDesc();
-		wi::vector<uint8_t> data;
+		ap::vector<uint8_t> data;
 		if (saveTextureToMemory(texture, data))
 		{
 			return saveTextureToFile(data, desc, fileName);
@@ -434,12 +434,12 @@ namespace wi::helper
 		return false;
 	}
 
-	bool saveTextureToFile(const wi::vector<uint8_t>& texturedata, const wi::graphics::TextureDesc& desc, const std::string& fileName)
+	bool saveTextureToFile(const ap::vector<uint8_t>& texturedata, const ap::graphics::TextureDesc& desc, const std::string& fileName)
 	{
-		using namespace wi::graphics;
+		using namespace ap::graphics;
 
 		std::string ext = GetExtensionFromFileName(fileName);
-		wi::vector<uint8_t> filedata;
+		ap::vector<uint8_t> filedata;
 		if (saveTextureToMemoryFile(texturedata, desc, ext, filedata))
 		{
 			return FileWrite(fileName, filedata.data(), filedata.size());
@@ -618,7 +618,7 @@ namespace wi::helper
 				switch (ex.code())
 				{
 				case E_ACCESSDENIED:
-					wi::backlog::post("Opening file failed: " + fileName + " | Reason: Permission Denied!");
+					ap::backlog::post("Opening file failed: " + fileName + " | Reason: Permission Denied!");
 					break;
 				default:
 					break;
@@ -643,10 +643,10 @@ namespace wi::helper
 
 #endif // PLATFORM_UWP
 
-		wi::backlog::post("File not found: " + fileName);
+		ap::backlog::post("File not found: " + fileName);
 		return false;
 	}
-	bool FileRead(const std::string& fileName, wi::vector<uint8_t>& data)
+	bool FileRead(const std::string& fileName, ap::vector<uint8_t>& data)
 	{
 		return FileRead_Impl(fileName, data);
 	}
@@ -703,7 +703,7 @@ namespace wi::helper
 				switch (ex.code())
 				{
 				case E_ACCESSDENIED:
-					wi::backlog::post("Opening file failed: " + fileName + " | Reason: Permission Denied!");
+					ap::backlog::post("Opening file failed: " + fileName + " | Reason: Permission Denied!");
 					break;
 				default:
 					break;
@@ -756,7 +756,7 @@ namespace wi::helper
 				switch (ex.code())
 				{
 				case E_ACCESSDENIED:
-					wi::backlog::post("Opening file failed: " + fileName + " | Reason: Permission Denied!");
+					ap::backlog::post("Opening file failed: " + fileName + " | Reason: Permission Denied!");
 					break;
 				default:
 					break;
@@ -821,7 +821,7 @@ namespace wi::helper
 			//	Second string is extensions, each separated by ';' and at the end of all, a '\0'
 			//	Then the whole container string is closed with an other '\0'
 			//		For example: "model files\0*.model;*.obj;\0"  <-- this string literal has "model files" as description and two accepted extensions "model" and "obj"
-			wi::vector<char> filter;
+			ap::vector<char> filter;
 			filter.reserve(256);
 			{
 				for (auto& x : params.description)

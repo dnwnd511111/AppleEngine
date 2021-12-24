@@ -1,22 +1,22 @@
-#include "wiGPUBVH.h"
-#include "wiScene.h"
-#include "wiRenderer.h"
+#include "apGPUBVH.h"
+#include "apScene.h"
+#include "apRenderer.h"
 #include "shaders/ShaderInterop_BVH.h"
-#include "wiProfiler.h"
-#include "wiResourceManager.h"
-#include "wiGPUSortLib.h"
-#include "wiTextureHelper.h"
-#include "wiBacklog.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
+#include "apProfiler.h"
+#include "apResourceManager.h"
+#include "apGPUSortLib.h"
+#include "apTextureHelper.h"
+#include "apBacklog.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
 
 //#define BVH_VALIDATE // slow but great for debug!
 
-using namespace wi::graphics;
-using namespace wi::scene;
-using namespace wi::ecs;
+using namespace ap::graphics;
+using namespace ap::scene;
+using namespace ap::ecs;
 
-namespace wi
+namespace ap
 {
 
 	enum CSTYPES_BVH
@@ -28,9 +28,9 @@ namespace wi
 	};
 	static Shader computeShaders[CSTYPE_BVH_COUNT];
 
-	void GPUBVH::Update(const wi::scene::Scene& scene)
+	void GPUBVH::Update(const ap::scene::Scene& scene)
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		// Pre-gather scene properties:
 		uint totalTriangles = 0;
@@ -47,7 +47,7 @@ namespace wi
 		}
 		for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
 		{
-			const wi::HairParticleSystem& hair = scene.hairs[i];
+			const ap::HairParticleSystem& hair = scene.hairs[i];
 
 			if (hair.meshID != INVALID_ENTITY)
 			{
@@ -56,7 +56,7 @@ namespace wi
 		}
 		for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
 		{
-			const wi::EmittedParticleSystem& emitter = scene.emitters[i];
+			const ap::EmittedParticleSystem& emitter = scene.emitters[i];
 			totalTriangles += emitter.GetMaxParticleCount() * 2;
 		}
 
@@ -141,9 +141,9 @@ namespace wi
 	}
 	void GPUBVH::Build(const Scene& scene, CommandList cmd) const
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
-		auto range = wi::profiler::BeginRangeGPU("BVH Rebuild", cmd);
+		auto range = ap::profiler::BeginRangeGPU("BVH Rebuild", cmd);
 
 		uint32_t primitiveCount = 0;
 
@@ -191,7 +191,7 @@ namespace wi
 
 			for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
 			{
-				const wi::HairParticleSystem& hair = scene.hairs[i];
+				const ap::HairParticleSystem& hair = scene.hairs[i];
 
 				if (hair.meshID != INVALID_ENTITY)
 				{
@@ -215,7 +215,7 @@ namespace wi
 
 			for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
 			{
-				const wi::EmittedParticleSystem& emitter = scene.emitters[i];
+				const ap::EmittedParticleSystem& emitter = scene.emitters[i];
 
 				if (emitter.GetMaxParticleCount() > 0)
 				{
@@ -260,7 +260,7 @@ namespace wi
 		device->EventEnd(cmd);
 
 		device->EventBegin("BVH - Sort Primitive Mortons", cmd);
-		wi::gpusortlib::Sort(primitiveCount, primitiveMortonBuffer, primitiveCounterBuffer, 0, primitiveIDBuffer, cmd);
+		ap::gpusortlib::Sort(primitiveCount, primitiveMortonBuffer, primitiveCounterBuffer, 0, primitiveIDBuffer, cmd);
 		device->EventEnd(cmd);
 
 		device->EventBegin("BVH - Build Hierarchy", cmd);
@@ -317,7 +317,7 @@ namespace wi
 		}
 		device->EventEnd(cmd);
 
-		wi::profiler::EndRange(range); // BVH rebuild
+		ap::profiler::EndRange(range); // BVH rebuild
 
 #ifdef BVH_VALIDATE
 		{
@@ -415,19 +415,19 @@ namespace wi
 	{
 		void LoadShaders()
 		{
-			wi::renderer::LoadShader(ShaderStage::CS, computeShaders[CSTYPE_BVH_PRIMITIVES], "bvh_primitivesCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, computeShaders[CSTYPE_BVH_HIERARCHY], "bvh_hierarchyCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, computeShaders[CSTYPE_BVH_PROPAGATEAABB], "bvh_propagateaabbCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, computeShaders[CSTYPE_BVH_PRIMITIVES], "bvh_primitivesCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, computeShaders[CSTYPE_BVH_HIERARCHY], "bvh_hierarchyCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, computeShaders[CSTYPE_BVH_PROPAGATEAABB], "bvh_propagateaabbCS.cso");
 		}
 	}
 
 	void GPUBVH::Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
-		static wi::eventhandler::Handle handle = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { GPUBVH_Internal::LoadShaders(); });
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { GPUBVH_Internal::LoadShaders(); });
 		GPUBVH_Internal::LoadShaders();
 
-		wi::backlog::post("wi::GPUBVH Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::GPUBVH Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 }

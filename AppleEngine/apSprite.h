@@ -1,13 +1,13 @@
 #pragma once
-#include "wiImage.h"
-#include "wiGraphicsDevice.h"
-#include "wiResourceManager.h"
-#include "wiRandom.h"
+#include "apImage.h"
+#include "apGraphicsDevice.h"
+#include "apResourceManager.h"
+#include "apRandom.h"
 
 #include <memory>
 #include <string>
 
-namespace wi
+namespace ap
 {
 	class Sprite
 	{
@@ -26,16 +26,16 @@ namespace wi
 
 		virtual void FixedUpdate();
 		virtual void Update(float dt);
-		virtual void Draw(wi::graphics::CommandList cmd) const;
+		virtual void Draw(ap::graphics::CommandList cmd) const;
 
 		constexpr void SetHidden(bool value = true) { if (value) { _flags |= HIDDEN; } else { _flags &= ~HIDDEN; } }
 		constexpr bool IsHidden() const { return _flags & HIDDEN; }
 		constexpr void SetDisableUpdate(bool value = true) { if (value) { _flags |= DISABLE_UPDATE; } else { _flags &= ~DISABLE_UPDATE; } }
 		constexpr bool IsDisableUpdate() const { return _flags & DISABLE_UPDATE; }
 
-		wi::image::Params params;
-		wi::Resource textureResource;
-		wi::Resource maskResource;
+		ap::image::Params params;
+		ap::Resource textureResource;
+		ap::Resource maskResource;
 
 		struct Anim
 		{
@@ -66,15 +66,15 @@ namespace wi
 				{
 					for (int i = 0; i < 4; ++i)
 					{
-						corner_angles[i] = wi::random::GetRandom(0, 1000) / 1000.0f * XM_2PI;
-						corner_speeds[i] = wi::random::GetRandom(500, 1000) / 1000.0f;
-						if (wi::random::GetRandom(0, 1) == 0)
+						corner_angles[i] = ap::random::GetRandom(0, 1000) / 1000.0f * XM_2PI;
+						corner_speeds[i] = ap::random::GetRandom(500, 1000) / 1000.0f;
+						if (ap::random::GetRandom(0, 1) == 0)
 						{
 							corner_speeds[i] *= -1;
 						}
-						corner_angles2[i] = wi::random::GetRandom(0, 1000) / 1000.0f * XM_2PI;
-						corner_speeds2[i] = wi::random::GetRandom(500, 1000) / 1000.0f;
-						if (wi::random::GetRandom(0, 1) == 0)
+						corner_angles2[i] = ap::random::GetRandom(0, 1000) / 1000.0f * XM_2PI;
+						corner_speeds2[i] = ap::random::GetRandom(500, 1000) / 1000.0f;
+						if (ap::random::GetRandom(0, 1) == 0)
 						{
 							corner_speeds2[i] *= -1;
 						}
@@ -95,7 +95,7 @@ namespace wi
 		};
 		Anim anim;
 
-		const wi::graphics::Texture* getTexture() const
+		const ap::graphics::Texture* getTexture() const
 		{
 			if (textureResource.IsValid())
 			{

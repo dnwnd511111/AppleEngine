@@ -1,10 +1,10 @@
-#include "wiGraphicsDevice_DX12.h"
+#include "apGraphicsDevice_DX12.h"
 
 #ifdef WICKEDENGINE_BUILD_DX12
-#include "wiHelper.h"
-#include "wiBacklog.h"
-#include "wiTimer.h"
-#include "wiUnorderedSet.h"
+#include "apHelper.h"
+#include "apBacklog.h"
+#include "apTimer.h"
+#include "apUnorderedSet.h"
 
 #include "Utility/dx12/d3dx12.h"
 #include "Utility/D3D12MemAlloc.h"
@@ -24,7 +24,7 @@
 
 using namespace Microsoft::WRL;
 
-namespace wi::graphics
+namespace ap::graphics
 {
 
 namespace dx12_internal
@@ -1006,7 +1006,7 @@ namespace dx12_internal
 			uint32_t descriptorCopyCount = 0u;
 			bool sampler_table = false;
 		};
-		wi::vector<RootParameterStatistics> root_stats;
+		ap::vector<RootParameterStatistics> root_stats;
 		const D3D12_VERSIONED_ROOT_SIGNATURE_DESC* rootsig_desc = nullptr;
 
 		void init(const D3D12_VERSIONED_ROOT_SIGNATURE_DESC& desc)
@@ -1303,8 +1303,8 @@ namespace dx12_internal
 		ComPtr<ID3D12Resource> resource;
 		SingleDescriptor srv;
 		SingleDescriptor uav;
-		wi::vector<SingleDescriptor> subresources_srv;
-		wi::vector<SingleDescriptor> subresources_uav;
+		ap::vector<SingleDescriptor> subresources_srv;
+		ap::vector<SingleDescriptor> subresources_uav;
 
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
 
@@ -1334,8 +1334,8 @@ namespace dx12_internal
 	{
 		SingleDescriptor rtv = {};
 		SingleDescriptor dsv = {};
-		wi::vector<SingleDescriptor> subresources_rtv;
-		wi::vector<SingleDescriptor> subresources_dsv;
+		ap::vector<SingleDescriptor> subresources_rtv;
+		ap::vector<SingleDescriptor> subresources_dsv;
 
 		~Texture_DX12() override
 		{
@@ -1388,8 +1388,8 @@ namespace dx12_internal
 		ComPtr<ID3D12PipelineState> resource;
 		ComPtr<ID3D12RootSignature> rootSignature;
 
-		wi::vector<uint8_t> shadercode;
-		wi::vector<D3D12_INPUT_ELEMENT_DESC> input_elements;
+		ap::vector<uint8_t> shadercode;
+		ap::vector<D3D12_INPUT_ELEMENT_DESC> input_elements;
 		D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
 
 		ComPtr<ID3D12VersionedRootSignatureDeserializer> rootsig_deserializer;
@@ -1436,7 +1436,7 @@ namespace dx12_internal
 	struct BVH_DX12 : public Resource_DX12
 	{
 		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS desc = {};
-		wi::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometries;
+		ap::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometries;
 		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info = {};
 		GPUBuffer scratch;
 	};
@@ -1447,11 +1447,11 @@ namespace dx12_internal
 
 		ComPtr<ID3D12StateObjectProperties> stateObjectProperties;
 
-		wi::vector<std::wstring> export_strings;
-		wi::vector<D3D12_EXPORT_DESC> exports;
-		wi::vector<D3D12_DXIL_LIBRARY_DESC> library_descs;
-		wi::vector<std::wstring> group_strings;
-		wi::vector<D3D12_HIT_GROUP_DESC> hitgroup_descs;
+		ap::vector<std::wstring> export_strings;
+		ap::vector<D3D12_EXPORT_DESC> exports;
+		ap::vector<D3D12_DXIL_LIBRARY_DESC> library_descs;
+		ap::vector<std::wstring> group_strings;
+		ap::vector<D3D12_HIT_GROUP_DESC> hitgroup_descs;
 
 		~RTPipelineState_DX12()
 		{
@@ -1481,8 +1481,8 @@ namespace dx12_internal
 	{
 		std::shared_ptr<GraphicsDevice_DX12::AllocationHandler> allocationhandler;
 		Microsoft::WRL::ComPtr<IDXGISwapChain3> swapChain;
-		wi::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> backBuffers;
-		wi::vector<D3D12_CPU_DESCRIPTOR_HANDLE> backbufferRTV;
+		ap::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> backBuffers;
+		ap::vector<D3D12_CPU_DESCRIPTOR_HANDLE> backbufferRTV;
 
 		Texture dummyTexture;
 		RenderPass renderpass;
@@ -1621,7 +1621,7 @@ using namespace dx12_internal;
 		if (cmd.uploadbuffer.desc.size < staging_size)
 		{
 			GPUBufferDesc uploadBufferDesc;
-			uploadBufferDesc.size = wi::math::GetNextPowerOfTwo(staging_size);
+			uploadBufferDesc.size = ap::math::GetNextPowerOfTwo(staging_size);
 			uploadBufferDesc.usage = Usage::UPLOAD;
 			bool upload_success = device->CreateBuffer(&uploadBufferDesc, nullptr, &cmd.uploadbuffer);
 			assert(upload_success);
@@ -2096,7 +2096,7 @@ using namespace dx12_internal;
 	// Engine functions
 	GraphicsDevice_DX12::GraphicsDevice_DX12(bool debuglayer, bool gpuvalidation)
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
 		ALLOCATION_MIN_ALIGNMENT = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
 		SHADER_IDENTIFIER_SIZE = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
@@ -2110,8 +2110,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "Failed to load dxgi.dll! ERROR: 0x" << std::hex << GetLastError();
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		HMODULE dx12 = LoadLibraryEx(L"d3d12.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
@@ -2119,8 +2119,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "Failed to load d3d12.dll! ERROR: 0x" << std::hex << GetLastError();
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		CreateDXGIFactory2 = (PFN_CREATE_DXGI_FACTORY_2)wiGetProcAddress(dxgi, "CreateDXGIFactory2");
@@ -2129,8 +2129,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "Failed to load CreateDXGIFactory2! ERROR: 0x" << std::hex << GetLastError();
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 #ifdef _DEBUG
@@ -2147,8 +2147,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "Failed to load D3D12CreateDevice! ERROR: 0x" << std::hex << GetLastError();
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		D3D12CreateVersionedRootSignatureDeserializer = (PFN_D3D12_CREATE_VERSIONED_ROOT_SIGNATURE_DESERIALIZER)wiGetProcAddress(dx12, "D3D12CreateVersionedRootSignatureDeserializer");
@@ -2157,8 +2157,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "Failed to load D3D12CreateVersionedRootSignatureDeserializer! ERROR: 0x" << std::hex << GetLastError();
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 #endif // PLATFORM_UWP
 
@@ -2212,8 +2212,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "CreateDXGIFactory2 failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		// Determines whether tearing support is available for fullscreen borderless windows.
@@ -2286,15 +2286,15 @@ using namespace dx12_internal;
 		assert(dxgiAdapter != nullptr);
 		if (dxgiAdapter == nullptr)
 		{
-			wi::helper::messageBox("DXGI: No capable adapter found!", "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox("DXGI: No capable adapter found!", "Error!");
+			ap::platform::Exit();
 		}
 
 		assert(device != nullptr);
 		if (device == nullptr)
 		{
-			wi::helper::messageBox("D3D12: Device couldn't be created!", "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox("D3D12: Device couldn't be created!", "Error!");
+			ap::platform::Exit();
 		}
 
 		if (debuglayer)
@@ -2338,8 +2338,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "D3D12MA::CreateAllocator failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		queues[QUEUE_GRAPHICS].desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -2352,8 +2352,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateCommandQueue[QUEUE_GRAPHICS] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 		hr = device->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&queues[QUEUE_GRAPHICS].fence));
 		assert(SUCCEEDED(hr));
@@ -2361,8 +2361,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateFence[QUEUE_GRAPHICS] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		queues[QUEUE_COMPUTE].desc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
@@ -2375,8 +2375,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateCommandQueue[QUEUE_COMPUTE] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 		hr = device->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&queues[QUEUE_COMPUTE].fence));
 		assert(SUCCEEDED(hr));
@@ -2384,8 +2384,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateFence[QUEUE_COMPUTE] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 
@@ -2406,8 +2406,8 @@ using namespace dx12_internal;
 			{
 				std::stringstream ss("");
 				ss << "ID3D12Device::CreateDescriptorHeap[CBV_SRV_UAV] failed! ERROR: 0x" << std::hex << hr;
-				wi::helper::messageBox(ss.str(), "Error!");
-				wi::platform::Exit();
+				ap::helper::messageBox(ss.str(), "Error!");
+				ap::platform::Exit();
 			}
 
 			descriptorheap_res.start_cpu = descriptorheap_res.heap_GPU->GetCPUDescriptorHandleForHeapStart();
@@ -2419,8 +2419,8 @@ using namespace dx12_internal;
 			{
 				std::stringstream ss("");
 				ss << "ID3D12Device::CreateFence[CBV_SRV_UAV] failed! ERROR: 0x" << std::hex << hr;
-				wi::helper::messageBox(ss.str(), "Error!");
-				wi::platform::Exit();
+				ap::helper::messageBox(ss.str(), "Error!");
+				ap::platform::Exit();
 			}
 			descriptorheap_res.fenceValue = descriptorheap_res.fence->GetCompletedValue();
 
@@ -2442,8 +2442,8 @@ using namespace dx12_internal;
 			{
 				std::stringstream ss("");
 				ss << "ID3D12Device::CreateDescriptorHeap[SAMPLER] failed! ERROR: 0x" << std::hex << hr;
-				wi::helper::messageBox(ss.str(), "Error!");
-				wi::platform::Exit();
+				ap::helper::messageBox(ss.str(), "Error!");
+				ap::platform::Exit();
 			}
 
 			descriptorheap_sam.start_cpu = descriptorheap_sam.heap_GPU->GetCPUDescriptorHandleForHeapStart();
@@ -2455,8 +2455,8 @@ using namespace dx12_internal;
 			{
 				std::stringstream ss("");
 				ss << "ID3D12Device::CreateFence[SAMPLER] failed! ERROR: 0x" << std::hex << hr;
-				wi::helper::messageBox(ss.str(), "Error!");
-				wi::platform::Exit();
+				ap::helper::messageBox(ss.str(), "Error!");
+				ap::platform::Exit();
 			}
 			descriptorheap_sam.fenceValue = descriptorheap_sam.fence->GetCompletedValue();
 
@@ -2477,8 +2477,8 @@ using namespace dx12_internal;
 				{
 					std::stringstream ss("");
 					ss << "ID3D12Device::CreateFence[FRAME] failed! ERROR: 0x" << std::hex << hr;
-					wi::helper::messageBox(ss.str(), "Error!");
-					wi::platform::Exit();
+					ap::helper::messageBox(ss.str(), "Error!");
+					ap::platform::Exit();
 				}
 			}
 		}
@@ -2558,8 +2558,8 @@ using namespace dx12_internal;
 		if (features.HighestRootSignatureVersion() < D3D_ROOT_SIGNATURE_VERSION_1_1)
 		{
 			assert(0);
-			wi::helper::messageBox("DX12: Root signature version 1.1 not supported!", "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox("DX12: Root signature version 1.1 not supported!", "Error!");
+			ap::platform::Exit();
 		}
 
 		// Create common indirect command signatures:
@@ -2584,8 +2584,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateCommandSignature[dispatchIndirect] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		cmd_desc.ByteStride = sizeof(IndirectDrawArgsInstanced);
@@ -2597,8 +2597,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateCommandSignature[drawInstancedIndirect] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		cmd_desc.ByteStride = sizeof(IndirectDrawArgsIndexedInstanced);
@@ -2610,8 +2610,8 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateCommandSignature[drawIndexedInstancedIndirect] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
-			wi::platform::Exit();
+			ap::helper::messageBox(ss.str(), "Error!");
+			ap::platform::Exit();
 		}
 
 		if (CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
@@ -2628,8 +2628,8 @@ using namespace dx12_internal;
 			{
 				std::stringstream ss("");
 				ss << "ID3D12Device::CreateCommandSignature[dispatchMeshIndirect] failed! ERROR: 0x" << std::hex << hr;
-				wi::helper::messageBox(ss.str(), "Error!");
-				wi::platform::Exit();
+				ap::helper::messageBox(ss.str(), "Error!");
+				ap::platform::Exit();
 			}
 		}
 
@@ -2647,7 +2647,7 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateDescriptorHeap[nulldescriptorheap_cbv_srv_uav] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
+			ap::helper::messageBox(ss.str(), "Error!");
 		}
 
 		nullHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
@@ -2658,7 +2658,7 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12Device::CreateDescriptorHeap[nulldescriptorheap_sampler] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Error!");
+			ap::helper::messageBox(ss.str(), "Error!");
 		}
 
 		nullCBV = nulldescriptorheap_cbv_srv_uav->GetCPUDescriptorHandleForHeapStart();
@@ -2715,10 +2715,10 @@ using namespace dx12_internal;
 		{
 			std::stringstream ss("");
 			ss << "ID3D12CommandQueue::GetTimestampFrequency[QUEUE_GRAPHICS] failed! ERROR: 0x" << std::hex << hr;
-			wi::helper::messageBox(ss.str(), "Warning!");
+			ap::helper::messageBox(ss.str(), "Warning!");
 		}
 
-		wi::backlog::post("Created GraphicsDevice_DX12 (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("Created GraphicsDevice_DX12 (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 	GraphicsDevice_DX12::~GraphicsDevice_DX12()
 	{
@@ -2726,7 +2726,7 @@ using namespace dx12_internal;
 		copyAllocator.destroy();
 	}
 
-	bool GraphicsDevice_DX12::CreateSwapChain(const SwapChainDesc* pDesc, wi::platform::window_type window, SwapChain* swapChain) const
+	bool GraphicsDevice_DX12::CreateSwapChain(const SwapChainDesc* pDesc, ap::platform::window_type window, SwapChain* swapChain) const
 	{
 		auto internal_state = std::static_pointer_cast<SwapChain_DX12>(swapChain->internal_state);
 		if (swapChain->internal_state == nullptr)
@@ -2893,7 +2893,7 @@ using namespace dx12_internal;
 		internal_state->dummyTexture.desc.width = pDesc->width;
 		internal_state->dummyTexture.desc.height = pDesc->height;
 		internal_state->renderpass = {};
-		wi::helper::hash_combine(internal_state->renderpass.hash, pDesc->format);
+		ap::helper::hash_combine(internal_state->renderpass.hash, pDesc->format);
 		internal_state->renderpass.desc.attachments.push_back(RenderPassAttachment::RenderTarget(&internal_state->dummyTexture));
 
 		return true;
@@ -3165,16 +3165,16 @@ using namespace dx12_internal;
 		if (pInitialData != nullptr)
 		{
 			uint32_t dataCount = pDesc->array_size * std::max(1u, pDesc->mip_levels);
-			wi::vector<D3D12_SUBRESOURCE_DATA> data(dataCount);
+			ap::vector<D3D12_SUBRESOURCE_DATA> data(dataCount);
 			for (uint32_t slice = 0; slice < dataCount; ++slice)
 			{
 				data[slice] = _ConvertSubresourceData(pInitialData[slice]);
 			}
 
 			UINT64 RequiredSize = 0;
-			wi::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts(dataCount);
-			wi::vector<UINT64> rowSizesInBytes(dataCount);
-			wi::vector<UINT> numRows(dataCount);
+			ap::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts(dataCount);
+			ap::vector<UINT64> rowSizesInBytes(dataCount);
+			ap::vector<UINT> numRows(dataCount);
 			device->GetCopyableFootprints(&desc, 0, dataCount, 0, layouts.data(), numRows.data(), rowSizesInBytes.data(), &RequiredSize);
 
 			auto cmd = copyAllocator.allocate(RequiredSize);
@@ -3370,19 +3370,19 @@ using namespace dx12_internal;
 		pso->desc = *pDesc;
 
 		pso->hash = 0;
-		wi::helper::hash_combine(pso->hash, pDesc->ms);
-		wi::helper::hash_combine(pso->hash, pDesc->as);
-		wi::helper::hash_combine(pso->hash, pDesc->vs);
-		wi::helper::hash_combine(pso->hash, pDesc->ps);
-		wi::helper::hash_combine(pso->hash, pDesc->hs);
-		wi::helper::hash_combine(pso->hash, pDesc->ds);
-		wi::helper::hash_combine(pso->hash, pDesc->gs);
-		wi::helper::hash_combine(pso->hash, pDesc->il);
-		wi::helper::hash_combine(pso->hash, pDesc->rs);
-		wi::helper::hash_combine(pso->hash, pDesc->bs);
-		wi::helper::hash_combine(pso->hash, pDesc->dss);
-		wi::helper::hash_combine(pso->hash, pDesc->pt);
-		wi::helper::hash_combine(pso->hash, pDesc->sample_mask);
+		ap::helper::hash_combine(pso->hash, pDesc->ms);
+		ap::helper::hash_combine(pso->hash, pDesc->as);
+		ap::helper::hash_combine(pso->hash, pDesc->vs);
+		ap::helper::hash_combine(pso->hash, pDesc->ps);
+		ap::helper::hash_combine(pso->hash, pDesc->hs);
+		ap::helper::hash_combine(pso->hash, pDesc->ds);
+		ap::helper::hash_combine(pso->hash, pDesc->gs);
+		ap::helper::hash_combine(pso->hash, pDesc->il);
+		ap::helper::hash_combine(pso->hash, pDesc->rs);
+		ap::helper::hash_combine(pso->hash, pDesc->bs);
+		ap::helper::hash_combine(pso->hash, pDesc->dss);
+		ap::helper::hash_combine(pso->hash, pDesc->pt);
+		ap::helper::hash_combine(pso->hash, pDesc->sample_mask);
 
 		auto& stream = internal_state->stream;
 		if (pso->desc.vs != nullptr)
@@ -3586,14 +3586,14 @@ using namespace dx12_internal;
 		}
 
 		renderpass->hash = 0;
-		wi::helper::hash_combine(renderpass->hash, pDesc->attachments.size());
+		ap::helper::hash_combine(renderpass->hash, pDesc->attachments.size());
 		int resolve_dst_counter = 0;
 		for (auto& attachment : pDesc->attachments)
 		{
 			if (attachment.type == RenderPassAttachment::Type::RENDERTARGET || attachment.type == RenderPassAttachment::Type::DEPTH_STENCIL)
 			{
-				wi::helper::hash_combine(renderpass->hash, attachment.texture->desc.format);
-				wi::helper::hash_combine(renderpass->hash, attachment.texture->desc.sample_count);
+				ap::helper::hash_combine(renderpass->hash, attachment.texture->desc.format);
+				ap::helper::hash_combine(renderpass->hash, attachment.texture->desc.sample_count);
 			}
 
 			const Texture* texture = attachment.texture;
@@ -3947,7 +3947,7 @@ using namespace dx12_internal;
 		D3D12_STATE_OBJECT_DESC desc = {};
 		desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
 
-		wi::vector<D3D12_STATE_SUBOBJECT> subobjects;
+		ap::vector<D3D12_STATE_SUBOBJECT> subobjects;
 
 		D3D12_RAYTRACING_PIPELINE_CONFIG pipeline_config = {};
 		{
@@ -3993,7 +3993,7 @@ using namespace dx12_internal;
 			library_desc.NumExports = 1;
 
 			D3D12_EXPORT_DESC& export_desc = internal_state->exports.emplace_back();
-			wi::helper::StringConvert(x.function_name, internal_state->export_strings.emplace_back());
+			ap::helper::StringConvert(x.function_name, internal_state->export_strings.emplace_back());
 			export_desc.Name = internal_state->export_strings.back().c_str();
 			library_desc.pExports = &export_desc;
 
@@ -4003,7 +4003,7 @@ using namespace dx12_internal;
 		internal_state->hitgroup_descs.reserve(pDesc->hit_groups.size());
 		for (auto& x : pDesc->hit_groups)
 		{
-			wi::helper::StringConvert(x.name, internal_state->group_strings.emplace_back());
+			ap::helper::StringConvert(x.name, internal_state->group_strings.emplace_back());
 
 			if (x.type == ShaderHitGroup::Type::GENERAL)
 				continue;
@@ -4603,7 +4603,7 @@ using namespace dx12_internal;
 	void GraphicsDevice_DX12::SetName(GPUResource* pResource, const char* name)
 	{
 		wchar_t text[256];
-		if (wi::helper::StringConvert(name, text) > 0)
+		if (ap::helper::StringConvert(name, text) > 0)
 		{
 			auto internal_state = to_internal(pResource);
 			if (internal_state->resource != nullptr)
@@ -5236,10 +5236,10 @@ using namespace dx12_internal;
 		active_rt[cmd] = nullptr;
 
 		size_t pipeline_hash = 0;
-		wi::helper::hash_combine(pipeline_hash, pso->hash);
+		ap::helper::hash_combine(pipeline_hash, pso->hash);
 		if (active_renderpass[cmd] != nullptr)
 		{
-			wi::helper::hash_combine(pipeline_hash, active_renderpass[cmd]->hash);
+			ap::helper::hash_combine(pipeline_hash, active_renderpass[cmd]->hash);
 		}
 		if (prev_pipeline_hash[cmd] == pipeline_hash)
 		{
@@ -5573,7 +5573,7 @@ using namespace dx12_internal;
 		desc.Inputs = dst_internal->desc;
 
 		// Make a copy of geometries, don't overwrite internal_state (thread safety)
-		wi::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometries;
+		ap::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometries;
 		geometries = dst_internal->geometries;
 		desc.Inputs.pGeometryDescs = geometries.data();
 
@@ -5761,7 +5761,7 @@ using namespace dx12_internal;
 	void GraphicsDevice_DX12::EventBegin(const char* name, CommandList cmd)
 	{
 		wchar_t text[128];
-		if (wi::helper::StringConvert(name, text) > 0)
+		if (ap::helper::StringConvert(name, text) > 0)
 		{
 			PIXBeginEvent(GetCommandList(cmd), 0xFF000000, text);
 		}
@@ -5773,7 +5773,7 @@ using namespace dx12_internal;
 	void GraphicsDevice_DX12::SetMarker(const char* name, CommandList cmd)
 	{
 		wchar_t text[128];
-		if (wi::helper::StringConvert(name, text) > 0)
+		if (ap::helper::StringConvert(name, text) > 0)
 		{
 			PIXSetMarker(GetCommandList(cmd), 0xFFFF0000, text);
 		}

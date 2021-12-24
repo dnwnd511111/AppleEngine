@@ -1,8 +1,8 @@
-#include "wiJobSystem.h"
-#include "wiSpinLock.h"
-#include "wiBacklog.h"
-#include "wiPlatform.h"
-#include "wiTimer.h"
+#include "apJobSystem.h"
+#include "apSpinLock.h"
+#include "apBacklog.h"
+#include "apPlatform.h"
+#include "apTimer.h"
 
 #include <thread>
 #include <condition_variable>
@@ -13,7 +13,7 @@
 #include <pthread.h>
 #endif
 
-namespace wi::jobsystem
+namespace ap::jobsystem
 {
 	struct Job
 	{
@@ -75,7 +75,7 @@ namespace wi::jobsystem
 		T data[capacity];
 		size_t head = 0;
 		size_t tail = 0;
-		wi::SpinLock lock;
+		ap::SpinLock lock;
 	};
 
 	// This structure is responsible to stop worker thread loops.
@@ -132,7 +132,7 @@ namespace wi::jobsystem
 			return;
 		maxThreadCount = std::max(1u, maxThreadCount);
 
-		wi::Timer timer;
+		ap::Timer timer;
 
 		// Retrieve the number of hardware threads in this system:
 		internal_state.numCores = std::thread::hardware_concurrency();
@@ -171,7 +171,7 @@ namespace wi::jobsystem
 			//assert(priority_result != 0);
 
 			// Name the thread:
-			std::wstring wthreadname = L"wi::jobsystem_" + std::to_wstring(threadID);
+			std::wstring wthreadname = L"ap::jobsystem_" + std::to_wstring(threadID);
 			HRESULT hr = SetThreadDescription(handle, wthreadname.c_str());
 			assert(SUCCEEDED(hr));
 #elif defined(PLATFORM_LINUX)
@@ -189,7 +189,7 @@ namespace wi::jobsystem
 				handle_error_en(ret, std::string(" pthread_setaffinity_np[" + std::to_string(threadID) + ']').c_str());
 
 			// Name the thread
-			std::string thread_name = "wi::jobsystem_" + std::to_string(threadID);
+			std::string thread_name = "ap::jobsystem_" + std::to_string(threadID);
 			ret = pthread_setname_np(worker.native_handle(), thread_name.c_str());
 			if (ret != 0)
 				handle_error_en(ret, std::string(" pthread_setname_np[" + std::to_string(threadID) + ']').c_str());
@@ -199,7 +199,7 @@ namespace wi::jobsystem
 			worker.detach();
 		}
 
-		wi::backlog::post("wi::jobsystem Initialized with [" + std::to_string(internal_state.numCores) + " cores] [" + std::to_string(internal_state.numThreads) + " threads] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::jobsystem Initialized with [" + std::to_string(internal_state.numCores) + " cores] [" + std::to_string(internal_state.numThreads) + " threads] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 	uint32_t GetThreadCount()

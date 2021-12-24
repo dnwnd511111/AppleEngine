@@ -1,11 +1,11 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiMath.h"
-#include "wiVector.h"
+#include "apMath.h"
+#include "apVector.h"
 
 #include <string>
 
-namespace wi
+namespace ap
 {
 	// This is a data container used for serialization purposes.
 	//	It can be used to READ or WRITE data, but not both at the same time.
@@ -17,7 +17,7 @@ namespace wi
 		uint64_t version = 0; // the version number is used for maintaining backwards compatibility with earlier archive versions
 		bool readMode = false; // archive can be either read or write mode, but not both
 		size_t pos = 0; // position of the next memory operation, relative to the data's beginning
-		wi::vector<uint8_t> DATA; // data suitable for read/write operations
+		ap::vector<uint8_t> DATA; // data suitable for read/write operations
 		const uint8_t* data_ptr = nullptr; // this can either be a memory mapped pointer (read only), or the DATA's pointer
 
 		std::string fileName; // save to this file on closing if not empty
@@ -179,7 +179,7 @@ namespace wi
 			return *this;
 		}
 		template<typename T>
-		inline Archive& operator<<(const wi::vector<T>& data)
+		inline Archive& operator<<(const ap::vector<T>& data)
 		{
 			// Here we will use the << operator so that non-specified types will have compile error!
 			(*this) << data.size();
@@ -326,7 +326,7 @@ namespace wi
 			return *this;
 		}
 		template<typename T>
-		inline Archive& operator>>(wi::vector<T>& data)
+		inline Archive& operator>>(ap::vector<T>& data)
 		{
 			// Here we will use the >> operator so that non-specified types will have compile error!
 			size_t count;

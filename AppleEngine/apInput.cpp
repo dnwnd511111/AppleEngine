@@ -1,13 +1,13 @@
-#include "wiInput.h"
-#include "wiPlatform.h"
-#include "wiXInput.h"
-#include "wiRawInput.h"
-#include "wiSDLInput.h"
-#include "wiHelper.h"
-#include "wiBacklog.h"
-#include "wiProfiler.h"
-#include "wiColor.h"
-#include "wiTimer.h"
+#include "apInput.h"
+#include "apPlatform.h"
+#include "apXInput.h"
+#include "apRawInput.h"
+#include "apSDLInput.h"
+#include "apHelper.h"
+#include "apBacklog.h"
+#include "apProfiler.h"
+#include "apColor.h"
+#include "apTimer.h"
 
 #include <algorithm>
 #include <map>
@@ -24,9 +24,9 @@
 #include <winrt/Windows.Devices.Input.h>
 #endif // PLATFORM_UWP
 
-namespace wi::input
+namespace ap::input
 {
-	wi::platform::window_type window = nullptr;
+	ap::platform::window_type window = nullptr;
 
 #ifdef _WIN32
 #ifndef PLATFORM_UWP
@@ -63,7 +63,7 @@ namespace wi::input
 		};
 	};
 	std::map<Input, uint32_t, Input::LessComparer> inputs;
-	wi::vector<Touch> touches;
+	ap::vector<Touch> touches;
 
 	struct Controller
 	{
@@ -78,21 +78,21 @@ namespace wi::input
 		int deviceIndex;
 		ControllerState state;
 	};
-	wi::vector<Controller> controllers;
+	ap::vector<Controller> controllers;
 	std::atomic_bool initialized{ false };
 
 	void Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
-		wi::input::rawinput::Initialize();
-		wi::input::sdlinput::Initialize();
+		ap::input::rawinput::Initialize();
+		ap::input::sdlinput::Initialize();
 
-		wi::backlog::post("wi::input Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::input Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 		initialized.store(true);
 	}
 
-	void Update(wi::platform::window_type _window)
+	void Update(ap::platform::window_type _window)
 	{
 		window = _window;
 		if (!initialized.load())
@@ -100,18 +100,18 @@ namespace wi::input
 			return;
 		}
 
-		auto range = wi::profiler::BeginRangeCPU("Input");
+		auto range = ap::profiler::BeginRangeCPU("Input");
 
-		wi::input::xinput::Update();
-		wi::input::rawinput::Update();
-		wi::input::sdlinput::Update();
+		ap::input::xinput::Update();
+		ap::input::rawinput::Update();
+		ap::input::sdlinput::Update();
 
 		mouse.delta_wheel = 0;
 		mouse.delta_position = XMFLOAT2(0, 0);
 
 #ifdef _WIN32
-		wi::input::rawinput::GetMouseState(&mouse); // currently only the relative data can be used from this
-		wi::input::rawinput::GetKeyboardState(&keyboard); 
+		ap::input::rawinput::GetMouseState(&mouse); // currently only the relative data can be used from this
+		ap::input::rawinput::GetKeyboardState(&keyboard); 
 
 		// apparently checking the mouse here instead of Down() avoids missing the button presses (review!)
         mouse.left_button_press |= KEY_DOWN(VK_LBUTTON);
@@ -130,8 +130,8 @@ namespace wi::input
 #endif // PLATFORM_UWP
 
 #elif SDL2
-		wi::input::sdlinput::GetMouseState(&mouse);
-		wi::input::sdlinput::GetKeyboardState(&keyboard);
+		ap::input::sdlinput::GetMouseState(&mouse);
+		ap::input::sdlinput::GetKeyboardState(&keyboard);
 		//TODO controllers
 		//TODO touch
 #endif
@@ -213,9 +213,9 @@ namespace wi::input
 #endif
 
 		// Check if low-level XINPUT controller is not registered for playerindex slot and register:
-		for (int i = 0; i < wi::input::xinput::GetMaxControllerCount(); ++i)
+		for (int i = 0; i < ap::input::xinput::GetMaxControllerCount(); ++i)
 		{
-			if (wi::input::xinput::GetControllerState(nullptr, i))
+			if (ap::input::xinput::GetControllerState(nullptr, i))
 			{
 				int slot = -1;
 				for (int j = 0; j < (int)controllers.size(); ++j)
@@ -244,9 +244,9 @@ namespace wi::input
 		}
 
 		// Check if low-level RAWINPUT controller is not registered for playerindex slot and register:
-		for (int i = 0; i < wi::input::rawinput::GetMaxControllerCount(); ++i)
+		for (int i = 0; i < ap::input::rawinput::GetMaxControllerCount(); ++i)
 		{
-			if (wi::input::rawinput::GetControllerState(nullptr, i))
+			if (ap::input::rawinput::GetControllerState(nullptr, i))
 			{
 				int slot = -1;
 				for (int j = 0; j < (int)controllers.size(); ++j)
@@ -275,9 +275,9 @@ namespace wi::input
 		}
 
 		// Check if low-level SDLINPUT controller is not registered for playerindex slot and register:
-		for (int i = 0; i < wi::input::sdlinput::GetMaxControllerCount(); ++i)
+		for (int i = 0; i < ap::input::sdlinput::GetMaxControllerCount(); ++i)
 		{
-			if (wi::input::sdlinput::GetControllerState(nullptr, i))
+			if (ap::input::sdlinput::GetControllerState(nullptr, i))
 			{
 				int slot = -1;
 				for (int j = 0; j < (int)controllers.size(); ++j)
@@ -312,13 +312,13 @@ namespace wi::input
 			switch (controller.deviceType)
 			{
 				case Controller::XINPUT:
-					connected = wi::input::xinput::GetControllerState(&controller.state, controller.deviceIndex);
+					connected = ap::input::xinput::GetControllerState(&controller.state, controller.deviceIndex);
 					break;
 				case Controller::RAWINPUT:
-					connected = wi::input::rawinput::GetControllerState(&controller.state, controller.deviceIndex);
+					connected = ap::input::rawinput::GetControllerState(&controller.state, controller.deviceIndex);
 					break;
 				case Controller::SDLINPUT:
-					connected = wi::input::sdlinput::GetControllerState(&controller.state, controller.deviceIndex);
+					connected = ap::input::sdlinput::GetControllerState(&controller.state, controller.deviceIndex);
 					break;
 			}
 
@@ -356,7 +356,7 @@ namespace wi::input
 
 		touches.clear();
 
-		wi::profiler::EndRange(range);
+		ap::profiler::EndRange(range);
 	}
 
 	bool Down(BUTTON button, int playerindex)
@@ -398,196 +398,196 @@ namespace wi::input
 
 			switch (button)
 			{
-			case wi::input::MOUSE_BUTTON_LEFT:
+			case ap::input::MOUSE_BUTTON_LEFT:
 				if (mouse.left_button_press) 
 					return true;
 				return false;
 				break;
-			case wi::input::MOUSE_BUTTON_RIGHT:
+			case ap::input::MOUSE_BUTTON_RIGHT:
 				if (mouse.right_button_press) 
 					return true;
 				return false;
 				break;
-			case wi::input::MOUSE_BUTTON_MIDDLE:
+			case ap::input::MOUSE_BUTTON_MIDDLE:
 				if (mouse.middle_button_press) 
 					return true;
 				return false;
 				break;
 #ifdef _WIN32
-			case wi::input::KEYBOARD_BUTTON_UP:
+			case ap::input::KEYBOARD_BUTTON_UP:
 				keycode = VK_UP;
 				break;
-			case wi::input::KEYBOARD_BUTTON_DOWN:
+			case ap::input::KEYBOARD_BUTTON_DOWN:
 				keycode = VK_DOWN;
 				break;
-			case wi::input::KEYBOARD_BUTTON_LEFT:
+			case ap::input::KEYBOARD_BUTTON_LEFT:
 				keycode = VK_LEFT;
 				break;
-			case wi::input::KEYBOARD_BUTTON_RIGHT:
+			case ap::input::KEYBOARD_BUTTON_RIGHT:
 				keycode = VK_RIGHT;
 				break;
-			case wi::input::KEYBOARD_BUTTON_SPACE:
+			case ap::input::KEYBOARD_BUTTON_SPACE:
 				keycode = VK_SPACE;
 				break;
-			case wi::input::KEYBOARD_BUTTON_RSHIFT:
+			case ap::input::KEYBOARD_BUTTON_RSHIFT:
 				keycode = VK_RSHIFT;
 				break;
-			case wi::input::KEYBOARD_BUTTON_LSHIFT:
+			case ap::input::KEYBOARD_BUTTON_LSHIFT:
 				keycode = VK_LSHIFT;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F1: 
+			case ap::input::KEYBOARD_BUTTON_F1: 
 				keycode = VK_F1;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F2:
+			case ap::input::KEYBOARD_BUTTON_F2:
 				keycode = VK_F2;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F3:
+			case ap::input::KEYBOARD_BUTTON_F3:
 				keycode = VK_F3;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F4:
+			case ap::input::KEYBOARD_BUTTON_F4:
 				keycode = VK_F4;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F5:
+			case ap::input::KEYBOARD_BUTTON_F5:
 				keycode = VK_F5;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F6:
+			case ap::input::KEYBOARD_BUTTON_F6:
 				keycode = VK_F6;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F7:
+			case ap::input::KEYBOARD_BUTTON_F7:
 				keycode = VK_F7;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F8:
+			case ap::input::KEYBOARD_BUTTON_F8:
 				keycode = VK_F8;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F9:
+			case ap::input::KEYBOARD_BUTTON_F9:
 				keycode = VK_F9;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F10:
+			case ap::input::KEYBOARD_BUTTON_F10:
 				keycode = VK_F10;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F11:
+			case ap::input::KEYBOARD_BUTTON_F11:
 				keycode = VK_F11;
 				break;
-			case wi::input::KEYBOARD_BUTTON_F12:
+			case ap::input::KEYBOARD_BUTTON_F12:
 				keycode = VK_F12;
 				break;
-			case wi::input::KEYBOARD_BUTTON_ENTER:
+			case ap::input::KEYBOARD_BUTTON_ENTER:
 				keycode = VK_RETURN;
 				break;
-			case wi::input::KEYBOARD_BUTTON_ESCAPE:
+			case ap::input::KEYBOARD_BUTTON_ESCAPE:
 				keycode = VK_ESCAPE;
 				break;
-			case wi::input::KEYBOARD_BUTTON_HOME:
+			case ap::input::KEYBOARD_BUTTON_HOME:
 				keycode = VK_HOME;
 				break;
-			case wi::input::KEYBOARD_BUTTON_LCONTROL:
+			case ap::input::KEYBOARD_BUTTON_LCONTROL:
 				keycode = VK_LCONTROL;
 				break;
-			case wi::input::KEYBOARD_BUTTON_RCONTROL:
+			case ap::input::KEYBOARD_BUTTON_RCONTROL:
 				keycode = VK_RCONTROL;
 				break;
-			case wi::input::KEYBOARD_BUTTON_DELETE:
+			case ap::input::KEYBOARD_BUTTON_DELETE:
 				keycode = VK_DELETE;
 				break;
-			case wi::input::KEYBOARD_BUTTON_BACKSPACE:
+			case ap::input::KEYBOARD_BUTTON_BACKSPACE:
 				keycode = VK_BACK;
 				break;
-			case wi::input::KEYBOARD_BUTTON_PAGEDOWN:
+			case ap::input::KEYBOARD_BUTTON_PAGEDOWN:
 				keycode = VK_NEXT;
 				break;
-			case wi::input::KEYBOARD_BUTTON_PAGEUP:
+			case ap::input::KEYBOARD_BUTTON_PAGEUP:
 				keycode = VK_PRIOR;
 				break;
 #elif SDL2
-                case wi::input::KEYBOARD_BUTTON_UP:
+                case ap::input::KEYBOARD_BUTTON_UP:
                     keycode = SDL_SCANCODE_UP;
                     break;
-                case wi::input::KEYBOARD_BUTTON_DOWN:
+                case ap::input::KEYBOARD_BUTTON_DOWN:
                     keycode = SDL_SCANCODE_DOWN;
                     break;
-                case wi::input::KEYBOARD_BUTTON_LEFT:
+                case ap::input::KEYBOARD_BUTTON_LEFT:
                     keycode = SDL_SCANCODE_LEFT;
                     break;
-                case wi::input::KEYBOARD_BUTTON_RIGHT:
+                case ap::input::KEYBOARD_BUTTON_RIGHT:
                     keycode = SDL_SCANCODE_RIGHT;
                     break;
-                case wi::input::KEYBOARD_BUTTON_SPACE:
+                case ap::input::KEYBOARD_BUTTON_SPACE:
                     keycode = SDL_SCANCODE_SPACE;
                     break;
-                case wi::input::KEYBOARD_BUTTON_RSHIFT:
+                case ap::input::KEYBOARD_BUTTON_RSHIFT:
                     keycode = SDL_SCANCODE_RSHIFT;
                     break;
-                case wi::input::KEYBOARD_BUTTON_LSHIFT:
+                case ap::input::KEYBOARD_BUTTON_LSHIFT:
                     keycode = SDL_SCANCODE_LSHIFT;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F1:
+                case ap::input::KEYBOARD_BUTTON_F1:
                     keycode = SDL_SCANCODE_F1;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F2:
+                case ap::input::KEYBOARD_BUTTON_F2:
                     keycode = SDL_SCANCODE_F2;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F3:
+                case ap::input::KEYBOARD_BUTTON_F3:
                     keycode = SDL_SCANCODE_F3;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F4:
+                case ap::input::KEYBOARD_BUTTON_F4:
                     keycode = SDL_SCANCODE_F4;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F5:
+                case ap::input::KEYBOARD_BUTTON_F5:
                     keycode = SDL_SCANCODE_F5;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F6:
+                case ap::input::KEYBOARD_BUTTON_F6:
                     keycode = SDL_SCANCODE_F6;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F7:
+                case ap::input::KEYBOARD_BUTTON_F7:
                     keycode = SDL_SCANCODE_F7;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F8:
+                case ap::input::KEYBOARD_BUTTON_F8:
                     keycode = SDL_SCANCODE_F8;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F9:
+                case ap::input::KEYBOARD_BUTTON_F9:
                     keycode = SDL_SCANCODE_F9;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F10:
+                case ap::input::KEYBOARD_BUTTON_F10:
                     keycode = SDL_SCANCODE_F10;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F11:
+                case ap::input::KEYBOARD_BUTTON_F11:
                     keycode = SDL_SCANCODE_F11;
                     break;
-                case wi::input::KEYBOARD_BUTTON_F12:
+                case ap::input::KEYBOARD_BUTTON_F12:
                     keycode = SDL_SCANCODE_F12;
                     break;
-                case wi::input::KEYBOARD_BUTTON_ENTER:
+                case ap::input::KEYBOARD_BUTTON_ENTER:
                     keycode = SDL_SCANCODE_RETURN;
                     break;
-                case wi::input::KEYBOARD_BUTTON_ESCAPE:
+                case ap::input::KEYBOARD_BUTTON_ESCAPE:
                     keycode = SDL_SCANCODE_ESCAPE;
                     break;
-                case wi::input::KEYBOARD_BUTTON_HOME:
+                case ap::input::KEYBOARD_BUTTON_HOME:
                     keycode = SDL_SCANCODE_HOME;
                     break;
-                case wi::input::KEYBOARD_BUTTON_LCONTROL:
+                case ap::input::KEYBOARD_BUTTON_LCONTROL:
                     keycode = SDL_SCANCODE_LCTRL;
                     break;
-                case wi::input::KEYBOARD_BUTTON_RCONTROL:
+                case ap::input::KEYBOARD_BUTTON_RCONTROL:
                     keycode = SDL_SCANCODE_RCTRL;
                     break;
-                case wi::input::KEYBOARD_BUTTON_DELETE:
+                case ap::input::KEYBOARD_BUTTON_DELETE:
                     keycode = SDL_SCANCODE_DELETE;
                     break;
-                case wi::input::KEYBOARD_BUTTON_BACKSPACE:
+                case ap::input::KEYBOARD_BUTTON_BACKSPACE:
                     keycode = SDL_SCANCODE_BACKSPACE;
                     break;
-                case wi::input::KEYBOARD_BUTTON_PAGEDOWN:
+                case ap::input::KEYBOARD_BUTTON_PAGEDOWN:
                     keycode = SDL_SCANCODE_PAGEDOWN;
                     break;
-                case wi::input::KEYBOARD_BUTTON_PAGEUP:
+                case ap::input::KEYBOARD_BUTTON_PAGEUP:
                     keycode = SDL_SCANCODE_PAGEUP;
                     break;
 				//Translating engine's keycode mapping (which comes from Win32 i presume) to the matching SDL2 keycode
 				//Win32 Link: https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 				//SDL2 Link: https://wiki.libsdl.org/SDL_Keycode
 				//Numbers start from enum 48 to 57, 58 to 64 are undefined, 65 to 90 are alphabets.
-				//Usage: the same as win32 platform, which is (for example) wi::input::Down((wi::input::BUTTON)'A' (referenced from Editor.cpp for the engine's editor program)
+				//Usage: the same as win32 platform, which is (for example) ap::input::Down((ap::input::BUTTON)'A' (referenced from Editor.cpp for the engine's editor program)
 				case 48:
 					keycode = SDL_SCANCODE_0;
 					break;
@@ -830,16 +830,16 @@ namespace wi::input
 
 			if (controller.deviceType == Controller::XINPUT)
 			{
-				wi::input::xinput::SetControllerFeedback(data, controller.deviceIndex);
+				ap::input::xinput::SetControllerFeedback(data, controller.deviceIndex);
 			}
 			else if (controller.deviceType == Controller::RAWINPUT)
 			{
-				wi::input::rawinput::SetControllerFeedback(data, controller.deviceIndex);
+				ap::input::rawinput::SetControllerFeedback(data, controller.deviceIndex);
 			}
 		}
 	}
 
-	const wi::vector<Touch>& GetTouches()
+	const ap::vector<Touch>& GetTouches()
 	{
 		return touches;
 	}

@@ -3,7 +3,7 @@
 #include <string>
 
 // This can be used to parse and retrieve startup/command arguments of the application
-namespace wi::arguments
+namespace ap::arguments
 {
 	void Parse(const wchar_t* args);
     void Parse(int argc, char *argv[]);

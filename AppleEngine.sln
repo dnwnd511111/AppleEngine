@@ -13,7 +13,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "AppleEngine\vendor
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bullet", "AppleEngine\vendor\Bullet\Bullet.vcxproj", "{4CEAD786-88AD-4063-A0A1-AE198687DEC0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders_SOURCE", "AppleEngine\Shaders_SOURCE\Shaders_SOURCE.vcxitems", "{D56C3F22-CFFC-47CA-8619-0ACA2DC899DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders_SOURCE", "AppleEngine\shaders\Shaders_SOURCE.vcxitems", "{D56C3F22-CFFC-47CA-8619-0ACA2DC899DE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

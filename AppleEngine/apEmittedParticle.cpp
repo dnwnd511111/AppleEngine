@@ -1,25 +1,25 @@
-#include "wiEmittedParticle.h"
-#include "wiScene.h"
-#include "wiRenderer.h"
-#include "wiResourceManager.h"
-#include "wiPrimitive.h"
-#include "wiRandom.h"
-#include "wiArchive.h"
-#include "wiTextureHelper.h"
-#include "wiGPUSortLib.h"
-#include "wiProfiler.h"
-#include "wiBacklog.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
-#include "wiVector.h"
+#include "apEmittedParticle.h"
+#include "apScene.h"
+#include "apRenderer.h"
+#include "apResourceManager.h"
+#include "apPrimitive.h"
+#include "apRandom.h"
+#include "apArchive.h"
+#include "apTextureHelper.h"
+#include "apGPUSortLib.h"
+#include "apProfiler.h"
+#include "apBacklog.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
+#include "apVector.h"
 
 #include <algorithm>
 
-using namespace wi::graphics;
-using namespace wi::scene;
-using namespace wi::enums;
+using namespace ap::graphics;
+using namespace ap::scene;
+using namespace ap::enums;
 
-namespace wi
+namespace ap
 {
 	static Shader vertexShader;
 	static Shader meshShader;
@@ -57,7 +57,7 @@ namespace wi
 
 	void EmittedParticleSystem::CreateSelfBuffers()
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		if (particleBuffer.desc.size < MAX_PARTICLES * sizeof(Particle))
 		{
@@ -85,7 +85,7 @@ namespace wi
 			device->SetName(&culledIndirectionBuffer2, "culledIndirectionBuffer2");
 
 			// Dead index list:
-			wi::vector<uint32_t> indices(MAX_PARTICLES);
+			ap::vector<uint32_t> indices(MAX_PARTICLES);
 			for (uint32_t i = 0; i < MAX_PARTICLES; ++i)
 			{
 				indices[i] = i;
@@ -101,7 +101,7 @@ namespace wi
 			}
 			bd.stride = sizeof(MeshComponent::Vertex_POS);
 			bd.size = bd.stride * 4 * MAX_PARTICLES;
-			wi::vector<MeshComponent::Vertex_POS> positionData(4 * MAX_PARTICLES);
+			ap::vector<MeshComponent::Vertex_POS> positionData(4 * MAX_PARTICLES);
 			std::fill(positionData.begin(), positionData.end(), MeshComponent::Vertex_POS());
 			device->CreateBuffer(&bd, positionData.data(), &vertexBuffer_POS);
 			device->SetName(&vertexBuffer_POS, "vertexBuffer_POS");
@@ -133,7 +133,7 @@ namespace wi
 			bd.format = Format::R32_UINT;
 			bd.stride = sizeof(uint);
 			bd.size = bd.stride * 6 * MAX_PARTICLES;
-			wi::vector<uint> primitiveData(6 * MAX_PARTICLES);
+			ap::vector<uint> primitiveData(6 * MAX_PARTICLES);
 			for (uint particleID = 0; particleID < MAX_PARTICLES; ++particleID)
 			{
 				uint v0 = particleID * 4;
@@ -158,7 +158,7 @@ namespace wi
 			bd.misc_flags = ResourceMiscFlag::BUFFER_STRUCTURED;
 			bd.stride = sizeof(float);
 			bd.size = bd.stride * MAX_PARTICLES;
-			wi::vector<float> distances(MAX_PARTICLES);
+			ap::vector<float> distances(MAX_PARTICLES);
 			std::fill(distances.begin(), distances.end(), 0.0f);
 			device->CreateBuffer(&bd, distances.data(), &distanceBuffer);
 			device->SetName(&distanceBuffer, "distanceBuffer");
@@ -231,9 +231,9 @@ namespace wi
 			bd.bind_flags = BindFlag::UNORDERED_ACCESS;
 			bd.misc_flags = ResourceMiscFlag::BUFFER_RAW | ResourceMiscFlag::INDIRECT_ARGS;
 			bd.size =
-				sizeof(wi::graphics::IndirectDispatchArgs) +
-				sizeof(wi::graphics::IndirectDispatchArgs) +
-				sizeof(wi::graphics::IndirectDrawArgsInstanced);
+				sizeof(ap::graphics::IndirectDispatchArgs) +
+				sizeof(ap::graphics::IndirectDispatchArgs) +
+				sizeof(ap::graphics::IndirectDrawArgsInstanced);
 			device->CreateBuffer(&bd, nullptr, &indirectBuffers);
 			device->SetName(&indirectBuffers, "indirectBuffers");
 
@@ -372,7 +372,7 @@ namespace wi
 			return;
 		}
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		device->EventBegin("UpdateEmittedParticles", cmd);
 
 		if (!IsPaused())
@@ -382,7 +382,7 @@ namespace wi
 			cb.xEmitCount = (uint32_t)emit;
 			cb.xEmitterMeshIndexCount = mesh == nullptr ? 0 : (uint32_t)mesh->indices.size();
 			cb.xEmitterMeshVertexPositionStride = sizeof(MeshComponent::Vertex_POS);
-			cb.xEmitterRandomness = wi::random::GetRandom(0, 1000) * 0.001f;
+			cb.xEmitterRandomness = ap::random::GetRandom(0, 1000) * 0.001f;
 			cb.xParticleLifeSpan = life;
 			cb.xParticleLifeSpanRandomness = random_life;
 			cb.xParticleNormalFactor = normal_factor;
@@ -506,7 +506,7 @@ namespace wi
 
 			if (IsSPHEnabled())
 			{
-				auto range = wi::profiler::BeginRangeGPU("SPH - Simulation", cmd);
+				auto range = ap::profiler::BeginRangeGPU("SPH - Simulation", cmd);
 
 				// Smooth Particle Hydrodynamics:
 				device->EventBegin("SPH - Simulation", cmd);
@@ -530,7 +530,7 @@ namespace wi
 				device->EventEnd(cmd);
 
 				// 2.) Sort particle index list based on partition grid cell index:
-				wi::gpusortlib::Sort(MAX_PARTICLES, sphPartitionCellIndices, counterBuffer, PARTICLECOUNTER_OFFSET_ALIVECOUNT, aliveList[0], cmd);
+				ap::gpusortlib::Sort(MAX_PARTICLES, sphPartitionCellIndices, counterBuffer, PARTICLECOUNTER_OFFSET_ALIVECOUNT, aliveList[0], cmd);
 
 				// 3.) Reset grid cell offset buffer with invalid offsets (max uint):
 				device->EventBegin("PartitionOffsetsReset", cmd);
@@ -599,7 +599,7 @@ namespace wi
 
 				device->EventEnd(cmd);
 
-				wi::profiler::EndRange(range);
+				ap::profiler::EndRange(range);
 			}
 
 			device->EventBegin("Simulate", cmd);
@@ -643,7 +643,7 @@ namespace wi
 
 		if (IsSorted())
 		{
-			wi::gpusortlib::Sort(MAX_PARTICLES, distanceBuffer, counterBuffer, PARTICLECOUNTER_OFFSET_CULLEDCOUNT, culledIndirectionBuffer, cmd);
+			ap::gpusortlib::Sort(MAX_PARTICLES, distanceBuffer, counterBuffer, PARTICLECOUNTER_OFFSET_CULLEDCOUNT, culledIndirectionBuffer, cmd);
 		}
 
 		if (!IsPaused())
@@ -709,16 +709,16 @@ namespace wi
 
 	void EmittedParticleSystem::Draw(const MaterialComponent& material, CommandList cmd) const
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		device->EventBegin("EmittedParticle", cmd);
 
-		if (wi::renderer::IsWireRender())
+		if (ap::renderer::IsWireRender())
 		{
 			device->BindPipelineState(&PSO_wire, cmd);
 		}
 		else
 		{
-			const wi::enums::BLENDMODE blendMode = material.GetBlendMode();
+			const ap::enums::BLENDMODE blendMode = material.GetBlendMode();
 			device->BindPipelineState(&PSO[blendMode][shaderType], cmd);
 
 			device->BindShadingRate(material.shadingRate, cmd);
@@ -751,41 +751,41 @@ namespace wi
 	{
 		void LoadShaders()
 		{
-			wi::renderer::LoadShader(ShaderStage::VS, vertexShader, "emittedparticleVS.cso");
+			ap::renderer::LoadShader(ShaderStage::VS, vertexShader, "emittedparticleVS.cso");
 
-			if (ALLOW_MESH_SHADER && wi::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
+			if (ALLOW_MESH_SHADER && ap::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
 			{
-				wi::renderer::LoadShader(ShaderStage::MS, meshShader, "emittedparticleMS.cso");
+				ap::renderer::LoadShader(ShaderStage::MS, meshShader, "emittedparticleMS.cso");
 			}
 
-			wi::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SOFT], "emittedparticlePS_soft.cso");
-			wi::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SOFT_DISTORTION], "emittedparticlePS_soft_distortion.cso");
-			wi::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SIMPLE], "emittedparticlePS_simple.cso");
-			wi::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SOFT_LIGHTING], "emittedparticlePS_soft_lighting.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SOFT], "emittedparticlePS_soft.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SOFT_DISTORTION], "emittedparticlePS_soft_distortion.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SIMPLE], "emittedparticlePS_simple.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, pixelShader[EmittedParticleSystem::SOFT_LIGHTING], "emittedparticlePS_soft_lighting.cso");
 
-			wi::renderer::LoadShader(ShaderStage::CS, kickoffUpdateCS, "emittedparticle_kickoffUpdateCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, finishUpdateCS, "emittedparticle_finishUpdateCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, emitCS, "emittedparticle_emitCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, emitCS_VOLUME, "emittedparticle_emitCS_volume.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, emitCS_FROMMESH, "emittedparticle_emitCS_FROMMESH.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, sphpartitionCS, "emittedparticle_sphpartitionCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, sphpartitionoffsetsCS, "emittedparticle_sphpartitionoffsetsCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, sphpartitionoffsetsresetCS, "emittedparticle_sphpartitionoffsetsresetCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, sphdensityCS, "emittedparticle_sphdensityCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, sphforceCS, "emittedparticle_sphforceCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, simulateCS, "emittedparticle_simulateCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, simulateCS_SORTING, "emittedparticle_simulateCS_SORTING.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, simulateCS_DEPTHCOLLISIONS, "emittedparticle_simulateCS_DEPTHCOLLISIONS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, simulateCS_SORTING_DEPTHCOLLISIONS, "emittedparticle_simulateCS_SORTING_DEPTHCOLLISIONS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, kickoffUpdateCS, "emittedparticle_kickoffUpdateCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, finishUpdateCS, "emittedparticle_finishUpdateCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, emitCS, "emittedparticle_emitCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, emitCS_VOLUME, "emittedparticle_emitCS_volume.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, emitCS_FROMMESH, "emittedparticle_emitCS_FROMMESH.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, sphpartitionCS, "emittedparticle_sphpartitionCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, sphpartitionoffsetsCS, "emittedparticle_sphpartitionoffsetsCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, sphpartitionoffsetsresetCS, "emittedparticle_sphpartitionoffsetsresetCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, sphdensityCS, "emittedparticle_sphdensityCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, sphforceCS, "emittedparticle_sphforceCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, simulateCS, "emittedparticle_simulateCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, simulateCS_SORTING, "emittedparticle_simulateCS_SORTING.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, simulateCS_DEPTHCOLLISIONS, "emittedparticle_simulateCS_DEPTHCOLLISIONS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, simulateCS_SORTING_DEPTHCOLLISIONS, "emittedparticle_simulateCS_SORTING_DEPTHCOLLISIONS.cso");
 
 
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			for (int i = 0; i < BLENDMODE_COUNT; ++i)
 			{
 				PipelineStateDesc desc;
 				desc.pt = PrimitiveTopology::TRIANGLESTRIP;
-				if (ALLOW_MESH_SHADER && wi::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
+				if (ALLOW_MESH_SHADER && ap::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
 				{
 					desc.ms = &meshShader;
 				}
@@ -807,7 +807,7 @@ namespace wi
 			{
 				PipelineStateDesc desc;
 				desc.pt = PrimitiveTopology::TRIANGLESTRIP;
-				if (ALLOW_MESH_SHADER && wi::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
+				if (ALLOW_MESH_SHADER && ap::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::MESH_SHADER))
 				{
 					desc.ms = &meshShader;
 				}
@@ -828,7 +828,7 @@ namespace wi
 
 	void EmittedParticleSystem::Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
 		RasterizerState rs;
 		rs.fill_mode = FillMode::SOLID;
@@ -900,20 +900,20 @@ namespace wi
 		bd.render_target[0].blend_enable = false;
 		blendStates[BLENDMODE_OPAQUE] = bd;
 
-		static wi::eventhandler::Handle handle = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { EmittedParticleSystem_Internal::LoadShaders(); });
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { EmittedParticleSystem_Internal::LoadShaders(); });
 		EmittedParticleSystem_Internal::LoadShaders();
 
-		wi::backlog::post("wi::EmittedParticleSystem Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::EmittedParticleSystem Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 
-	void EmittedParticleSystem::Serialize(wi::Archive& archive, wi::ecs::EntitySerializer& seri)
+	void EmittedParticleSystem::Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri)
 	{
 		if (archive.IsReadMode())
 		{
 			archive >> _flags;
 			archive >> (uint32_t&)shaderType;
-			wi::ecs::SerializeEntity(archive, meshID, seri);
+			ap::ecs::SerializeEntity(archive, meshID, seri);
 			archive >> MAX_PARTICLES;
 			archive >> FIXED_TIMESTEP;
 			archive >> size;
@@ -967,7 +967,7 @@ namespace wi
 		{
 			archive << _flags;
 			archive << (uint32_t)shaderType;
-			wi::ecs::SerializeEntity(archive, meshID, seri);
+			ap::ecs::SerializeEntity(archive, meshID, seri);
 			archive << MAX_PARTICLES;
 			archive << FIXED_TIMESTEP;
 			archive << size;

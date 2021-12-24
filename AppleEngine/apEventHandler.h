@@ -4,7 +4,7 @@
 #include <memory>
 #include <functional>
 
-namespace wi::eventhandler
+namespace ap::eventhandler
 {
 	static constexpr int EVENT_THREAD_SAFE_POINT = -1;
 	static constexpr int EVENT_RELOAD_SHADERS = -2;

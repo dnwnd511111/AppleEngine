@@ -1,13 +1,13 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiVector.h"
+#include "apVector.h"
 
 #include <cassert>
 #include <memory>
 #include <string>
 #include <limits>
 
-namespace wi::graphics
+namespace ap::graphics
 {
 	struct Shader;
 	struct GPUResource;
@@ -415,7 +415,7 @@ namespace wi::graphics
 			uint32_t aligned_byte_offset = APPEND_ALIGNED_ELEMENT;
 			InputClassification input_slot_class = InputClassification::PER_VERTEX_DATA;
 		};
-		wi::vector<Element> elements;
+		ap::vector<Element> elements;
 	};
 
 	union ClearValue
@@ -721,7 +721,7 @@ namespace wi::graphics
 			ALLOW_UAV_WRITES = 1 << 0,
 		};
 		Flags flags = Flags::EMPTY;
-		wi::vector<RenderPassAttachment> attachments;
+		ap::vector<RenderPassAttachment> attachments;
 	};
 
 	struct SwapChainDesc
@@ -919,7 +919,7 @@ namespace wi::graphics
 				} aabbs;
 
 			};
-			wi::vector<Geometry> geometries;
+			ap::vector<Geometry> geometries;
 		} bottom_level;
 
 		struct TopLevel
@@ -982,8 +982,8 @@ namespace wi::graphics
 	};
 	struct RaytracingPipelineStateDesc
 	{
-		wi::vector<ShaderLibrary> shader_libraries;
-		wi::vector<ShaderHitGroup> hit_groups;
+		ap::vector<ShaderLibrary> shader_libraries;
+		ap::vector<ShaderHitGroup> hit_groups;
 		uint32_t max_trace_recursion_depth = 1;
 		uint32_t max_attribute_size_in_bytes = 0;
 		uint32_t max_payload_size_in_bytes = 0;
@@ -1178,26 +1178,26 @@ namespace wi::graphics
 }
 
 template<>
-struct enable_bitmask_operators<wi::graphics::ColorWrite> {
+struct enable_bitmask_operators<ap::graphics::ColorWrite> {
 	static const bool enable = true;
 };
 template<>
-struct enable_bitmask_operators<wi::graphics::BindFlag> {
+struct enable_bitmask_operators<ap::graphics::BindFlag> {
 	static const bool enable = true;
 };
 template<>
-struct enable_bitmask_operators<wi::graphics::ResourceMiscFlag> {
+struct enable_bitmask_operators<ap::graphics::ResourceMiscFlag> {
 	static const bool enable = true;
 };
 template<>
-struct enable_bitmask_operators<wi::graphics::GraphicsDeviceCapability> {
+struct enable_bitmask_operators<ap::graphics::GraphicsDeviceCapability> {
 	static const bool enable = true;
 };
 template<>
-struct enable_bitmask_operators<wi::graphics::ResourceState> {
+struct enable_bitmask_operators<ap::graphics::ResourceState> {
 	static const bool enable = true;
 };
 template<>
-struct enable_bitmask_operators<wi::graphics::RenderPassDesc::Flags> {
+struct enable_bitmask_operators<ap::graphics::RenderPassDesc::Flags> {
 	static const bool enable = true;
 };

@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-namespace wi
+namespace ap
 {
 	struct Timer
 	{
@@ -15,7 +15,7 @@ namespace wi
 			timestamp = std::chrono::high_resolution_clock::now();
 		}
 
-		// Elapsed time in seconds since the wi::Timer creation or last call to record()
+		// Elapsed time in seconds since the ap::Timer creation or last call to record()
 		inline double elapsed_seconds()
 		{
 			auto timestamp2 = std::chrono::high_resolution_clock::now();
@@ -23,13 +23,13 @@ namespace wi
 			return time_span.count();
 		}
 
-		// Elapsed time in milliseconds since the wi::Timer creation or last call to record()
+		// Elapsed time in milliseconds since the ap::Timer creation or last call to record()
 		inline double elapsed_milliseconds()
 		{
 			return elapsed_seconds() * 1000.0;
 		}
 
-		// Elapsed time in milliseconds since the wi::Timer creation or last call to record()
+		// Elapsed time in milliseconds since the ap::Timer creation or last call to record()
 		inline double elapsed()
 		{
 			return elapsed_milliseconds();

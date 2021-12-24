@@ -1,15 +1,15 @@
-#include "wiFFTGenerator.h"
-#include "wiResourceManager.h"
-#include "wiRenderer.h"
+#include "apFFTGenerator.h"
+#include "apResourceManager.h"
+#include "apRenderer.h"
 #include "shaders/ShaderInterop_FFTGenerator.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi::fftgenerator
+namespace ap::fftgenerator
 {
 	Shader radix008A_CS;
 	Shader radix008A_CS2;
@@ -33,7 +33,7 @@ namespace wi::fftgenerator
 		// Setup execution configuration
 		uint32_t grid = thread_count / COHERENCY_GRANULARITY;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		// Buffers
 		const GPUResource* srvs[1] = { &pSRV_Src };
@@ -71,7 +71,7 @@ namespace wi::fftgenerator
 		CommandList cmd)
 	{
 		const uint32_t thread_count = fft_plan.slices * (512 * 512) / 8;
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		const GPUBuffer* cs_cbs;
 
 		uint32_t istride = 512 * 512 / 8;
@@ -168,7 +168,7 @@ namespace wi::fftgenerator
 
 	void fft512x512_create_plan(CSFFT512x512_Plan& plan, uint32_t slices)
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		plan.slices = slices;
 
@@ -189,8 +189,8 @@ namespace wi::fftgenerator
 
 	void LoadShaders()
 	{
-		wi::renderer::LoadShader(ShaderStage::CS, radix008A_CS, "fft_512x512_c2c_CS.cso");
-		wi::renderer::LoadShader(ShaderStage::CS, radix008A_CS2, "fft_512x512_c2c_v2_CS.cso");
+		ap::renderer::LoadShader(ShaderStage::CS, radix008A_CS, "fft_512x512_c2c_CS.cso");
+		ap::renderer::LoadShader(ShaderStage::CS, radix008A_CS2, "fft_512x512_c2c_v2_CS.cso");
 	}
 
 }

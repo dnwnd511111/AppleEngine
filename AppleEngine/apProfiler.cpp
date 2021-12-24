@@ -1,12 +1,12 @@
-#include "wiProfiler.h"
-#include "wiGraphicsDevice.h"
-#include "wiFont.h"
-#include "wiImage.h"
-#include "wiTimer.h"
-#include "wiTextureHelper.h"
-#include "wiHelper.h"
-#include "wiUnorderedMap.h"
-#include "wiBacklog.h"
+#include "apProfiler.h"
+#include "apGraphicsDevice.h"
+#include "apFont.h"
+#include "apImage.h"
+#include "apTimer.h"
+#include "apTextureHelper.h"
+#include "apHelper.h"
+#include "apUnorderedMap.h"
+#include "apBacklog.h"
 
 #if __has_include("Superluminal/PerformanceAPI_capi.h")
 #include "Superluminal/PerformanceAPI_capi.h"
@@ -19,9 +19,9 @@
 #include <atomic>
 #include <sstream>
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi::profiler
+namespace ap::profiler
 {
 	bool ENABLED = false;
 	bool initialized = false;
@@ -47,14 +47,14 @@ namespace wi::profiler
 		float time = 0;
 		CommandList cmd = INVALID_COMMANDLIST;
 
-		wi::Timer cpuTimer;
+		ap::Timer cpuTimer;
 
 		int gpuBegin[arraysize(queryResultBuffer)];
 		int gpuEnd[arraysize(queryResultBuffer)];
 
 		bool IsCPURange() const { return cmd == INVALID_COMMANDLIST; }
 	};
-	wi::unordered_map<size_t, Range> ranges;
+	ap::unordered_map<size_t, Range> ranges;
 
 	void BeginFrame()
 	{
@@ -67,7 +67,7 @@ namespace wi::profiler
 
 			ranges.reserve(100);
 
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			GPUQueryHeapDesc desc;
 			desc.type = GpuQueryType::TIMESTAMP;
@@ -89,14 +89,14 @@ namespace wi::profiler
 			superluminal_handle = PerformanceAPI_LoadFrom(L"PerformanceAPI.dll", &superluminal_functions);
 			if (superluminal_handle)
 			{
-				wi::backlog::post("[wi::profiler] Superluminal Performance API loaded");
+				ap::backlog::post("[ap::profiler] Superluminal Performance API loaded");
 			}
 #endif // PERFORMANCEAPI_ENABLED
 		}
 
 		cpu_frame = BeginRangeCPU("CPU Frame");
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		CommandList cmd = device->BeginCommandList();
 
 		device->QueryReset(
@@ -113,7 +113,7 @@ namespace wi::profiler
 		if (!ENABLED || !initialized)
 			return;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		// note: read the GPU Frame end range manually because it will be on a separate command list than start point:
 		auto& gpu_range = ranges[gpu_frame];
@@ -182,7 +182,7 @@ namespace wi::profiler
 		}
 #endif // PERFORMANCEAPI_ENABLED
 
-		range_id id = wi::helper::string_hash(name);
+		range_id id = ap::helper::string_hash(name);
 
 		lock.lock();
 
@@ -190,7 +190,7 @@ namespace wi::profiler
 		size_t differentiator = 0;
 		while (ranges[id].in_use)
 		{
-			wi::helper::hash_combine(id, differentiator++);
+			ap::helper::hash_combine(id, differentiator++);
 		}
 		ranges[id].in_use = true;
 		ranges[id].name = name;
@@ -205,7 +205,7 @@ namespace wi::profiler
 		if (!ENABLED || !initialized)
 			return 0;
 
-		range_id id = wi::helper::string_hash(name);
+		range_id id = ap::helper::string_hash(name);
 
 		lock.lock();
 
@@ -213,14 +213,14 @@ namespace wi::profiler
 		size_t differentiator = 0;
 		while (ranges[id].in_use)
 		{
-			wi::helper::hash_combine(id, differentiator++);
+			ap::helper::hash_combine(id, differentiator++);
 		}
 		ranges[id].in_use = true;
 		ranges[id].name = name;
 		ranges[id].cmd = cmd;
 
 		ranges[id].gpuBegin[queryheap_idx] = nextQuery.fetch_add(1);
-		wi::graphics::GetDevice()->QueryEnd(&queryHeap, ranges[id].gpuBegin[queryheap_idx], cmd);
+		ap::graphics::GetDevice()->QueryEnd(&queryHeap, ranges[id].gpuBegin[queryheap_idx], cmd);
 
 		lock.unlock();
 
@@ -250,7 +250,7 @@ namespace wi::profiler
 			else
 			{
 				ranges[id].gpuEnd[queryheap_idx] = nextQuery.fetch_add(1);
-				wi::graphics::GetDevice()->QueryEnd(&queryHeap, it->second.gpuEnd[queryheap_idx], it->second.cmd);
+				ap::graphics::GetDevice()->QueryEnd(&queryHeap, it->second.gpuEnd[queryheap_idx], it->second.cmd);
 			}
 		}
 		else
@@ -266,15 +266,15 @@ namespace wi::profiler
 		uint32_t num_hits = 0;
 		float total_time = 0;
 	};
-	wi::unordered_map<std::string, Hits> time_cache_cpu;
-	wi::unordered_map<std::string, Hits> time_cache_gpu;
-	void DrawData(const wi::Canvas& canvas, float x, float y, CommandList cmd)
+	ap::unordered_map<std::string, Hits> time_cache_cpu;
+	ap::unordered_map<std::string, Hits> time_cache_gpu;
+	void DrawData(const ap::Canvas& canvas, float x, float y, CommandList cmd)
 	{
 		if (!ENABLED || !initialized)
 			return;
 
-		wi::image::SetCanvas(canvas, cmd);
-		wi::font::SetCanvas(canvas, cmd);
+		ap::image::SetCanvas(canvas, cmd);
+		ap::font::SetCanvas(canvas, cmd);
 
 		std::stringstream ss("");
 		ss.precision(2);
@@ -332,17 +332,17 @@ namespace wi::profiler
 			x.second.total_time = 0;
 		}
 
-		wi::font::Params params = wi::font::Params(x, y, wi::font::WIFONTSIZE_DEFAULT - 4, wi::font::WIFALIGN_LEFT, wi::font::WIFALIGN_TOP, wi::Color(255, 255, 255, 255), wi::Color(0, 0, 0, 255));
+		ap::font::Params params = ap::font::Params(x, y, ap::font::WIFONTSIZE_DEFAULT - 4, ap::font::WIFALIGN_LEFT, ap::font::WIFALIGN_TOP, ap::Color(255, 255, 255, 255), ap::Color(0, 0, 0, 255));
 
-		wi::image::Params fx;
+		ap::image::Params fx;
 		fx.pos.x = (float)params.posX;
 		fx.pos.y = (float)params.posY;
-		fx.siz.x = (float)wi::font::TextWidth(ss.str(), params);
-		fx.siz.y = (float)wi::font::TextHeight(ss.str(), params);
-		fx.color = wi::Color(20, 20, 20, 230);
-		wi::image::Draw(wi::texturehelper::getWhite(), fx, cmd);
+		fx.siz.x = (float)ap::font::TextWidth(ss.str(), params);
+		fx.siz.y = (float)ap::font::TextHeight(ss.str(), params);
+		fx.color = ap::Color(20, 20, 20, 230);
+		ap::image::Draw(ap::texturehelper::getWhite(), fx, cmd);
 
-		wi::font::Draw(ss.str(), params, cmd);
+		ap::font::Draw(ss.str(), params, cmd);
 	}
 
 	void SetEnabled(bool value)

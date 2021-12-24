@@ -1,6 +1,6 @@
 #pragma once
 
-namespace wi::initializer
+namespace ap::initializer
 {
 	enum INITIALIZED_SYSTEM
 	{

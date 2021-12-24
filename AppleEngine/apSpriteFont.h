@@ -1,9 +1,9 @@
 #pragma once
-#include "wiFont.h"
+#include "apFont.h"
 
 #include <string>
 
-namespace wi
+namespace ap
 {
 	class SpriteFont
 	{
@@ -17,17 +17,17 @@ namespace wi
 		uint32_t _flags = EMPTY;
 	public:
 		std::wstring text;
-		wi::font::Params params;
+		ap::font::Params params;
 
 		SpriteFont() = default;
-		SpriteFont(const std::string& value, const wi::font::Params& params = wi::font::Params()) :params(params)
+		SpriteFont(const std::string& value, const ap::font::Params& params = ap::font::Params()) :params(params)
 		{
 			SetText(value);
 		}
 
 		virtual void FixedUpdate();
 		virtual void Update(float dt);
-		virtual void Draw(wi::graphics::CommandList cmd) const;
+		virtual void Draw(ap::graphics::CommandList cmd) const;
 
 		constexpr void SetHidden(bool value = true) { if (value) { _flags |= HIDDEN; } else { _flags &= ~HIDDEN; } }
 		constexpr bool IsHidden() const { return _flags & HIDDEN; }

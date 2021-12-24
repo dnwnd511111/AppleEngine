@@ -1,7 +1,7 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiVector.h"
+#include "apGraphicsDevice.h"
+#include "apVector.h"
 
 #include <string>
 #include <functional>
@@ -13,7 +13,7 @@ namespace std
 }
 #endif // WI_VECTOR_TYPE
 
-namespace wi::helper
+namespace ap::helper
 {
 	template <class T>
 	constexpr void hash_combine(std::size_t& seed, const T& v)
@@ -42,22 +42,22 @@ namespace wi::helper
 
 	void messageBox(const std::string& msg, const std::string& caption = "Warning!");
 
-	void screenshot(const wi::graphics::SwapChain& swapchain, const std::string& name = "");
+	void screenshot(const ap::graphics::SwapChain& swapchain, const std::string& name = "");
 
 	// Save raw pixel data from the texture to memory
-	bool saveTextureToMemory(const wi::graphics::Texture& texture, wi::vector<uint8_t>& texturedata);
+	bool saveTextureToMemory(const ap::graphics::Texture& texture, ap::vector<uint8_t>& texturedata);
 
 	// Save texture to memory as a file format
-	bool saveTextureToMemoryFile(const wi::graphics::Texture& texture, const std::string& fileExtension, wi::vector<uint8_t>& filedata);
+	bool saveTextureToMemoryFile(const ap::graphics::Texture& texture, const std::string& fileExtension, ap::vector<uint8_t>& filedata);
 
 	// Save raw texture data to memory as file format
-	bool saveTextureToMemoryFile(const wi::vector<uint8_t>& textureData, const wi::graphics::TextureDesc& desc, const std::string& fileExtension, wi::vector<uint8_t>& filedata);
+	bool saveTextureToMemoryFile(const ap::vector<uint8_t>& textureData, const ap::graphics::TextureDesc& desc, const std::string& fileExtension, ap::vector<uint8_t>& filedata);
 
 	// Save texture to file format
-	bool saveTextureToFile(const wi::graphics::Texture& texture, const std::string& fileName);
+	bool saveTextureToFile(const ap::graphics::Texture& texture, const std::string& fileName);
 
 	// Save raw texture data to file format
-	bool saveTextureToFile(const wi::vector<uint8_t>& texturedata, const wi::graphics::TextureDesc& desc, const std::string& fileName);
+	bool saveTextureToFile(const ap::vector<uint8_t>& texturedata, const ap::graphics::TextureDesc& desc, const std::string& fileName);
 
 	std::string getCurrentDateTimeAsString();
 
@@ -79,10 +79,10 @@ namespace wi::helper
 
 	void DirectoryCreate(const std::string& path);
 
-	bool FileRead(const std::string& fileName, wi::vector<uint8_t>& data);
+	bool FileRead(const std::string& fileName, ap::vector<uint8_t>& data);
 
 #if WI_VECTOR_TYPE
-	// This version is provided if std::vector != wi::vector
+	// This version is provided if std::vector != ap::vector
 	bool FileRead(const std::string& fileName, std::vector<uint8_t>& data);
 #endif // WI_VECTOR_TYPE
 
@@ -101,7 +101,7 @@ namespace wi::helper
 			SAVE,
 		} type = OPEN;
 		std::string description;
-		wi::vector<std::string> extensions;
+		ap::vector<std::string> extensions;
 	};
 	void FileDialog(const FileDialogParams& params, std::function<void(std::string fileName)> onSuccess);
 

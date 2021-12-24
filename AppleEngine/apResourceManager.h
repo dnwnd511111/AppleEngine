@@ -1,30 +1,30 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiAudio.h"
-#include "wiArchive.h"
-#include "wiJobSystem.h"
-#include "wiVector.h"
+#include "apGraphicsDevice.h"
+#include "apAudio.h"
+#include "apArchive.h"
+#include "apJobSystem.h"
+#include "apVector.h"
 
 #include <memory>
 
-namespace wi
+namespace ap
 {
 	// This can hold an asset
-	//	It can be loaded from file or memory using wi::resourcemanager::Load()
+	//	It can be loaded from file or memory using ap::resourcemanager::Load()
 	struct Resource
 	{
 		std::shared_ptr<void> internal_state;
 		inline bool IsValid() const { return internal_state.get() != nullptr; }
 
-		const wi::vector<uint8_t>& GetFileData() const;
-		const wi::graphics::Texture& GetTexture() const;
-		const wi::audio::Sound& GetSound() const;
+		const ap::vector<uint8_t>& GetFileData() const;
+		const ap::graphics::Texture& GetTexture() const;
+		const ap::audio::Sound& GetSound() const;
 
-		void SetFileData(const wi::vector<uint8_t>& data);
-		void SetFileData(wi::vector<uint8_t>&& data);
-		void SetTexture(const wi::graphics::Texture& texture);
-		void SetSound(const wi::audio::Sound& sound);
+		void SetFileData(const ap::vector<uint8_t>& data);
+		void SetFileData(ap::vector<uint8_t>&& data);
+		void SetTexture(const ap::graphics::Texture& texture);
+		void SetSound(const ap::audio::Sound& sound);
 	};
 
 	namespace resourcemanager
@@ -37,8 +37,8 @@ namespace wi
 		};
 		void SetMode(Mode param);
 		Mode GetMode();
-		wi::vector<std::string> GetSupportedImageExtensions();
-		wi::vector<std::string> GetSupportedSoundExtensions();
+		ap::vector<std::string> GetSupportedImageExtensions();
+		ap::vector<std::string> GetSupportedSoundExtensions();
 
 		// Order of these must not change as the flags can be serialized!
 		enum class Flags
@@ -66,16 +66,16 @@ namespace wi
 
 		struct ResourceSerializer
 		{
-			wi::vector<Resource> resources;
+			ap::vector<Resource> resources;
 		};
 		// Serializes all resources that are compatible
 		//	Compatible resources are those whose file data is kept around using the IMPORT_RETAIN_FILEDATA flag when loading.
-		void Serialize(wi::Archive& archive, ResourceSerializer& seri);
+		void Serialize(ap::Archive& archive, ResourceSerializer& seri);
 	}
 
 }
 
 template<>
-struct enable_bitmask_operators<wi::resourcemanager::Flags> {
+struct enable_bitmask_operators<ap::resourcemanager::Flags> {
 	static const bool enable = true;
 };

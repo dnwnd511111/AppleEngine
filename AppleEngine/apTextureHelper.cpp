@@ -1,17 +1,17 @@
-#include "wiTextureHelper.h"
-#include "wiRandom.h"
-#include "wiColor.h"
-#include "wiBacklog.h"
-#include "wiSpinLock.h"
-#include "wiTimer.h"
-#include "wiUnorderedMap.h"
+#include "apTextureHelper.h"
+#include "apRandom.h"
+#include "apColor.h"
+#include "apBacklog.h"
+#include "apSpinLock.h"
+#include "apTimer.h"
+#include "apUnorderedMap.h"
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
 // from Utility/samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp.cpp
 extern float samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp(int pixel_i, int pixel_j, int sampleIndex, int sampleDimension);
 
-namespace wi::texturehelper
+namespace ap::texturehelper
 {
 
 	enum HELPERTEXTURES
@@ -24,25 +24,25 @@ namespace wi::texturehelper
 		HELPERTEXTURE_BLUENOISE,
 		HELPERTEXTURE_COUNT
 	};
-	wi::graphics::Texture helperTextures[HELPERTEXTURE_COUNT];
-	wi::unordered_map<unsigned long, wi::graphics::Texture> colorTextures;
-	wi::SpinLock colorlock;
+	ap::graphics::Texture helperTextures[HELPERTEXTURE_COUNT];
+	ap::unordered_map<unsigned long, ap::graphics::Texture> colorTextures;
+	ap::SpinLock colorlock;
 
 	void Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		// Random64x64
 		{
 			uint8_t data[64 * 64 * 4];
 			for (int i = 0; i < arraysize(data); i += 4)
 			{
-				data[i] = wi::random::GetRandom(0, 255);
-				data[i + 1] = wi::random::GetRandom(0, 255);
-				data[i + 2] = wi::random::GetRandom(0, 255);
-				data[i + 3] = wi::random::GetRandom(0, 255);
+				data[i] = ap::random::GetRandom(0, 255);
+				data[i + 1] = ap::random::GetRandom(0, 255);
+				data[i + 2] = ap::random::GetRandom(0, 255);
+				data[i + 3] = ap::random::GetRandom(0, 255);
 			}
 
 			CreateTexture(helperTextures[HELPERTEXTURE_RANDOM64X64], data, 64, 64);
@@ -152,7 +152,7 @@ namespace wi::texturehelper
 			device->SetName(&helperTextures[HELPERTEXTURE_BLUENOISE], "HELPERTEXTURE_BLUENOISE");
 		}
 
-		wi::backlog::post("wi::texturehelper Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::texturehelper Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 	const Texture* getRandom64x64()
@@ -167,7 +167,7 @@ namespace wi::texturehelper
 
 	const Texture* getNormalMapDefault()
 	{
-		return getColor(wi::Color(127, 127, 255, 255));
+		return getColor(ap::Color(127, 127, 255, 255));
 	}
 
 	const Texture* getBlackCubeMap()
@@ -187,20 +187,20 @@ namespace wi::texturehelper
 
 	const Texture* getWhite()
 	{
-		return getColor(wi::Color(255, 255, 255, 255));
+		return getColor(ap::Color(255, 255, 255, 255));
 	}
 
 	const Texture* getBlack()
 	{
-		return getColor(wi::Color(0, 0, 0, 255));
+		return getColor(ap::Color(0, 0, 0, 255));
 	}
 
 	const Texture* getTransparent()
 	{
-		return getColor(wi::Color(0, 0, 0, 0));
+		return getColor(ap::Color(0, 0, 0, 0));
 	}
 
-	const Texture* getColor(wi::Color color)
+	const Texture* getColor(ap::Color color)
 	{
 		colorlock.lock();
 		auto it = colorTextures.find(color.rgba);
@@ -212,7 +212,7 @@ namespace wi::texturehelper
 			return &it->second;
 		}
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		static const int dim = 1;
 		static const int dataLength = dim * dim * 4;
@@ -240,13 +240,13 @@ namespace wi::texturehelper
 	}
 
 
-	bool CreateTexture(wi::graphics::Texture& texture, const uint8_t* data, uint32_t width, uint32_t height, Format format)
+	bool CreateTexture(ap::graphics::Texture& texture, const uint8_t* data, uint32_t width, uint32_t height, Format format)
 	{
 		if (data == nullptr)
 		{
 			return false;
 		}
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		TextureDesc textureDesc;
 		textureDesc.width = width;

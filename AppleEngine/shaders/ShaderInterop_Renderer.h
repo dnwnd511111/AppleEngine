@@ -534,7 +534,7 @@ static const uint OPTION_BIT_STATIC_SKY_HDR = 1 << 13;
 
 struct FrameCB
 {
-	uint		options;							// wi::renderer bool options packed into bitmask
+	uint		options;							// ap::renderer bool options packed into bitmask
 	uint		shadow_cascade_count;
 	float		shadow_kernel_2D;
 	float		shadow_kernel_cube;

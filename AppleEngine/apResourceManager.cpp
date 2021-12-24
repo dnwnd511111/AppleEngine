@@ -1,8 +1,8 @@
-#include "wiResourceManager.h"
-#include "wiRenderer.h"
-#include "wiHelper.h"
-#include "wiTextureHelper.h"
-#include "wiUnorderedMap.h"
+#include "apResourceManager.h"
+#include "apRenderer.h"
+#include "apHelper.h"
+#include "apTextureHelper.h"
+#include "apUnorderedMap.h"
 
 #include "Utility/stb_image.h"
 #include "Utility/tinyddsloader.h"
@@ -12,35 +12,35 @@ extern basist::etc1_global_selector_codebook g_basis_global_codebook;
 #include <algorithm>
 #include <mutex>
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi
+namespace ap
 {
 	struct ResourceInternal
 	{
 		resourcemanager::Flags flags = resourcemanager::Flags::NONE;
-		wi::graphics::Texture texture;
-		wi::audio::Sound sound;
-		wi::vector<uint8_t> filedata;
+		ap::graphics::Texture texture;
+		ap::audio::Sound sound;
+		ap::vector<uint8_t> filedata;
 	};
 
-	const wi::vector<uint8_t>& Resource::GetFileData() const
+	const ap::vector<uint8_t>& Resource::GetFileData() const
 	{
 		const ResourceInternal* resourceinternal = (ResourceInternal*)internal_state.get();
 		return resourceinternal->filedata;
 	}
-	const wi::graphics::Texture& Resource::GetTexture() const
+	const ap::graphics::Texture& Resource::GetTexture() const
 	{
 		const ResourceInternal* resourceinternal = (ResourceInternal*)internal_state.get();
 		return resourceinternal->texture;
 	}
-	const wi::audio::Sound& Resource::GetSound() const
+	const ap::audio::Sound& Resource::GetSound() const
 	{
 		const ResourceInternal* resourceinternal = (ResourceInternal*)internal_state.get();
 		return resourceinternal->sound;
 	}
 
-	void Resource::SetFileData(const wi::vector<uint8_t>& data)
+	void Resource::SetFileData(const ap::vector<uint8_t>& data)
 	{
 		if (internal_state == nullptr)
 		{
@@ -49,7 +49,7 @@ namespace wi
 		ResourceInternal* resourceinternal = (ResourceInternal*)internal_state.get();
 		resourceinternal->filedata = data;
 	}
-	void Resource::SetFileData(wi::vector<uint8_t>&& data)
+	void Resource::SetFileData(ap::vector<uint8_t>&& data)
 	{
 		if (internal_state == nullptr)
 		{
@@ -58,7 +58,7 @@ namespace wi
 		ResourceInternal* resourceinternal = (ResourceInternal*)internal_state.get();
 		resourceinternal->filedata = data;
 	}
-	void Resource::SetTexture(const wi::graphics::Texture& texture)
+	void Resource::SetTexture(const ap::graphics::Texture& texture)
 	{
 		if (internal_state == nullptr)
 		{
@@ -67,7 +67,7 @@ namespace wi
 		ResourceInternal* resourceinternal = (ResourceInternal*)internal_state.get();
 		resourceinternal->texture = texture;
 	}
-	void Resource::SetSound(const wi::audio::Sound& sound)
+	void Resource::SetSound(const ap::audio::Sound& sound)
 	{
 		if (internal_state == nullptr)
 		{
@@ -80,7 +80,7 @@ namespace wi
 	namespace resourcemanager
 	{
 		static std::mutex locker;
-		static wi::unordered_map<std::string, std::weak_ptr<ResourceInternal>> resources;
+		static ap::unordered_map<std::string, std::weak_ptr<ResourceInternal>> resources;
 		static Mode mode = Mode::DISCARD_FILEDATA_AFTER_LOAD;
 
 		void SetMode(Mode param)
@@ -97,7 +97,7 @@ namespace wi
 			IMAGE,
 			SOUND,
 		};
-		static const wi::unordered_map<std::string, DataType> types = {
+		static const ap::unordered_map<std::string, DataType> types = {
 			std::make_pair("BASIS", DataType::IMAGE),
 			std::make_pair("KTX2", DataType::IMAGE),
 			std::make_pair("JPG", DataType::IMAGE),
@@ -109,9 +109,9 @@ namespace wi
 			std::make_pair("WAV", DataType::SOUND),
 			std::make_pair("OGG", DataType::SOUND),
 		};
-		wi::vector<std::string> GetSupportedImageExtensions()
+		ap::vector<std::string> GetSupportedImageExtensions()
 		{
-			wi::vector<std::string> ret;
+			ap::vector<std::string> ret;
 			for (auto& x : types)
 			{
 				if (x.second == DataType::IMAGE)
@@ -121,9 +121,9 @@ namespace wi
 			}
 			return ret;
 		}
-		wi::vector<std::string> GetSupportedSoundExtensions()
+		ap::vector<std::string> GetSupportedSoundExtensions()
 		{
-			wi::vector<std::string> ret;
+			ap::vector<std::string> ret;
 			for (auto& x : types)
 			{
 				if (x.second == DataType::SOUND)
@@ -168,7 +168,7 @@ namespace wi
 
 			if (filedata == nullptr || filesize == 0)
 			{
-				if (!wi::helper::FileRead(name, resource->filedata))
+				if (!ap::helper::FileRead(name, resource->filedata))
 				{
 					resource.reset();
 					return Resource();
@@ -177,7 +177,7 @@ namespace wi
 				filesize = resource->filedata.size();
 			}
 
-			std::string ext = wi::helper::toUpper(wi::helper::GetExtensionFromFileName(name));
+			std::string ext = ap::helper::toUpper(ap::helper::GetExtensionFromFileName(name));
 			DataType type;
 
 			// dynamic type selection:
@@ -199,7 +199,7 @@ namespace wi
 			{
 			case DataType::IMAGE:
 			{
-				GraphicsDevice* device = wi::graphics::GetDevice();
+				GraphicsDevice* device = ap::graphics::GetDevice();
 				if (!ext.compare("KTX2"))
 				{
 					basist::ktx2_transcoder transcoder(&g_basis_global_codebook);
@@ -247,9 +247,9 @@ namespace wi
 									}
 								}
 							}
-							wi::vector<uint8_t*> transcoded_data(transcoded_data_size);
+							ap::vector<uint8_t*> transcoded_data(transcoded_data_size);
 
-							wi::vector<SubresourceData> InitData;
+							ap::vector<SubresourceData> InitData;
 							size_t transcoded_data_offset = 0;
 							for (uint32_t layer = 0; layer < std::max(1u, transcoder.get_layers()); ++layer)
 							{
@@ -332,9 +332,9 @@ namespace wi
 											transcoded_data_size += level_info.m_total_blocks * bytes_per_block;
 										}
 									}
-									wi::vector<uint8_t*> transcoded_data(transcoded_data_size);
+									ap::vector<uint8_t*> transcoded_data(transcoded_data_size);
 
-									wi::vector<SubresourceData> InitData;
+									ap::vector<SubresourceData> InitData;
 									size_t transcoded_data_offset = 0;
 									for (uint32_t mip = 0; mip < desc.mip_levels; ++mip)
 									{
@@ -463,7 +463,7 @@ namespace wi
 							break;
 						}
 
-						wi::vector<SubresourceData> InitData;
+						ap::vector<SubresourceData> InitData;
 						for (uint32_t arrayIndex = 0; arrayIndex < desc.array_size; ++arrayIndex)
 						{
 							for (uint32_t mip = 0; mip < desc.mip_levels; ++mip)
@@ -533,7 +533,7 @@ namespace wi
 								desc.width != 256 ||
 								desc.height != 16)
 							{
-								wi::helper::messageBox("The Dimensions must be 256 x 16 for color grading LUT!", "Error");
+								ap::helper::messageBox("The Dimensions must be 256 x 16 for color grading LUT!", "Error");
 							}
 							else
 							{
@@ -574,7 +574,7 @@ namespace wi
 							desc.layout = ResourceState::SHADER_RESOURCE;
 
 							uint32_t mipwidth = width;
-							wi::vector<SubresourceData> InitData(desc.mip_levels);
+							ap::vector<SubresourceData> InitData(desc.mip_levels);
 							for (uint32_t mip = 0; mip < desc.mip_levels; ++mip)
 							{
 								InitData[mip].data_ptr = rgb; // attention! we don't fill the mips here correctly, just always point to the mip0 data by default. Mip levels will be created using compute shader when needed!
@@ -601,7 +601,7 @@ namespace wi
 			break;
 			case DataType::SOUND:
 			{
-				success = wi::audio::CreateSound(filedata, filesize, &resource->sound);
+				success = ap::audio::CreateSound(filedata, filesize, &resource->sound);
 			}
 			break;
 			};
@@ -625,7 +625,7 @@ namespace wi
 				if (type == DataType::IMAGE && resource->texture.desc.mip_levels > 1
 					&& has_flag(resource->texture.desc.bind_flags, BindFlag::UNORDERED_ACCESS))
 				{
-					wi::renderer::AddDeferredMIPGen(resource->texture, true);
+					ap::renderer::AddDeferredMIPGen(resource->texture, true);
 				}
 
 				Resource retVal;
@@ -658,7 +658,7 @@ namespace wi
 		}
 
 
-		void Serialize(wi::Archive& archive, ResourceSerializer& seri)
+		void Serialize(ap::Archive& archive, ResourceSerializer& seri)
 		{
 			if (archive.IsReadMode())
 			{
@@ -669,12 +669,12 @@ namespace wi
 				{
 					std::string name;
 					Flags flags = Flags::NONE;
-					wi::vector<uint8_t> filedata;
+					ap::vector<uint8_t> filedata;
 				};
-				wi::vector<TempResource> temp_resources;
+				ap::vector<TempResource> temp_resources;
 				temp_resources.resize(serializable_count);
 
-				wi::jobsystem::context ctx;
+				ap::jobsystem::context ctx;
 				std::mutex seri_locker;
 				for (size_t i = 0; i < serializable_count; ++i)
 				{
@@ -689,7 +689,7 @@ namespace wi
 					resource.name = archive.GetSourceDirectory() + resource.name;
 
 					// "Loading" the resource can happen asynchronously to serialization of file data, to improve performance
-					wi::jobsystem::Execute(ctx, [i, &temp_resources, &seri_locker, &seri](wi::jobsystem::JobArgs args) {
+					ap::jobsystem::Execute(ctx, [i, &temp_resources, &seri_locker, &seri](ap::jobsystem::JobArgs args) {
 						auto& tmp_resource = temp_resources[i];
 						auto res = Load(tmp_resource.name, tmp_resource.flags, tmp_resource.filedata.data(), tmp_resource.filedata.size());
 						seri_locker.lock();
@@ -698,7 +698,7 @@ namespace wi
 						});
 				}
 
-				wi::jobsystem::Wait(ctx);
+				ap::jobsystem::Wait(ctx);
 			}
 			else
 			{
@@ -732,7 +732,7 @@ namespace wi
 						if (resource != nullptr && !resource->filedata.empty())
 						{
 							std::string name = it.first;
-							wi::helper::MakePathRelative(archive.GetSourceDirectory(), name);
+							ap::helper::MakePathRelative(archive.GetSourceDirectory(), name);
 
 							archive << name;
 							archive << (uint32_t)resource->flags;

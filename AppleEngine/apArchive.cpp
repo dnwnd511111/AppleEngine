@@ -1,9 +1,9 @@
-#include "wiArchive.h"
-#include "wiHelper.h"
+#include "apArchive.h"
+#include "apHelper.h"
 
 #include <fstream>
 
-namespace wi
+namespace ap
 {
 
 	// this should always be only INCREMENTED and only if a new serialization is implemeted somewhere!
@@ -21,21 +21,21 @@ namespace wi
 	{
 		if (!fileName.empty())
 		{
-			directory = wi::helper::GetDirectoryFromPath(fileName);
+			directory = ap::helper::GetDirectoryFromPath(fileName);
 			if (readMode)
 			{
-				if (wi::helper::FileRead(fileName, DATA))
+				if (ap::helper::FileRead(fileName, DATA))
 				{
 					data_ptr = DATA.data();
 					(*this) >> version;
 					if (version < __archiveVersionBarrier)
 					{
-						wi::helper::messageBox("The archive version (" + std::to_string(version) + ") is no longer supported!", "Error!");
+						ap::helper::messageBox("The archive version (" + std::to_string(version) + ") is no longer supported!", "Error!");
 						Close();
 					}
 					if (version > __archiveVersion)
 					{
-						wi::helper::messageBox("The archive version (" + std::to_string(version) + ") is higher than the program's (" + std::to_string(__archiveVersion) + ")!", "Error!");
+						ap::helper::messageBox("The archive version (" + std::to_string(version) + ") is higher than the program's (" + std::to_string(__archiveVersion) + ")!", "Error!");
 						Close();
 					}
 				}
@@ -87,12 +87,12 @@ namespace wi
 
 	bool Archive::SaveFile(const std::string& fileName)
 	{
-		return wi::helper::FileWrite(fileName, data_ptr, pos);
+		return ap::helper::FileWrite(fileName, data_ptr, pos);
 	}
 
 	bool Archive::SaveHeaderFile(const std::string& fileName, const std::string& dataName)
 	{
-		return wi::helper::Bin2H(data_ptr, pos, fileName, dataName.c_str());
+		return ap::helper::Bin2H(data_ptr, pos, fileName, dataName.c_str());
 	}
 
 	const std::string& Archive::GetSourceDirectory() const

@@ -1,6 +1,6 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiMath.h"
+#include "apMath.h"
 
 #include <memory>
 #include <string>
@@ -9,7 +9,7 @@
 #include <SDL2/SDL.h>
 #endif
 
-namespace wi::audio
+namespace ap::audio
 {
 	void Initialize();
 

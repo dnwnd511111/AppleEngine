@@ -1,9 +1,9 @@
-#include "wiSpriteFont.h"
-#include "wiHelper.h"
+#include "apSpriteFont.h"
+#include "apHelper.h"
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi
+namespace ap
 {
 
 	void SpriteFont::FixedUpdate()
@@ -21,25 +21,25 @@ namespace wi
 	{
 		if (IsHidden())
 			return;
-		wi::font::Draw(text, params, cmd);
+		ap::font::Draw(text, params, cmd);
 	}
 
 	float SpriteFont::TextWidth() const
 	{
-		return wi::font::TextWidth(text, params);
+		return ap::font::TextWidth(text, params);
 	}
 	float SpriteFont::TextHeight() const
 	{
-		return wi::font::TextHeight(text, params);
+		return ap::font::TextHeight(text, params);
 	}
 
 	void SpriteFont::SetText(const std::string& value)
 	{
-		wi::helper::StringConvert(value, text);
+		ap::helper::StringConvert(value, text);
 	}
 	void SpriteFont::SetText(std::string&& value)
 	{
-		wi::helper::StringConvert(value, text);
+		ap::helper::StringConvert(value, text);
 	}
 	void SpriteFont::SetText(const std::wstring& value)
 	{
@@ -53,7 +53,7 @@ namespace wi
 	std::string SpriteFont::GetTextA() const
 	{
 		std::string retVal;
-		wi::helper::StringConvert(text, retVal);
+		ap::helper::StringConvert(text, retVal);
 		return retVal;
 	}
 	const std::wstring& SpriteFont::GetText() const

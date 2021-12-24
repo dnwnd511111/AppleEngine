@@ -1,11 +1,11 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiEnums.h"
-#include "wiColor.h"
-#include "wiCanvas.h"
+#include "apGraphicsDevice.h"
+#include "apEnums.h"
+#include "apColor.h"
+#include "apCanvas.h"
 
-namespace wi::image
+namespace ap::image
 {
 	// Do not alter order or value because it is bound to lua manually!
 	enum STENCILMODE
@@ -83,13 +83,13 @@ namespace wi::image
 		uint8_t stencilRef = 0;
 		STENCILMODE stencilComp = STENCILMODE_DISABLED;
 		STENCILREFMODE stencilRefMode = STENCILREFMODE_ALL;
-		wi::enums::BLENDMODE blendFlag = wi::enums::BLENDMODE_ALPHA;
+		ap::enums::BLENDMODE blendFlag = ap::enums::BLENDMODE_ALPHA;
 		SAMPLEMODE sampleFlag = SAMPLEMODE_MIRROR;
 		QUALITY quality = QUALITY_LINEAR;
 
-		const wi::graphics::Texture* maskMap = nullptr;
+		const ap::graphics::Texture* maskMap = nullptr;
 		// Generic texture
-		constexpr void setMaskMap(const wi::graphics::Texture* tex) { maskMap = tex; }
+		constexpr void setMaskMap(const ap::graphics::Texture* tex) { maskMap = tex; }
 
 		constexpr bool isDrawRectEnabled() const { return _flags & DRAWRECT; }
 		constexpr bool isDrawRect2Enabled() const { return _flags & DRAWRECT2; }
@@ -111,7 +111,7 @@ namespace wi::image
 		// enable full screen override. It just draws texture onto the full screen, disabling any other setup except sampler and stencil)
 		constexpr void enableFullScreen() { _flags |= FULLSCREEN; }
 		// enable background blur, which samples a background screen texture on a specified mip level on transparent areas instead of alpha blending
-		//	the background tex should be bound with wi::image::SetBackground() beforehand
+		//	the background tex should be bound with ap::image::SetBackground() beforehand
 		constexpr void enableBackground() { _flags |= BACKGROUND; }
 		// enable HDR10 output mapping, if this image can be interpreted in linear space and converted to HDR10 display format
 		//	this only works together with the enableFullScreen() override!
@@ -144,13 +144,13 @@ namespace wi::image
 
 
 	// Set canvas to handle DPI-aware image rendering (applied to all image rendering commands on this CommandList)
-	void SetCanvas(const wi::Canvas& canvas, wi::graphics::CommandList cmd);
+	void SetCanvas(const ap::Canvas& canvas, ap::graphics::CommandList cmd);
 
 	// Set a background texture (applied to all image rendering commands on this CommandList that used enableBackground())
-	void SetBackground(const wi::graphics::Texture& texture, wi::graphics::CommandList cmd);
+	void SetBackground(const ap::graphics::Texture& texture, ap::graphics::CommandList cmd);
 
 	// Draw the specified texture with the specified parameters
-	void Draw(const wi::graphics::Texture* texture, const Params& params, wi::graphics::CommandList cmd);
+	void Draw(const ap::graphics::Texture* texture, const Params& params, ap::graphics::CommandList cmd);
 
 	// Initializes the image renderer
 	void Initialize();

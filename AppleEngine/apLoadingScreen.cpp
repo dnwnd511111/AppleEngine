@@ -1,17 +1,17 @@
-#include "wiLoadingScreen.h"
-#include "wiApplication.h"
+#include "apLoadingScreen.h"
+#include "apApplication.h"
 
 #include <thread>
 
-namespace wi
+namespace ap
 {
 
 	bool LoadingScreen::isActive()
 	{
-		return wi::jobsystem::IsBusy(ctx);
+		return ap::jobsystem::IsBusy(ctx);
 	}
 
-	void LoadingScreen::addLoadingFunction(std::function<void(wi::jobsystem::JobArgs)> loadingFunction)
+	void LoadingScreen::addLoadingFunction(std::function<void(ap::jobsystem::JobArgs)> loadingFunction)
 	{
 		if (loadingFunction != nullptr)
 		{
@@ -19,9 +19,9 @@ namespace wi
 		}
 	}
 
-	void LoadingScreen::addLoadingComponent(RenderPath* component, Application* main, float fadeSeconds, wi::Color fadeColor)
+	void LoadingScreen::addLoadingComponent(RenderPath* component, Application* main, float fadeSeconds, ap::Color fadeColor)
 	{
-		addLoadingFunction([=](wi::jobsystem::JobArgs args) {
+		addLoadingFunction([=](ap::jobsystem::JobArgs args) {
 			component->Load();
 			});
 		onFinished([=] {
@@ -39,10 +39,10 @@ namespace wi
 	{
 		for (auto& x : tasks)
 		{
-			wi::jobsystem::Execute(ctx, x);
+			ap::jobsystem::Execute(ctx, x);
 		}
 		std::thread([this]() {
-			wi::jobsystem::Wait(ctx);
+			ap::jobsystem::Wait(ctx);
 			finish();
 			}).detach();
 

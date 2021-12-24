@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace wi::random
+namespace ap::random
 {
 	int GetRandom(int minValue, int maxValue);
 	int GetRandom(int maxValue);

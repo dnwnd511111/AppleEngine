@@ -1,31 +1,31 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiPrimitive.h"
-#include "wiCanvas.h"
-#include "wiVector.h"
-#include "wiColor.h"
-#include "wiScene.h"
-#include "wiSprite.h"
-#include "wiSpriteFont.h"
+#include "apGraphicsDevice.h"
+#include "apPrimitive.h"
+#include "apCanvas.h"
+#include "apVector.h"
+#include "apColor.h"
+#include "apScene.h"
+#include "apSprite.h"
+#include "apSpriteFont.h"
 
 #include <string>
 #include <functional>
 
-namespace wi::gui
+namespace ap::gui
 {
 	class Widget;
 
 	class GUI
 	{
 	private:
-		wi::vector<Widget*> widgets;
+		ap::vector<Widget*> widgets;
 		bool focus = false;
 		bool visible = true;
 	public:
 
-		void Update(const wi::Canvas& canvas, float dt);
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const;
+		void Update(const ap::Canvas& canvas, float dt);
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const;
 
 		void AddWidget(Widget* widget);
 		void RemoveWidget(Widget* widget);
@@ -47,7 +47,7 @@ namespace wi::gui
 		float fValue;
 		bool bValue;
 		int iValue;
-		wi::Color color;
+		ap::Color color;
 		std::string sValue;
 		uint64_t userdata;
 	};
@@ -61,7 +61,7 @@ namespace wi::gui
 		WIDGETSTATE_COUNT,
 	};
 
-	class Widget : public wi::scene::TransformComponent
+	class Widget : public ap::scene::TransformComponent
 	{
 	private:
 		int tooltipTimer = 0;
@@ -94,23 +94,23 @@ namespace wi::gui
 		virtual void SetVisible(bool val);
 		bool IsVisible() const;
 		// last param default: set color for all states
-		void SetColor(wi::Color color, WIDGETSTATE state = WIDGETSTATE_COUNT);
-		wi::Color GetColor() const;
+		void SetColor(ap::Color color, WIDGETSTATE state = WIDGETSTATE_COUNT);
+		ap::Color GetColor() const;
 		// last param default: set color for all states
-		void SetImage(wi::Resource textureResource, WIDGETSTATE state = WIDGETSTATE_COUNT);
+		void SetImage(ap::Resource textureResource, WIDGETSTATE state = WIDGETSTATE_COUNT);
 
-		virtual void Update(const wi::Canvas& canvas, float dt);
-		virtual void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const = 0;
-		virtual void RenderTooltip(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const;
+		virtual void Update(const ap::Canvas& canvas, float dt);
+		virtual void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const = 0;
+		virtual void RenderTooltip(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const;
 
-		wi::Sprite sprites[WIDGETSTATE_COUNT];
-		wi::SpriteFont font;
+		ap::Sprite sprites[WIDGETSTATE_COUNT];
+		ap::SpriteFont font;
 
 		XMFLOAT3 translation = XMFLOAT3(0, 0, 0);
 		XMFLOAT3 scale = XMFLOAT3(1, 1, 1);
 
-		wi::primitive::Hitbox2D hitBox;
-		wi::graphics::Rect scissorRect;
+		ap::primitive::Hitbox2D hitBox;
+		ap::graphics::Rect scissorRect;
 
 		Widget* parent = nullptr;
 		void AttachTo(Widget* parent);
@@ -119,8 +119,8 @@ namespace wi::gui
 		void Activate();
 		void Deactivate();
 
-		void ApplyScissor(const wi::Canvas& canvas, const wi::graphics::Rect rect, wi::graphics::CommandList cmd, bool constrain_to_parent = true) const;
-		wi::primitive::Hitbox2D GetPointerHitbox() const;
+		void ApplyScissor(const ap::Canvas& canvas, const ap::graphics::Rect rect, ap::graphics::CommandList cmd, bool constrain_to_parent = true) const;
+		ap::primitive::Hitbox2D GetPointerHitbox() const;
 
 		bool priority_change = true;
 		uint32_t priority = 0;
@@ -140,8 +140,8 @@ namespace wi::gui
 	public:
 		void Create(const std::string& name);
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void OnClick(std::function<void(EventArgs args)> func);
 		void OnDragStart(std::function<void(EventArgs args)> func);
@@ -156,8 +156,8 @@ namespace wi::gui
 	public:
 		void Create(const std::string& name);
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 	};
 
 	// Text input box
@@ -165,12 +165,12 @@ namespace wi::gui
 	{
 	protected:
 		std::function<void(EventArgs args)> onInputAccepted;
-		static wi::SpriteFont font_input;
+		static ap::SpriteFont font_input;
 
 	public:
 		void Create(const std::string& name);
 
-		wi::SpriteFont font_description;
+		ap::SpriteFont font_description;
 
 		void SetValue(const std::string& newValue);
 		void SetValue(int newValue);
@@ -183,8 +183,8 @@ namespace wi::gui
 		static void AddInput(const char inputChar);
 		static void DeleteFromInput();
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void OnInputAccepted(std::function<void(EventArgs args)> func);
 	};
@@ -206,15 +206,15 @@ namespace wi::gui
 		// step : slider step size
 		void Create(float start, float end, float defaultValue, float step, const std::string& name);
 
-		wi::Sprite sprites_knob[WIDGETSTATE_COUNT];
+		ap::Sprite sprites_knob[WIDGETSTATE_COUNT];
 
 		void SetValue(float value);
 		float GetValue() const;
 		void SetRange(float start, float end);
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
-		void RenderTooltip(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
+		void RenderTooltip(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void OnSlide(std::function<void(EventArgs args)> func);
 	};
@@ -228,13 +228,13 @@ namespace wi::gui
 	public:
 		void Create(const std::string& name);
 
-		wi::Sprite sprites_check[WIDGETSTATE_COUNT];
+		ap::Sprite sprites_check[WIDGETSTATE_COUNT];
 
 		void SetCheck(bool value);
 		bool GetCheck() const;
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void OnClick(std::function<void(EventArgs args)> func);
 	};
@@ -267,7 +267,7 @@ namespace wi::gui
 			std::string name;
 			uint64_t userdata = 0;
 		};
-		wi::vector<Item> items;
+		ap::vector<Item> items;
 
 		float GetItemOffset(int index) const;
 	public:
@@ -286,8 +286,8 @@ namespace wi::gui
 		uint64_t GetItemUserData(int index) const;
 		size_t GetItemCount() const { return items.size(); }
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void OnSelect(std::function<void(EventArgs args)> func);
 	};
@@ -302,7 +302,7 @@ namespace wi::gui
 		Button resizeDragger_BottomRight;
 		Button moveDragger;
 		Label label;
-		wi::vector<Widget*> widgets;
+		ap::vector<Widget*> widgets;
 		bool minimized = false;
 	public:
 		void Create(const std::string& name, bool window_controls = true);
@@ -311,9 +311,9 @@ namespace wi::gui
 		void RemoveWidget(Widget* widget);
 		void RemoveWidgets();
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
-		void RenderTooltip(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
+		void RenderTooltip(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void SetVisible(bool value) override;
 		void SetEnabled(bool value) override;
@@ -348,11 +348,11 @@ namespace wi::gui
 	public:
 		void Create(const std::string& name, bool window_controls = true);
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
-		wi::Color GetPickColor() const;
-		void SetPickColor(wi::Color value);
+		ap::Color GetPickColor() const;
+		void SetPickColor(ap::Color value);
 
 		void OnColorChanged(std::function<void(EventArgs args)> func);
 	};
@@ -388,11 +388,11 @@ namespace wi::gui
 		float scrollbar_height = 0;
 		float scrollbar_value = 0;
 
-		wi::primitive::Hitbox2D GetHitbox_ListArea() const;
-		wi::primitive::Hitbox2D GetHitbox_Item(int visible_count, int level) const;
-		wi::primitive::Hitbox2D GetHitbox_ItemOpener(int visible_count, int level) const;
+		ap::primitive::Hitbox2D GetHitbox_ListArea() const;
+		ap::primitive::Hitbox2D GetHitbox_Item(int visible_count, int level) const;
+		ap::primitive::Hitbox2D GetHitbox_ItemOpener(int visible_count, int level) const;
 
-		wi::vector<Item> items;
+		ap::vector<Item> items;
 
 		float GetItemOffset(int index) const;
 	public:
@@ -408,8 +408,8 @@ namespace wi::gui
 		int GetItemCount() const { return (int)items.size(); }
 		const Item& GetItem(int index) const;
 
-		void Update(const wi::Canvas& canvas, float dt) override;
-		void Render(const wi::Canvas& canvas, wi::graphics::CommandList cmd) const override;
+		void Update(const ap::Canvas& canvas, float dt) override;
+		void Render(const ap::Canvas& canvas, ap::graphics::CommandList cmd) const override;
 
 		void OnSelect(std::function<void(EventArgs args)> func);
 	};

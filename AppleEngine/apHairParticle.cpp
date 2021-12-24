@@ -1,23 +1,23 @@
-#include "wiHairParticle.h"
-#include "wiRenderer.h"
-#include "wiResourceManager.h"
-#include "wiPrimitive.h"
-#include "wiRandom.h"
-#include "wiArchive.h"
+#include "apHairParticle.h"
+#include "apRenderer.h"
+#include "apResourceManager.h"
+#include "apPrimitive.h"
+#include "apRandom.h"
+#include "apArchive.h"
 #include "shaders/ShaderInterop.h"
-#include "wiTextureHelper.h"
-#include "wiScene.h"
+#include "apTextureHelper.h"
+#include "apScene.h"
 #include "shaders/ShaderInterop_HairParticle.h"
-#include "wiBacklog.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
+#include "apBacklog.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
 
-using namespace wi::primitive;
-using namespace wi::graphics;
-using namespace wi::scene;
-using namespace wi::enums;
+using namespace ap::primitive;
+using namespace ap::graphics;
+using namespace ap::scene;
+using namespace ap::enums;
 
-namespace wi
+namespace ap
 {
 	static Shader vs;
 	static Shader ps_prepass;
@@ -49,7 +49,7 @@ namespace wi
 		aabb = AABB(_min, _max);
 		aabb = aabb.transform(world);
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		if (_flags & REBUILD_BUFFERS || !constantBuffer.IsValid() || (strandCount * segmentCount) != simulationBuffer.GetDesc().size / sizeof(PatchSimulationData))
 		{
@@ -96,7 +96,7 @@ namespace wi
 				bd.format = Format::R32_UINT;
 				bd.stride = sizeof(uint);
 				bd.size = bd.stride * 6 * particleCount;
-				wi::vector<uint> primitiveData(6 * particleCount);
+				ap::vector<uint> primitiveData(6 * particleCount);
 				for (uint particleID = 0; particleID < particleCount; ++particleID)
 				{
 					uint v0 = particleID * 4;
@@ -151,11 +151,11 @@ namespace wi
 
 			if (!vertex_lengths.empty())
 			{
-				wi::vector<uint8_t> ulengths;
+				ap::vector<uint8_t> ulengths;
 				ulengths.reserve(vertex_lengths.size());
 				for (auto& x : vertex_lengths)
 				{
-					ulengths.push_back(uint8_t(wi::math::Clamp(x, 0, 1) * 255.0f));
+					ulengths.push_back(uint8_t(ap::math::Clamp(x, 0, 1) * 255.0f));
 				}
 
 				bd.misc_flags = ResourceMiscFlag::NONE;
@@ -234,7 +234,7 @@ namespace wi
 			return;
 		}
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		device->EventBegin("HairParticle - UpdateGPU", cmd);
 
 		TextureDesc desc;
@@ -337,26 +337,26 @@ namespace wi
 		regenerate_frame = false;
 	}
 
-	void HairParticleSystem::Draw(const MaterialComponent& material, wi::enums::RENDERPASS renderPass, CommandList cmd) const
+	void HairParticleSystem::Draw(const MaterialComponent& material, ap::enums::RENDERPASS renderPass, CommandList cmd) const
 	{
 		if (strandCount == 0 || !constantBuffer.IsValid())
 		{
 			return;
 		}
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		device->EventBegin("HairParticle - Draw", cmd);
 
 		device->BindStencilRef(STENCILREF_DEFAULT, cmd);
 
-		if (wi::renderer::IsWireRender())
+		if (ap::renderer::IsWireRender())
 		{
 			if (renderPass == RENDERPASS_PREPASS)
 			{
 				return;
 			}
 			device->BindPipelineState(&PSO_wire, cmd);
-			device->BindResource(wi::texturehelper::getWhite(), 0, cmd);
+			device->BindResource(ap::texturehelper::getWhite(), 0, cmd);
 		}
 		else
 		{
@@ -379,12 +379,12 @@ namespace wi
 	}
 
 
-	void HairParticleSystem::Serialize(wi::Archive& archive, wi::ecs::EntitySerializer& seri)
+	void HairParticleSystem::Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri)
 	{
 		if (archive.IsReadMode())
 		{
 			archive >> _flags;
-			wi::ecs::SerializeEntity(archive, meshID, seri);
+			ap::ecs::SerializeEntity(archive, meshID, seri);
 			archive >> strandCount;
 			archive >> segmentCount;
 			archive >> randomSeed;
@@ -413,7 +413,7 @@ namespace wi
 		else
 		{
 			archive << _flags;
-			wi::ecs::SerializeEntity(archive, meshID, seri);
+			ap::ecs::SerializeEntity(archive, meshID, seri);
 			archive << strandCount;
 			archive << segmentCount;
 			archive << randomSeed;
@@ -439,16 +439,16 @@ namespace wi
 	{
 		void LoadShaders()
 		{
-			wi::renderer::LoadShader(ShaderStage::VS, vs, "hairparticleVS.cso");
+			ap::renderer::LoadShader(ShaderStage::VS, vs, "hairparticleVS.cso");
 
-			wi::renderer::LoadShader(ShaderStage::PS, ps_simple, "hairparticlePS_simple.cso");
-			wi::renderer::LoadShader(ShaderStage::PS, ps_prepass, "hairparticlePS_prepass.cso");
-			wi::renderer::LoadShader(ShaderStage::PS, ps, "hairparticlePS.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, ps_simple, "hairparticlePS_simple.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, ps_prepass, "hairparticlePS_prepass.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, ps, "hairparticlePS.cso");
 
-			wi::renderer::LoadShader(ShaderStage::CS, cs_simulate, "hairparticle_simulateCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, cs_finishUpdate, "hairparticle_finishUpdateCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, cs_simulate, "hairparticle_simulateCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, cs_finishUpdate, "hairparticle_finishUpdateCS.cso");
 
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			for (int i = 0; i < RENDERPASS_COUNT; ++i)
 			{
@@ -493,7 +493,7 @@ namespace wi
 
 	void HairParticleSystem::Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
 		RasterizerState rsd;
 		rsd.fill_mode = FillMode::SOLID;
@@ -559,9 +559,9 @@ namespace wi
 		bld.alpha_to_coverage_enable = false;
 		bs = bld;
 
-		static wi::eventhandler::Handle handle = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { HairParticleSystem_Internal::LoadShaders(); });
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { HairParticleSystem_Internal::LoadShaders(); });
 		HairParticleSystem_Internal::LoadShaders();
 
-		wi::backlog::post("wi::HairParticleSystem Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::HairParticleSystem Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 }

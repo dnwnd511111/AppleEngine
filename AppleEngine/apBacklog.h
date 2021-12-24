@@ -1,11 +1,11 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiCanvas.h"
+#include "apGraphicsDevice.h"
+#include "apCanvas.h"
 
 #include <string>
 
-namespace wi::backlog
+namespace ap::backlog
 {
 	// Do not modify the order, as this is exposed to LUA scripts as int!
 	enum class LogLevel
@@ -18,8 +18,8 @@ namespace wi::backlog
 
 	void Toggle();
 	void Scroll(int direction);
-	void Update(const wi::Canvas& canvas, float dt = 1.0f / 60.0f);
-	void Draw(const wi::Canvas& canvas, wi::graphics::CommandList cmd);
+	void Update(const ap::Canvas& canvas, float dt = 1.0f / 60.0f);
+	void Draw(const ap::Canvas& canvas, ap::graphics::CommandList cmd);
 
 	std::string getText();
 	void clear();
@@ -33,7 +33,7 @@ namespace wi::backlog
 
 	bool isActive();
 
-	void setBackground(wi::graphics::Texture* texture);
+	void setBackground(ap::graphics::Texture* texture);
 	void setFontSize(int value);
 	void setFontRowspacing(float value);
 

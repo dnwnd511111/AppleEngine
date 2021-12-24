@@ -1,24 +1,24 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphicsDevice.h"
-#include "wiColor.h"
+#include "apGraphicsDevice.h"
+#include "apColor.h"
 
-namespace wi::texturehelper
+namespace ap::texturehelper
 {
 	void Initialize();
 
-	const wi::graphics::Texture* getRandom64x64();
-	const wi::graphics::Texture* getColorGradeDefault();
-	const wi::graphics::Texture* getNormalMapDefault();
-	const wi::graphics::Texture* getBlackCubeMap();
-	const wi::graphics::Texture* getUINT4();
-	const wi::graphics::Texture* getBlueNoise();
+	const ap::graphics::Texture* getRandom64x64();
+	const ap::graphics::Texture* getColorGradeDefault();
+	const ap::graphics::Texture* getNormalMapDefault();
+	const ap::graphics::Texture* getBlackCubeMap();
+	const ap::graphics::Texture* getUINT4();
+	const ap::graphics::Texture* getBlueNoise();
 
-	const wi::graphics::Texture* getWhite();
-	const wi::graphics::Texture* getBlack();
-	const wi::graphics::Texture* getTransparent();
-	const wi::graphics::Texture* getColor(wi::Color color);
+	const ap::graphics::Texture* getWhite();
+	const ap::graphics::Texture* getBlack();
+	const ap::graphics::Texture* getTransparent();
+	const ap::graphics::Texture* getColor(ap::Color color);
 
-	bool CreateTexture(wi::graphics::Texture& texture, const uint8_t* data, uint32_t width, uint32_t height, wi::graphics::Format format = wi::graphics::Format::R8G8B8A8_UNORM);
+	bool CreateTexture(ap::graphics::Texture& texture, const uint8_t* data, uint32_t width, uint32_t height, ap::graphics::Format format = ap::graphics::Format::R8G8B8A8_UNORM);
 };
 

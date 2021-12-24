@@ -12,7 +12,7 @@
 #include <unordered_map>
 #endif // WI_UNORDERED_MAP_TYPE
 
-namespace wi
+namespace ap
 {
 	template<typename K, typename V>
 #if WI_UNORDERED_MAP_TYPE == 1

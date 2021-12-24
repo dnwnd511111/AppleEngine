@@ -1,10 +1,10 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiPlatform.h"
-#include "wiColor.h"
-#include "wiVector.h"
+#include "apPlatform.h"
+#include "apColor.h"
+#include "apVector.h"
 
-namespace wi::input
+namespace ap::input
 {
 	// Do not alter order as it is bound to lua manually!
 	enum BUTTON
@@ -103,14 +103,14 @@ namespace wi::input
 	{
 		float vibration_left = 0;	// left vibration motor (0: no vibration, 1: maximum vibration)
 		float vibration_right = 0;	// right vibration motor (0: no vibration, 1: maximum vibration)
-		wi::Color led_color;			// led color
+		ap::Color led_color;			// led color
 	};
 
 	// call once at app start
 	void Initialize();
 
 	// call once per frame
-	void Update(wi::platform::window_type window);
+	void Update(ap::platform::window_type window);
 
 	const KeyboardState& GetKeyboardState();
 	const MouseState& GetMouseState();
@@ -144,7 +144,7 @@ namespace wi::input
 		// current position of touch
 		XMFLOAT2 pos;
 	};
-	const wi::vector<Touch>& GetTouches();
+	const ap::vector<Touch>& GetTouches();
 
 };
 

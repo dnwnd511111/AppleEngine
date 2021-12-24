@@ -1,8 +1,8 @@
 #pragma once
-#include "wiRenderPath3D.h"
-#include "wiVector.h"
+#include "apRenderPath3D.h"
+#include "apVector.h"
 
-namespace wi
+namespace ap
 {
 
 	class RenderPath3D_PathTracing :
@@ -11,27 +11,27 @@ namespace wi
 	protected:
 		int sam = -1;
 		int target = 1024;
-		wi::graphics::Texture traceResult;
+		ap::graphics::Texture traceResult;
 
-		wi::vector<uint8_t> texturedata_src;
-		wi::vector<uint8_t> texturedata_dst;
-		wi::vector<uint8_t> texturedata_albedo;
-		wi::vector<uint8_t> texturedata_normal;
-		wi::graphics::Texture denoiserAlbedo;
-		wi::graphics::Texture denoiserNormal;
-		wi::graphics::Texture denoiserResult;
-		wi::jobsystem::context denoiserContext;
+		ap::vector<uint8_t> texturedata_src;
+		ap::vector<uint8_t> texturedata_dst;
+		ap::vector<uint8_t> texturedata_albedo;
+		ap::vector<uint8_t> texturedata_normal;
+		ap::graphics::Texture denoiserAlbedo;
+		ap::graphics::Texture denoiserNormal;
+		ap::graphics::Texture denoiserResult;
+		ap::jobsystem::context denoiserContext;
 
-		wi::graphics::RenderPass renderpass_debugbvh;
+		ap::graphics::RenderPass renderpass_debugbvh;
 
 		void ResizeBuffers() override;
 
 	public:
-		const wi::graphics::Texture* GetDepthStencil() const override { return nullptr; };
+		const ap::graphics::Texture* GetDepthStencil() const override { return nullptr; };
 
 		void Update(float dt) override;
 		void Render() const override;
-		void Compose(wi::graphics::CommandList cmd) const override;
+		void Compose(ap::graphics::CommandList cmd) const override;
 
 		int getCurrentSampleCount() const { return sam; }
 		void setTargetSampleCount(int value) { target = value; }

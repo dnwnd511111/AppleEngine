@@ -23,7 +23,7 @@
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 
-namespace wi::math
+namespace ap::math
 {
 	static constexpr XMFLOAT4X4 IDENTITY_MATRIX = XMFLOAT4X4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 

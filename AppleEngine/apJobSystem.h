@@ -3,7 +3,7 @@
 #include <functional>
 #include <atomic>
 
-namespace wi::jobsystem
+namespace ap::jobsystem
 {
 	void Initialize(uint32_t maxThreadCount = ~0u);
 

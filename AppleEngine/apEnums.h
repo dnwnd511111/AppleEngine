@@ -1,6 +1,6 @@
 #pragma once
 
-namespace wi::enums
+namespace ap::enums
 {
 	// Common blendmodes used across multiple systems
 	enum BLENDMODE

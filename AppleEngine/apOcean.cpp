@@ -1,19 +1,19 @@
-#include "wiOcean.h"
-#include "wiRenderer.h"
-#include "wiResourceManager.h"
+#include "apOcean.h"
+#include "apRenderer.h"
+#include "apResourceManager.h"
 #include "shaders/ShaderInterop_Ocean.h"
-#include "wiScene.h"
-#include "wiBacklog.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
-#include "wiVector.h"
+#include "apScene.h"
+#include "apBacklog.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
+#include "apVector.h"
 
 #include <algorithm>
 
-using namespace wi::graphics;
-using namespace wi::scene;
+using namespace ap::graphics;
+using namespace ap::scene;
 
-namespace wi
+namespace ap
 {
 	namespace ocean_internal
 	{
@@ -31,22 +31,22 @@ namespace wi
 
 		PipelineState PSO, PSO_wire;
 
-		wi::fftgenerator::CSFFT512x512_Plan m_fft_plan;
+		ap::fftgenerator::CSFFT512x512_Plan m_fft_plan;
 
 
 		void LoadShaders()
 		{
-			wi::renderer::LoadShader(ShaderStage::CS, updateSpectrumCS, "oceanSimulatorCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, updateDisplacementMapCS, "oceanUpdateDisplacementMapCS.cso");
-			wi::renderer::LoadShader(ShaderStage::CS, updateGradientFoldingCS, "oceanUpdateGradientFoldingCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, updateSpectrumCS, "oceanSimulatorCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, updateDisplacementMapCS, "oceanUpdateDisplacementMapCS.cso");
+			ap::renderer::LoadShader(ShaderStage::CS, updateGradientFoldingCS, "oceanUpdateGradientFoldingCS.cso");
 
-			wi::renderer::LoadShader(ShaderStage::VS, oceanSurfVS, "oceanSurfaceVS.cso");
+			ap::renderer::LoadShader(ShaderStage::VS, oceanSurfVS, "oceanSurfaceVS.cso");
 
-			wi::renderer::LoadShader(ShaderStage::PS, oceanSurfPS, "oceanSurfacePS.cso");
-			wi::renderer::LoadShader(ShaderStage::PS, wireframePS, "oceanSurfaceSimplePS.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, oceanSurfPS, "oceanSurfacePS.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, wireframePS, "oceanSurfaceSimplePS.cso");
 
 
-			GraphicsDevice* device = wi::graphics::GetDevice();
+			GraphicsDevice* device = ap::graphics::GetDevice();
 
 			{
 				PipelineStateDesc desc;
@@ -104,12 +104,12 @@ namespace wi
 
 	void Ocean::Create(const OceanParameters& params)
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		// Height map H(0)
 		int height_map_size = (params.dmap_dim + 4) * (params.dmap_dim + 1);
-		wi::vector<XMFLOAT2> h0_data(height_map_size);
-		wi::vector<float> omega_data(height_map_size);
+		ap::vector<XMFLOAT2> h0_data(height_map_size);
+		ap::vector<float> omega_data(height_map_size);
 		initHeightMap(params, h0_data.data(), omega_data.data());
 
 		int hmap_dim = params.dmap_dim;
@@ -119,7 +119,7 @@ namespace wi
 		int output_size = hmap_dim * hmap_dim;
 
 		// For filling the buffer with zeroes.
-		wi::vector<char> zero_data(3 * output_size * sizeof(float) * 2);
+		ap::vector<char> zero_data(3 * output_size * sizeof(float) * 2);
 		std::fill(zero_data.begin(), zero_data.end(), 0);
 
 		GPUBufferDesc buf_desc;
@@ -252,7 +252,7 @@ namespace wi
 
 	void Ocean::UpdateDisplacementMap(const OceanParameters& params, CommandList cmd) const
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		device->EventBegin("Ocean Simulation", cmd);
 
@@ -360,7 +360,7 @@ namespace wi
 		// Unbind
 
 
-		wi::renderer::GenerateMipChain(gradientMap, wi::renderer::MIPGENFILTER_LINEAR, cmd);
+		ap::renderer::GenerateMipChain(gradientMap, ap::renderer::MIPGENFILTER_LINEAR, cmd);
 
 		device->EventEnd(cmd);
 	}
@@ -368,11 +368,11 @@ namespace wi
 
 	void Ocean::Render(const CameraComponent& camera, const OceanParameters& params, CommandList cmd) const
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		device->EventBegin("Ocean Rendering", cmd);
 
-		bool wire = wi::renderer::IsWireRender();
+		bool wire = ap::renderer::IsWireRender();
 
 		if (wire)
 		{
@@ -408,9 +408,9 @@ namespace wi
 
 	void Ocean::Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		RasterizerState ras_desc;
 		ras_desc.fill_mode = FillMode::SOLID;
@@ -449,13 +449,13 @@ namespace wi
 		blendState = blend_desc;
 
 
-		static wi::eventhandler::Handle handle = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); wi::fftgenerator::LoadShaders(); });
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); ap::fftgenerator::LoadShaders(); });
 
 		LoadShaders();
-		wi::fftgenerator::LoadShaders();
+		ap::fftgenerator::LoadShaders();
 		fft512x512_create_plan(m_fft_plan, 3);
 
-		wi::backlog::post("wi::Ocean Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::Ocean Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 	const Texture* Ocean::getDisplacementMap() const

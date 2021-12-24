@@ -1,14 +1,14 @@
-#include "wiGPUSortLib.h"
-#include "wiRenderer.h"
-#include "wiResourceManager.h"
+#include "apGPUSortLib.h"
+#include "apRenderer.h"
+#include "apResourceManager.h"
 #include "shaders/ShaderInterop_GPUSortLib.h"
-#include "wiEventHandler.h"
-#include "wiTimer.h"
-#include "wiBacklog.h"
+#include "apEventHandler.h"
+#include "apTimer.h"
+#include "apBacklog.h"
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi::gpusortlib
+namespace ap::gpusortlib
 {
 	static GPUBuffer indirectBuffer;
 	static Shader kickoffSortCS;
@@ -19,28 +19,28 @@ namespace wi::gpusortlib
 
 	void LoadShaders()
 	{
-		wi::renderer::LoadShader(ShaderStage::CS, kickoffSortCS, "gpusortlib_kickoffSortCS.cso");
-		wi::renderer::LoadShader(ShaderStage::CS, sortCS, "gpusortlib_sortCS.cso");
-		wi::renderer::LoadShader(ShaderStage::CS, sortInnerCS, "gpusortlib_sortInnerCS.cso");
-		wi::renderer::LoadShader(ShaderStage::CS, sortStepCS, "gpusortlib_sortStepCS.cso");
+		ap::renderer::LoadShader(ShaderStage::CS, kickoffSortCS, "gpusortlib_kickoffSortCS.cso");
+		ap::renderer::LoadShader(ShaderStage::CS, sortCS, "gpusortlib_sortCS.cso");
+		ap::renderer::LoadShader(ShaderStage::CS, sortInnerCS, "gpusortlib_sortInnerCS.cso");
+		ap::renderer::LoadShader(ShaderStage::CS, sortStepCS, "gpusortlib_sortStepCS.cso");
 
 	}
 
 	void Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
 		GPUBufferDesc bd;
 		bd.usage = Usage::DEFAULT;
 		bd.bind_flags = BindFlag::UNORDERED_ACCESS;
 		bd.misc_flags = ResourceMiscFlag::INDIRECT_ARGS | ResourceMiscFlag::BUFFER_RAW;
 		bd.size = sizeof(IndirectDispatchArgs);
-		wi::graphics::GetDevice()->CreateBuffer(&bd, nullptr, &indirectBuffer);
+		ap::graphics::GetDevice()->CreateBuffer(&bd, nullptr, &indirectBuffer);
 
-		static wi::eventhandler::Handle handle = wi::eventhandler::Subscribe(wi::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
 		LoadShaders();
 
-		wi::backlog::post("wi::gpusortlib Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::gpusortlib Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 
@@ -52,7 +52,7 @@ namespace wi::gpusortlib
 		const GPUBuffer& indexBuffer_write,
 		CommandList cmd)
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		device->EventBegin("GPUSortLib", cmd);
 

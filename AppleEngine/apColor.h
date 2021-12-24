@@ -1,8 +1,8 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiMath.h"
+#include "apMath.h"
 
-namespace wi
+namespace ap
 {
 	struct Color
 	{
@@ -53,7 +53,7 @@ namespace wi
 
 		static constexpr Color lerp(Color a, Color b, float i)
 		{
-			return fromFloat4(wi::math::Lerp(a.toFloat4(), b.toFloat4(), i));
+			return fromFloat4(ap::math::Lerp(a.toFloat4(), b.toFloat4(), i));
 		}
 
 		static constexpr Color Red() { return Color(255, 0, 0, 255); }

@@ -17,7 +17,7 @@
 #include <vector>
 #endif // WI_VECTOR_TYPE
 
-namespace wi
+namespace ap
 {
 	template<typename T, typename A = std::allocator<T>>
 #if WI_VECTOR_TYPE == 0

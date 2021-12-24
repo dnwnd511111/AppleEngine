@@ -1,11 +1,11 @@
 #pragma once
-#include "wiRenderPath.h"
-#include "wiGUI.h"
-#include "wiVector.h"
+#include "apRenderPath.h"
+#include "apGUI.h"
+#include "apVector.h"
 
 #include <string>
 
-namespace wi
+namespace ap
 {
 	class Sprite;
 	class SpriteFont;
@@ -19,14 +19,14 @@ namespace wi
 		} type = SPRITE;
 		union
 		{
-			wi::Sprite* sprite = nullptr;
-			wi::SpriteFont* font;
+			ap::Sprite* sprite = nullptr;
+			ap::SpriteFont* font;
 		};
 		int order = 0;
 	};
 	struct RenderLayer2D
 	{
-		wi::vector<RenderItem2D> items;
+		ap::vector<RenderItem2D> items;
 		std::string name;
 		int order = 0;
 	};
@@ -35,22 +35,22 @@ namespace wi
 		public RenderPath
 	{
 	private:
-		wi::graphics::Texture rtStenciled;
-		wi::graphics::Texture rtStenciled_resolved;
-		wi::graphics::Texture rtFinal;
+		ap::graphics::Texture rtStenciled;
+		ap::graphics::Texture rtStenciled_resolved;
+		ap::graphics::Texture rtFinal;
 
-		wi::graphics::RenderPass renderpass_stenciled;
-		wi::graphics::RenderPass renderpass_final;
+		ap::graphics::RenderPass renderpass_stenciled;
+		ap::graphics::RenderPass renderpass_final;
 
-		wi::graphics::Texture rtLinearColorSpace;
-		wi::graphics::RenderPass renderpass_linearize;
+		ap::graphics::Texture rtLinearColorSpace;
+		ap::graphics::RenderPass renderpass_linearize;
 
-		wi::gui::GUI GUI;
+		ap::gui::GUI GUI;
 
 		XMUINT2 current_buffersize{};
 		float current_layoutscale{};
 
-		mutable wi::graphics::Texture render_result = rtFinal;
+		mutable ap::graphics::Texture render_result = rtFinal;
 
 		float hdr_scaling = 9.0f;
 
@@ -63,32 +63,32 @@ namespace wi
 		void Update(float dt) override;
 		void FixedUpdate() override;
 		void Render() const override;
-		void Compose(wi::graphics::CommandList cmd) const override;
+		void Compose(ap::graphics::CommandList cmd) const override;
 
-		const wi::graphics::Texture& GetRenderResult() const { return render_result; }
-		virtual const wi::graphics::Texture* GetDepthStencil() const { return nullptr; }
-		virtual const wi::graphics::Texture* GetGUIBlurredBackground() const { return nullptr; }
+		const ap::graphics::Texture& GetRenderResult() const { return render_result; }
+		virtual const ap::graphics::Texture* GetDepthStencil() const { return nullptr; }
+		virtual const ap::graphics::Texture* GetGUIBlurredBackground() const { return nullptr; }
 
-		void AddSprite(wi::Sprite* sprite, const std::string& layer = "");
-		void RemoveSprite(wi::Sprite* sprite);
+		void AddSprite(ap::Sprite* sprite, const std::string& layer = "");
+		void RemoveSprite(ap::Sprite* sprite);
 		void ClearSprites();
-		int GetSpriteOrder(wi::Sprite* sprite);
+		int GetSpriteOrder(ap::Sprite* sprite);
 
-		void AddFont(wi::SpriteFont* font, const std::string& layer = "");
-		void RemoveFont(wi::SpriteFont* font);
+		void AddFont(ap::SpriteFont* font, const std::string& layer = "");
+		void RemoveFont(ap::SpriteFont* font);
 		void ClearFonts();
-		int GetFontOrder(wi::SpriteFont* font);
+		int GetFontOrder(ap::SpriteFont* font);
 
-		wi::vector<RenderLayer2D> layers{ 1 };
+		ap::vector<RenderLayer2D> layers{ 1 };
 		void AddLayer(const std::string& name);
 		void SetLayerOrder(const std::string& name, int order);
-		void SetSpriteOrder(wi::Sprite* sprite, int order);
-		void SetFontOrder(wi::SpriteFont* font, int order);
+		void SetSpriteOrder(ap::Sprite* sprite, int order);
+		void SetFontOrder(ap::SpriteFont* font, int order);
 		void SortLayers();
 		void CleanLayers();
 
-		const wi::gui::GUI& GetGUI() const { return GUI; }
-		wi::gui::GUI& GetGUI() { return GUI; }
+		const ap::gui::GUI& GetGUI() const { return GUI; }
+		ap::gui::GUI& GetGUI() { return GUI; }
 
 		float resolutionScale = 1.0f;
 		XMUINT2 GetInternalResolution() const

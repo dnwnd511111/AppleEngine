@@ -1,10 +1,10 @@
-#include "wiPhysics.h"
-#include "wiScene.h"
-#include "wiProfiler.h"
-#include "wiBacklog.h"
-#include "wiJobSystem.h"
-#include "wiRenderer.h"
-#include "wiTimer.h"
+#include "apPhysics.h"
+#include "apScene.h"
+#include "apProfiler.h"
+#include "apBacklog.h"
+#include "apJobSystem.h"
+#include "apRenderer.h"
+#include "apTimer.h"
 
 #include "btBulletDynamicsCommon.h"
 #include "BulletSoftBody/btSoftBodyHelpers.h"
@@ -15,10 +15,10 @@
 #include <mutex>
 #include <memory>
 
-using namespace wi::ecs;
-using namespace wi::scene;
+using namespace ap::ecs;
+using namespace ap::scene;
 
-namespace wi::physics
+namespace ap::physics
 {
 	bool ENABLED = true;
 	bool SIMULATION_ENABLED = true;
@@ -38,18 +38,18 @@ namespace wi::physics
 	{
 		void drawLine(const btVector3& from, const btVector3& to, const btVector3& color) override
 		{
-			wi::renderer::RenderableLine line;
+			ap::renderer::RenderableLine line;
 			line.start = XMFLOAT3(from.x(), from.y(), from.z());
 			line.end = XMFLOAT3(to.x(), to.y(), to.z());
 			line.color_start = line.color_end = XMFLOAT4(color.x(), color.y(), color.z(), 1.0f);
-			wi::renderer::DrawLine(line);
+			ap::renderer::DrawLine(line);
 		}
 		void drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color) override
 		{
 		}
 		void reportErrorWarning(const char* warningString) override
 		{
-			wi::backlog::post(warningString);
+			ap::backlog::post(warningString);
 		}
 		void draw3dText(const btVector3& location, const char* textString) override
 		{
@@ -66,7 +66,7 @@ namespace wi::physics
 
 	void Initialize()
 	{
-		wi::Timer timer;
+		ap::Timer timer;
 
 		dynamicsWorld.getSolverInfo().m_solverMode |= SOLVER_RANDMIZE_ORDER;
 		dynamicsWorld.getDispatchInfo().m_enableSatConvex = true;
@@ -82,7 +82,7 @@ namespace wi::physics
 		softWorldInfo.m_gravity.setValue(gravity.x(), gravity.y(), gravity.z());
 		softWorldInfo.m_sparsesdf.Initialize();
 
-		wi::backlog::post("wi::physics Initialized [Bullet] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
+		ap::backlog::post("ap::physics Initialized [Bullet] (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");
 	}
 
 	bool IsEnabled() { return ENABLED; }
@@ -97,7 +97,7 @@ namespace wi::physics
 	int GetAccuracy() { return ACCURACY; }
 	void SetAccuracy(int value) { ACCURACY = value; }
 
-	void AddRigidBody(Entity entity, wi::scene::RigidBodyPhysicsComponent& physicscomponent, const wi::scene::TransformComponent& transform, const wi::scene::MeshComponent* mesh)
+	void AddRigidBody(Entity entity, ap::scene::RigidBodyPhysicsComponent& physicscomponent, const ap::scene::TransformComponent& transform, const ap::scene::MeshComponent* mesh)
 	{
 		btCollisionShape* shape = nullptr;
 
@@ -132,7 +132,7 @@ namespace wi::physics
 			}
 			else
 			{
-				wi::backlog::post("Convex Hull physics requested, but no MeshComponent provided!");
+				ap::backlog::post("Convex Hull physics requested, but no MeshComponent provided!");
 				assert(0);
 			}
 			break;
@@ -176,7 +176,7 @@ namespace wi::physics
 			}
 			else
 			{
-				wi::backlog::post("Triangle Mesh physics requested, but no MeshComponent provided!");
+				ap::backlog::post("Triangle Mesh physics requested, but no MeshComponent provided!");
 				assert(0);
 			}
 			break;
@@ -230,7 +230,7 @@ namespace wi::physics
 			physicscomponent.physicsobject = rigidbody;
 		}
 	}
-	void AddSoftBody(Entity entity, wi::scene::SoftBodyPhysicsComponent& physicscomponent, const wi::scene::MeshComponent& mesh)
+	void AddSoftBody(Entity entity, ap::scene::SoftBodyPhysicsComponent& physicscomponent, const ap::scene::MeshComponent& mesh)
 	{
 		physicscomponent.CreateFromMesh(mesh);
 
@@ -328,7 +328,7 @@ namespace wi::physics
 	}
 
 	void RunPhysicsUpdateSystem(
-		wi::jobsystem::context& ctx,
+		ap::jobsystem::context& ctx,
 		Scene& scene,
 		float dt
 	)
@@ -336,12 +336,12 @@ namespace wi::physics
 		if (!IsEnabled() || dt <= 0)
 			return;
 
-		auto range = wi::profiler::BeginRangeCPU("Physics");
+		auto range = ap::profiler::BeginRangeCPU("Physics");
 
 		btVector3 wind = btVector3(scene.weather.windDirection.x, scene.weather.windDirection.y, scene.weather.windDirection.z);
 
 		// System will register rigidbodies to objects, and update physics engine state for kinematics:
-		wi::jobsystem::Dispatch(ctx, (uint32_t)scene.rigidbodies.GetCount(), 256, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)scene.rigidbodies.GetCount(), 256, [&](ap::jobsystem::JobArgs args) {
 
 			RigidBodyPhysicsComponent& physicscomponent = scene.rigidbodies[args.jobIndex];
 			Entity entity = scene.rigidbodies.GetEntity(args.jobIndex);
@@ -413,7 +413,7 @@ namespace wi::physics
 		});
 
 		// System will register softbodies to meshes and update physics engine state:
-		wi::jobsystem::Dispatch(ctx, (uint32_t)scene.softbodies.GetCount(), 1, [&](wi::jobsystem::JobArgs args) {
+		ap::jobsystem::Dispatch(ctx, (uint32_t)scene.softbodies.GetCount(), 1, [&](ap::jobsystem::JobArgs args) {
 
 			SoftBodyPhysicsComponent& physicscomponent = scene.softbodies[args.jobIndex];
 			Entity entity = scene.softbodies.GetEntity(args.jobIndex);
@@ -459,7 +459,7 @@ namespace wi::physics
 						btSoftBody::Node& node = softbody->m_nodes[(uint32_t)ind];
 						uint32_t graphicsInd = physicscomponent.physicsToGraphicsVertexMapping[ind];
 						XMFLOAT3 position = mesh.vertex_positions[graphicsInd];
-						XMVECTOR P = armature == nullptr ? XMLoadFloat3(&position) : wi::scene::SkinVertex(mesh, *armature, graphicsInd);
+						XMVECTOR P = armature == nullptr ? XMLoadFloat3(&position) : ap::scene::SkinVertex(mesh, *armature, graphicsInd);
 						P = XMVector3Transform(P, worldMatrix);
 						XMStoreFloat3(&position, P);
 						node.m_x = btVector3(position.x, position.y, position.z);
@@ -468,7 +468,7 @@ namespace wi::physics
 			}
 		});
 
-		wi::jobsystem::Wait(ctx);
+		ap::jobsystem::Wait(ctx);
 
 		// Perform internal simulation step:
 		if (IsSimulationEnabled())
@@ -530,7 +530,7 @@ namespace wi::physics
 					btVector3 aabb_min;
 					btVector3 aabb_max;
 					softbody->getAabb(aabb_min, aabb_max);
-					physicscomponent->aabb = wi::primitive::AABB(XMFLOAT3(aabb_min.x(), aabb_min.y(), aabb_min.z()), XMFLOAT3(aabb_max.x(), aabb_max.y(), aabb_max.z()));
+					physicscomponent->aabb = ap::primitive::AABB(XMFLOAT3(aabb_min.x(), aabb_min.y(), aabb_min.z()), XMFLOAT3(aabb_max.x(), aabb_max.y(), aabb_max.z()));
 
 					// Soft body simulation nodes will update graphics mesh:
 					for (size_t ind = 0; ind < physicscomponent->vertex_positions_simulation.size(); ++ind)
@@ -631,13 +631,13 @@ namespace wi::physics
 			dynamicsWorld.debugDrawWorld();
 		}
 
-		wi::profiler::EndRange(range); // Physics
+		ap::profiler::EndRange(range); // Physics
 	}
 
 
 
 	void ApplyForce(
-		const wi::scene::RigidBodyPhysicsComponent& physicscomponent,
+		const ap::scene::RigidBodyPhysicsComponent& physicscomponent,
 		const XMFLOAT3& force
 	)
 	{
@@ -648,7 +648,7 @@ namespace wi::physics
 		}
 	}
 	void ApplyForceAt(
-		const wi::scene::RigidBodyPhysicsComponent& physicscomponent,
+		const ap::scene::RigidBodyPhysicsComponent& physicscomponent,
 		const XMFLOAT3& force,
 		const XMFLOAT3& at
 	)
@@ -661,7 +661,7 @@ namespace wi::physics
 	}
 
 	void ApplyImpulse(
-		const wi::scene::RigidBodyPhysicsComponent& physicscomponent,
+		const ap::scene::RigidBodyPhysicsComponent& physicscomponent,
 		const XMFLOAT3& impulse
 	)
 	{
@@ -672,7 +672,7 @@ namespace wi::physics
 		}
 	}
 	void ApplyImpulseAt(
-		const wi::scene::RigidBodyPhysicsComponent& physicscomponent,
+		const ap::scene::RigidBodyPhysicsComponent& physicscomponent,
 		const XMFLOAT3& impulse,
 		const XMFLOAT3& at
 	)

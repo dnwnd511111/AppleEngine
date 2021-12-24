@@ -1,12 +1,12 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiArchive.h"
-#include "wiMath.h"
-#include "wiECS.h"
+#include "apArchive.h"
+#include "apMath.h"
+#include "apECS.h"
 
 #include <limits>
 
-namespace wi::primitive
+namespace ap::primitive
 {
 	struct Sphere;
 	struct Ray;
@@ -66,7 +66,7 @@ namespace wi::primitive
 			return XMFLOAT3(0, 0, 0);
 		}
 
-		void Serialize(wi::Archive& archive, wi::ecs::EntitySerializer& seri);
+		void Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri);
 	};
 	struct Sphere
 	{

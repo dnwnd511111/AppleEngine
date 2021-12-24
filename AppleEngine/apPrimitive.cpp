@@ -1,6 +1,6 @@
-#include "wiPrimitive.h"
+#include "apPrimitive.h"
 
-namespace wi::primitive
+namespace ap::primitive
 {
 
 	void AABB::createFromHalfWidth(const XMFLOAT3& center, const XMFLOAT3& halfwidth)
@@ -167,9 +167,9 @@ namespace wi::primitive
 	}
 	AABB AABB::Merge(const AABB& a, const AABB& b)
 	{
-		return AABB(wi::math::Min(a.getMin(), b.getMin()), wi::math::Max(a.getMax(), b.getMax()));
+		return AABB(ap::math::Min(a.getMin(), b.getMin()), ap::math::Max(a.getMax(), b.getMax()));
 	}
-	void AABB::Serialize(wi::Archive& archive, wi::ecs::EntitySerializer& seri)
+	void AABB::Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri)
 	{
 		if (archive.IsReadMode())
 		{
@@ -203,12 +203,12 @@ namespace wi::primitive
 	bool Sphere::intersects(const AABB& b) const {
 		XMFLOAT3 min = b.getMin();
 		XMFLOAT3 max = b.getMax();
-		XMFLOAT3 closestPointInAabb = wi::math::Min(wi::math::Max(center, min), max);
-		double distanceSquared = wi::math::Distance(closestPointInAabb, center);
+		XMFLOAT3 closestPointInAabb = ap::math::Min(ap::math::Max(center, min), max);
+		double distanceSquared = ap::math::Distance(closestPointInAabb, center);
 		return distanceSquared < radius;
 	}
 	bool Sphere::intersects(const Sphere& b)const {
-		return wi::math::Distance(center, b.center) <= radius + b.radius;
+		return ap::math::Distance(center, b.center) <= radius + b.radius;
 	}
 	bool Sphere::intersects(const Ray& b) const {
 		XMVECTOR o = XMLoadFloat3(&b.origin);
@@ -264,10 +264,10 @@ namespace wi::primitive
 		}
 
 		// Select point on capsule B line segment nearest to best potential endpoint on A capsule:
-		XMVECTOR bestB = wi::math::ClosestPointOnLineSegment(b_A, b_B, bestA);
+		XMVECTOR bestB = ap::math::ClosestPointOnLineSegment(b_A, b_B, bestA);
 
 		// Now do the same for capsule A segment:
-		bestA = wi::math::ClosestPointOnLineSegment(a_A, a_B, bestB);
+		bestA = ap::math::ClosestPointOnLineSegment(a_A, a_B, bestB);
 
 		// Finally, sphere collision:
 		XMVECTOR N = bestA - bestB;
@@ -399,7 +399,7 @@ namespace wi::primitive
 
 	bool Hitbox2D::intersects(const Hitbox2D& b) const
 	{
-		return wi::math::Collision2D(pos, siz, b.pos, b.siz);
+		return ap::math::Collision2D(pos, siz, b.pos, b.siz);
 	}
 
 }

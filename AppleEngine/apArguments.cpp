@@ -1,19 +1,19 @@
-#include "wiArguments.h"
-#include "wiHelper.h"
-#include "wiUnorderedSet.h"
+#include "apArguments.h"
+#include "apHelper.h"
+#include "apUnorderedSet.h"
 
 #include <sstream>
 #include <iterator>
 
-namespace wi::arguments
+namespace ap::arguments
 {
-	wi::unordered_set<std::string> params;
+	ap::unordered_set<std::string> params;
 
 	void Parse(const wchar_t* args)
 	{
 		std::wstring from = args;
 		std::string to;
-		wi::helper::StringConvert(from, to);
+		ap::helper::StringConvert(from, to);
 
 		std::istringstream iss(to);
 

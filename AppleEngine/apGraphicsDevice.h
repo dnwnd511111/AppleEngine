@@ -1,13 +1,13 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiGraphics.h"
-#include "wiPlatform.h"
+#include "apGraphics.h"
+#include "apPlatform.h"
 
 #include <cassert>
 #include <cstring>
 #include <algorithm>
 
-namespace wi::graphics
+namespace ap::graphics
 {
 	// CommandList can be used to record graphics commands from a CPU thread
 	//	Use GraphicsDevice::BeginCommandList() to start a command list
@@ -74,7 +74,7 @@ namespace wi::graphics
 		virtual ~GraphicsDevice() = default;
 
 		// Create a SwapChain. If the SwapChain is to be recreated, the window handle can be nullptr.
-		virtual bool CreateSwapChain(const SwapChainDesc* pDesc, wi::platform::window_type window, SwapChain* swapChain) const = 0;
+		virtual bool CreateSwapChain(const SwapChainDesc* pDesc, ap::platform::window_type window, SwapChain* swapChain) const = 0;
 		virtual bool CreateBuffer(const GPUBufferDesc *pDesc, const void* pInitialData, GPUBuffer *pBuffer) const = 0;
 		virtual bool CreateTexture(const TextureDesc* pDesc, const SubresourceData *pInitialData, Texture *pTexture) const = 0;
 		virtual bool CreateShader(ShaderStage stage, const void *pShaderBytecode, size_t BytecodeLength, Shader *pShader) const = 0;

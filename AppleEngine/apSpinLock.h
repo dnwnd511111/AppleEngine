@@ -1,7 +1,7 @@
 #pragma once
 #include <atomic>
 
-namespace wi
+namespace ap
 {
 	class SpinLock
 	{

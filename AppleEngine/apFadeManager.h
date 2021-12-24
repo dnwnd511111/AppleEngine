@@ -1,12 +1,12 @@
 #pragma once
 #include "CommonInclude.h"
-#include "wiColor.h"
-#include "wiTimer.h"
-#include "wiMath.h"
+#include "apColor.h"
+#include "apTimer.h"
+#include "apMath.h"
 
 #include <functional>
 
-namespace wi
+namespace ap
 {
 	class FadeManager
 	{
@@ -21,7 +21,7 @@ namespace wi
 			FADE_OUT,	// faded -> no fade
 			FADE_FINISHED,
 		} state = FADE_FINISHED;
-		wi::Color color = wi::Color(0, 0, 0, 255);
+		ap::Color color = ap::Color(0, 0, 0, 255);
 		std::function<void()> onFade = [] {};
 
 		FadeManager()
@@ -29,7 +29,7 @@ namespace wi
 			Clear();
 		}
 		void Clear();
-		void Start(float seconds, wi::Color color, std::function<void()> onFadeFunction)
+		void Start(float seconds, ap::Color color, std::function<void()> onFadeFunction)
 		{
 			targetFadeTimeInSeconds = seconds;
 			this->color = color;

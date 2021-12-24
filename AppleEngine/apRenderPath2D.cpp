@@ -1,12 +1,12 @@
-#include "wiRenderPath2D.h"
-#include "wiResourceManager.h"
-#include "wiSprite.h"
-#include "wiSpriteFont.h"
-#include "wiRenderer.h"
+#include "apRenderPath2D.h"
+#include "apResourceManager.h"
+#include "apSprite.h"
+#include "apSpriteFont.h"
+#include "apRenderer.h"
 
-using namespace wi::graphics;
+using namespace ap::graphics;
 
-namespace wi
+namespace ap
 {
 
 	void RenderPath2D::ResizeBuffers()
@@ -14,7 +14,7 @@ namespace wi
 		current_buffersize = GetInternalResolution();
 		current_layoutscale = 0; // invalidate layout
 
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 
 		const Texture* dsv = GetDepthStencil();
 		if (dsv != nullptr && (resolutionScale != 1.0f || dsv->GetDesc().sample_count > 1))
@@ -141,13 +141,13 @@ namespace wi
 		{
 			TextureDesc desc = rtFinal.desc;
 			desc.format = Format::R16G16B16A16_FLOAT;
-			bool success = wi::graphics::GetDevice()->CreateTexture(&desc, nullptr, &rtLinearColorSpace);
+			bool success = ap::graphics::GetDevice()->CreateTexture(&desc, nullptr, &rtLinearColorSpace);
 			assert(success);
-			wi::graphics::GetDevice()->SetName(&rtLinearColorSpace, "rtLinearColorSpace");
+			ap::graphics::GetDevice()->SetName(&rtLinearColorSpace, "rtLinearColorSpace");
 
 			RenderPassDesc renderpassdesc;
 			renderpassdesc.attachments.push_back(RenderPassAttachment::RenderTarget(&rtLinearColorSpace, RenderPassAttachment::LoadOp::CLEAR));
-			success = wi::graphics::GetDevice()->CreateRenderPass(&renderpassdesc, &renderpass_linearize);
+			success = ap::graphics::GetDevice()->CreateRenderPass(&renderpassdesc, &renderpass_linearize);
 			assert(success);
 		}
 
@@ -182,16 +182,16 @@ namespace wi
 	}
 	void RenderPath2D::Render() const
 	{
-		GraphicsDevice* device = wi::graphics::GetDevice();
+		GraphicsDevice* device = ap::graphics::GetDevice();
 		CommandList cmd = device->BeginCommandList();
-		wi::image::SetCanvas(*this, cmd);
-		wi::font::SetCanvas(*this, cmd);
+		ap::image::SetCanvas(*this, cmd);
+		ap::font::SetCanvas(*this, cmd);
 
-		wi::renderer::ProcessDeferredMipGenRequests(cmd);
+		ap::renderer::ProcessDeferredMipGenRequests(cmd);
 
 		if (GetGUIBlurredBackground() != nullptr)
 		{
-			wi::image::SetBackground(*GetGUIBlurredBackground(), cmd);
+			ap::image::SetBackground(*GetGUIBlurredBackground(), cmd);
 		}
 
 		// Special care for internal resolution, because stencil buffer is of internal resolution, 
@@ -212,7 +212,7 @@ namespace wi
 				{
 					if (y.type == RenderItem2D::SPRITE &&
 						y.sprite != nullptr &&
-						y.sprite->params.stencilComp != wi::image::STENCILMODE_DISABLED)
+						y.sprite->params.stencilComp != ap::image::STENCILMODE_DISABLED)
 					{
 						y.sprite->Draw(cmd);
 					}
@@ -235,15 +235,15 @@ namespace wi
 			if (rtStenciled.IsValid())
 			{
 				device->EventBegin("Copy STENCIL Sprite Layers", cmd);
-				wi::image::Params fx;
+				ap::image::Params fx;
 				fx.enableFullScreen();
 				if (rtStenciled.GetDesc().sample_count > 1)
 				{
-					wi::image::Draw(&rtStenciled_resolved, fx, cmd);
+					ap::image::Draw(&rtStenciled_resolved, fx, cmd);
 				}
 				else
 				{
-					wi::image::Draw(&rtStenciled, fx, cmd);
+					ap::image::Draw(&rtStenciled, fx, cmd);
 				}
 				device->EventEnd(cmd);
 			}
@@ -256,7 +256,7 @@ namespace wi
 					{
 						if (y.type == RenderItem2D::SPRITE &&
 							y.sprite != nullptr &&
-							y.sprite->params.stencilComp != wi::image::STENCILMODE_DISABLED)
+							y.sprite->params.stencilComp != ap::image::STENCILMODE_DISABLED)
 						{
 							y.sprite->Draw(cmd);
 						}
@@ -275,7 +275,7 @@ namespace wi
 				{
 				default:
 				case RenderItem2D::SPRITE:
-					if (y.sprite != nullptr && y.sprite->params.stencilComp == wi::image::STENCILMODE_DISABLED)
+					if (y.sprite != nullptr && y.sprite->params.stencilComp == ap::image::STENCILMODE_DISABLED)
 					{
 						y.sprite->Draw(cmd);
 					}
@@ -299,10 +299,10 @@ namespace wi
 		{
 			// Convert the regular SRGB result of the render path to linear space for HDR compositing:
 			device->RenderPassBegin(&renderpass_linearize, cmd);
-			wi::image::Params fx;
+			ap::image::Params fx;
 			fx.enableFullScreen();
 			fx.enableLinearOutputMapping(hdr_scaling);
-			wi::image::Draw(&rtFinal, fx, cmd);
+			ap::image::Draw(&rtFinal, fx, cmd);
 			device->RenderPassEnd(cmd);
 			render_result = rtLinearColorSpace;
 		}
@@ -315,16 +315,16 @@ namespace wi
 	}
 	void RenderPath2D::Compose(CommandList cmd) const
 	{
-		wi::image::Params fx;
+		ap::image::Params fx;
 		fx.enableFullScreen();
-		fx.blendFlag = wi::enums::BLENDMODE_PREMULTIPLIED;
-		wi::image::Draw(&render_result, fx, cmd);
+		fx.blendFlag = ap::enums::BLENDMODE_PREMULTIPLIED;
+		ap::image::Draw(&render_result, fx, cmd);
 
 		RenderPath::Compose(cmd);
 	}
 
 
-	void RenderPath2D::AddSprite(wi::Sprite* sprite, const std::string& layer)
+	void RenderPath2D::AddSprite(ap::Sprite* sprite, const std::string& layer)
 	{
 		for (auto& x : layers)
 		{
@@ -337,7 +337,7 @@ namespace wi
 		}
 		SortLayers();
 	}
-	void RenderPath2D::RemoveSprite(wi::Sprite* sprite)
+	void RenderPath2D::RemoveSprite(ap::Sprite* sprite)
 	{
 		for (auto& x : layers)
 		{
@@ -365,7 +365,7 @@ namespace wi
 		}
 		CleanLayers();
 	}
-	int RenderPath2D::GetSpriteOrder(wi::Sprite* sprite)
+	int RenderPath2D::GetSpriteOrder(ap::Sprite* sprite)
 	{
 		for (auto& x : layers)
 		{
@@ -380,7 +380,7 @@ namespace wi
 		return 0;
 	}
 
-	void RenderPath2D::AddFont(wi::SpriteFont* font, const std::string& layer)
+	void RenderPath2D::AddFont(ap::SpriteFont* font, const std::string& layer)
 	{
 		for (auto& x : layers)
 		{
@@ -393,7 +393,7 @@ namespace wi
 		}
 		SortLayers();
 	}
-	void RenderPath2D::RemoveFont(wi::SpriteFont* font)
+	void RenderPath2D::RemoveFont(ap::SpriteFont* font)
 	{
 		for (auto& x : layers)
 		{
@@ -421,7 +421,7 @@ namespace wi
 		}
 		CleanLayers();
 	}
-	int RenderPath2D::GetFontOrder(wi::SpriteFont* font)
+	int RenderPath2D::GetFontOrder(ap::SpriteFont* font)
 	{
 		for (auto& x : layers)
 		{
@@ -462,7 +462,7 @@ namespace wi
 		}
 		SortLayers();
 	}
-	void RenderPath2D::SetSpriteOrder(wi::Sprite* sprite, int order)
+	void RenderPath2D::SetSpriteOrder(ap::Sprite* sprite, int order)
 	{
 		for (auto& x : layers)
 		{
@@ -476,7 +476,7 @@ namespace wi
 		}
 		SortLayers();
 	}
-	void RenderPath2D::SetFontOrder(wi::SpriteFont* font, int order)
+	void RenderPath2D::SetFontOrder(ap::SpriteFont* font, int order)
 	{
 		for (auto& x : layers)
 		{
@@ -538,7 +538,7 @@ namespace wi
 			{
 				continue;
 			}
-			wi::vector<RenderItem2D> itemsToRetain(0);
+			ap::vector<RenderItem2D> itemsToRetain(0);
 			for (auto& y : x.items)
 			{
 				if (y.sprite != nullptr || y.font != nullptr)
