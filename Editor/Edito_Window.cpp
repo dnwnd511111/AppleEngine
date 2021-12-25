@@ -2,6 +2,7 @@
 //
 
 #include "pch.h"
+#include "Resource.h"
 #include "framework.h"
 #include "Editor.h"
 
