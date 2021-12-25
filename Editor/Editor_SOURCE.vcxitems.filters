@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Editor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ModelImporter_GLTF.cpp">
+      <Filter>ModelImporter</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ModelImporter_OBJ.cpp">
+      <Filter>ModelImporter</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)xatlas.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Editor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)tiny_gltf.h">
+      <Filter>ModelImporter</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)tiny_obj_loader.h">
+      <Filter>ModelImporter</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)ModelImporter.h">
+      <Filter>ModelImporter</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)json.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)xatlas.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Images">
+      <UniqueIdentifier>{db271124-da6a-499a-85ac-cb9e3c214d3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ModelImporter">
+      <UniqueIdentifier>{915fb410-6e2f-4f1a-a6e5-e694a953591f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="$(MSBuildThisFileDirectory)images\arealight.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\armature.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\blood1.png">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\camera.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\decal.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\directional_light.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\emitter.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\forcefield.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\hair.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\leaf.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\pointlight.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\ripple.png">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\sound.dds">
+      <Filter>Images</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)images\spotlight.dds">
+      <Filter>Images</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
