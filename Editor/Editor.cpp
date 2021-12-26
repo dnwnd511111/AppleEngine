@@ -23,6 +23,7 @@ void EditorLoadingScreen::Load()
 {
 
 	LoadingScreen::Load();
+	
 }
 
 void EditorLoadingScreen::Update(float dt)
@@ -188,6 +189,17 @@ void EditorComponent::Load()
 
 	//
 	ChangeRenderPath(RENDERPATH_DEFAULT);
+
+	ap::renderer::SetToDrawDebugEnvProbes(true);
+	ap::renderer::SetToDrawGridHelper(true);
+	ap::renderer::SetToDrawDebugCameras(true);
+
+	ap::scene::TransformComponent camera_transform;
+	camera_transform.ClearTransform();
+	camera_transform.Translate(XMFLOAT3(0, 2, -10));
+	camera_transform.UpdateTransform();
+	ap::scene::GetCamera().TransformCamera(camera_transform);
+	ap::scene::GetCamera().UpdateCamera();
 
 	//
 
