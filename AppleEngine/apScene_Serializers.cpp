@@ -66,16 +66,33 @@ namespace ap::scene
 		if (archive.IsReadMode())
 		{
 			archive >> layerMask_bind;
-			if (archive.GetVersion() < 36)
+
+			size_t childrenCount;
+			archive >> childrenCount;
+			childrenID.resize(childrenCount);
+			for (size_t i = 0; i < childrenCount; i++)
 			{
-				XMFLOAT4X4 world_parent_inverse_bind;
-				archive >> world_parent_inverse_bind;
+				Entity childID;
+				SerializeEntity(archive, childID, seri);
+				childrenID[i] = childID;
 			}
+
 		}
 		else
 		{
 			archive << layerMask_bind;
+
+			archive << childrenID.size();
+			for (size_t i = 0; i < childrenID.size(); i++)
+			{
+				Entity childID = childrenID[i];
+				SerializeEntity(archive, childID, seri);
+			}
+
 		}
+
+		
+
 	}
 	void MaterialComponent::Serialize(ap::Archive& archive, EntitySerializer& seri)
 	{

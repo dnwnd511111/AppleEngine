@@ -114,8 +114,11 @@ namespace ap::scene
 
 	struct HierarchyComponent
 	{
+		
+		ap::vector<ap::ecs::Entity>  childrenID;
 		ap::ecs::Entity parentID = ap::ecs::INVALID_ENTITY;
 		uint32_t layerMask_bind; // saved child layermask at the time of binding
+
 
 		void Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri);
 	};

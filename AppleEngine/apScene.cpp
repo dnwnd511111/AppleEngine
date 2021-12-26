@@ -1894,6 +1894,7 @@ namespace ap::scene
 	void Scene::Entity_Remove(Entity entity)
 	{
 		Component_Detach(entity); // special case, this will also remove entity from hierarchy but also do more!
+		hierarchy.Remove(entity);
 
 		names.Remove(entity);
 		layers.Remove(entity);
@@ -2177,8 +2178,26 @@ namespace ap::scene
 			Component_Detach(entity);
 		}
 
-		HierarchyComponent& parentcomponent = hierarchy.Create(entity);
-		parentcomponent.parentID = parent;
+
+		HierarchyComponent* parentcomponent = hierarchy.GetComponent(entity);
+		if (parentcomponent == nullptr)
+		{
+			parentcomponent = &hierarchy.Create(entity);
+		}
+
+		parentcomponent->parentID = parent;
+
+		HierarchyComponent* parentHierarchy = hierarchy.GetComponent(parent);
+		if (parentHierarchy == nullptr)
+		{
+			parentHierarchy = &hierarchy.Create(parent);
+		}
+
+		if (std::find(parentHierarchy->childrenID.begin(), parentHierarchy->childrenID.end(),entity ) == parentHierarchy->childrenID.end())
+		{
+			parentHierarchy->childrenID.push_back(entity);
+		}
+		
 
 		TransformComponent* transform_parent = transforms.GetComponent(parent);
 		if (transform_parent == nullptr)
@@ -2229,7 +2248,19 @@ namespace ap::scene
 				layer->propagationMask = ~0;
 			}
 
-			hierarchy.Remove(entity);
+			HierarchyComponent* parentHierarchy = hierarchy.GetComponent(parent->parentID);
+			if (parentHierarchy != nullptr)
+			{
+				parentHierarchy->childrenID.erase(std::remove(parentHierarchy->childrenID.begin(), parentHierarchy->childrenID.end(), entity), parentHierarchy->childrenID.end());
+				if (parentHierarchy->parentID == ap::ecs::INVALID_ENTITY && parentHierarchy->childrenID.size() == 0 )
+				{
+					hierarchy.Remove(parent->parentID);
+				}
+			}
+			
+			if(parent->childrenID.size() == 0)
+				hierarchy.Remove(entity);
+			
 		}
 	}
 	void Scene::Component_DetachChildren(Entity parent)
@@ -2656,7 +2687,7 @@ namespace ap::scene
 			}
 
 			const HierarchyComponent* hier = hierarchy.GetComponent(entity);
-			TransformComponent* parent_transform = hier == nullptr ? nullptr : transforms.GetComponent(hier->parentID);
+			TransformComponent* parent_transform = (hier == nullptr || hier->parentID == ap::ecs::INVALID_ENTITY) ? nullptr : transforms.GetComponent(hier->parentID);
 			if (parent_transform != nullptr)
 			{
 				// Spring hierarchy resolve depends on spring component order!
@@ -2728,7 +2759,7 @@ namespace ap::scene
 			TransformComponent* transform = transforms.GetComponent(entity);
 			TransformComponent* target = transforms.GetComponent(ik.target);
 			const HierarchyComponent* hier = hierarchy.GetComponent(entity);
-			if (transform == nullptr || target == nullptr || hier == nullptr)
+			if (transform == nullptr || target == nullptr || hier == nullptr || hier->parentID == ap::ecs::INVALID_ENTITY)
 			{
 				continue;
 			}
@@ -2762,7 +2793,7 @@ namespace ap::scene
 					parent_transform->UpdateTransform();
 					// parent back to local space (if parent has parent):
 					const HierarchyComponent* hier_parent = hierarchy.GetComponent(parent_entity);
-					if (hier_parent != nullptr)
+					if (hier_parent != nullptr && hier_parent->parentID != ap::ecs::INVALID_ENTITY)
 					{
 						Entity parent_of_parent_entity = hier_parent->parentID;
 						const TransformComponent* transform_parent_of_parent = transforms.GetComponent(parent_of_parent_entity);
@@ -2779,7 +2810,7 @@ namespace ap::scene
 						recurse_parent = stack[recurse_chain];
 					}
 
-					if (hier_parent == nullptr)
+					if (hier_parent == nullptr || hier_parent->parentID == ap::ecs::INVALID_ENTITY)
 					{
 						// chain root reached, exit
 						break;
