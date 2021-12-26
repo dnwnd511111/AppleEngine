@@ -94,5 +94,5 @@ public:
 	EditorLoadingScreen loader;
 
 	void Initialize() override;
-	//void Compose(ap::graphics::CommandList cmd) override;
+	void ImGuiRender() override;
 };

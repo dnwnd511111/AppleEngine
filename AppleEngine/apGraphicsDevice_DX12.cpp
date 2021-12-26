@@ -5784,6 +5784,36 @@ using namespace dx12_internal;
 		return active_renderpass[cmd];
 	}
 
+
+
+	void GraphicsDevice_DX12::InitImGui(ap::platform::window_type window)
+	{
+
+#ifdef PLATFORM_WINDOWS_DESKTOP
+
+#else
+		assert(false && "not support other platforms")
+#endif // PLATFORM_WINDOWS_DESKTOP
+
+	}
+
+	void GraphicsDevice_DX12::DestoryImGui()
+	{
+	}
+
+	void GraphicsDevice_DX12::BeginImGui()
+	{
+	}
+
+	void GraphicsDevice_DX12::EndImGui()
+	{
+	}
+
+	uint64_t GraphicsDevice_DX12::CopyDescriptorToImGui(const Texture* texture, int subresource) const
+	{
+		return uint64_t();
+	}
+
 }
 
 #endif // APPLEENGINE_BUILD_DX12

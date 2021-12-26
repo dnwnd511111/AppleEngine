@@ -36,6 +36,7 @@ void EditorLoadingScreen::Update(float dt)
 
 void Editor::Initialize()
 {
+
 	Application::Initialize();
 
 
@@ -59,6 +60,12 @@ void Editor::Initialize()
 	loader.addLoadingComponent(&renderComponent, this, 0.2f);
 
 	ActivatePath(&loader, 0.2f);
+
+	
+}
+
+void Editor::ImGuiRender()
+{
 }
 
 

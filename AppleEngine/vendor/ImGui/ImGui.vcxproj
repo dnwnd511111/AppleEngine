@@ -83,6 +83,7 @@
     <ClInclude Include="backends\imgui_impl_dx12.h" />
     <ClInclude Include="backends\imgui_impl_win32.h" />
     <ClInclude Include="imgui.h" />
+    <ClInclude Include="ImGuizmo.h" />
     <ClInclude Include="imgui_internal.h" />
     <ClInclude Include="imstb_rectpack.h" />
     <ClInclude Include="imstb_textedit.h" />
@@ -92,6 +93,7 @@
     <ClCompile Include="backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="backends\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="ImGuizmo.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
     <ClCompile Include="imgui_tables.cpp" />

@@ -146,6 +146,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
         return FALSE;
     }
 
+
+    editor.isEditor = true;
     editor.SetWindow(hWnd, fullscreen);
 
     ShowWindow(hWnd, nCmdShow);

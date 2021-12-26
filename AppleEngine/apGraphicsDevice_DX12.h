@@ -455,6 +455,15 @@ namespace ap::graphics
 		};
 		std::shared_ptr<AllocationHandler> allocationhandler;
 
+
+		void InitImGui(ap::platform::window_type window) ;
+		void DestoryImGui() ;
+		void BeginImGui() ;
+		void EndImGui() ;
+		uint64_t CopyDescriptorToImGui(const Texture* texture, int subresource = -1) const ;
+
+
+
 	};
 
 }

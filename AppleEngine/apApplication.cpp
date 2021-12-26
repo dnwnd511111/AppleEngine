@@ -178,31 +178,69 @@ namespace ap
 		graphicsDevice->BindViewports(1, &viewport, cmd);
 
 		bool colorspace_conversion_required = colorspace == ColorSpace::HDR10_ST2084;
-		if (colorspace_conversion_required)
+
+		if (isEditor)
 		{
-			// In HDR10, we perform the compositing in a custom linear color space render target
-			graphicsDevice->RenderPassBegin(&renderpass, cmd);
+			if (colorspace_conversion_required)
+			{
+				// In HDR10, we perform the compositing in a custom linear color space render target
+				graphicsDevice->RenderPassBegin(&renderpass, cmd);
+			}
+			else
+			{
+				graphicsDevice->RenderPassBegin(&renderpass_imgui, cmd);
+			}
+			Compose(cmd);
+			graphicsDevice->RenderPassEnd(cmd);
+
+
+			if (colorspace_conversion_required)
+			{
+				// In HDR10, we perform a final mapping from linear to HDR10, into the swapchain
+				graphicsDevice->RenderPassBegin(&renderpass_imgui, cmd);
+				ap::image::Params fx;
+				fx.enableFullScreen();
+				fx.enableHDR10OutputMapping();
+				ap::image::Draw(&rendertarget, fx, cmd);
+				graphicsDevice->RenderPassEnd(cmd);
+			}
+
+
+			graphicsDevice->RenderPassBegin(&swapChain, cmd);
+			ImGuiRender();
+			graphicsDevice->RenderPassEnd(cmd);
+
 		}
 		else
 		{
-			// If swapchain is SRGB or Linear HDR, it can be used for blending
-			//	- If it is SRGB, the render path will ensure tonemapping to SDR
-			//	- If it is Linear HDR, we can blend trivially in linear space
-			graphicsDevice->RenderPassBegin(&swapChain, cmd);
-		}
-		Compose(cmd);
-		graphicsDevice->RenderPassEnd(cmd);
 
-		if (colorspace_conversion_required)
-		{
-			// In HDR10, we perform a final mapping from linear to HDR10, into the swapchain
-			graphicsDevice->RenderPassBegin(&swapChain, cmd);
-			ap::image::Params fx;
-			fx.enableFullScreen();
-			fx.enableHDR10OutputMapping();
-			ap::image::Draw(&rendertarget, fx, cmd);
+			if (colorspace_conversion_required)
+			{
+				// In HDR10, we perform the compositing in a custom linear color space render target
+				graphicsDevice->RenderPassBegin(&renderpass, cmd);
+			}
+			else
+			{
+				// If swapchain is SRGB or Linear HDR, it can be used for blending
+				//	- If it is SRGB, the render path will ensure tonemapping to SDR
+				//	- If it is Linear HDR, we can blend trivially in linear space
+				graphicsDevice->RenderPassBegin(&swapChain, cmd);
+			}
+			Compose(cmd);
 			graphicsDevice->RenderPassEnd(cmd);
+
+			if (colorspace_conversion_required)
+			{
+				// In HDR10, we perform a final mapping from linear to HDR10, into the swapchain
+				graphicsDevice->RenderPassBegin(&swapChain, cmd);
+				ap::image::Params fx;
+				fx.enableFullScreen();
+				fx.enableHDR10OutputMapping();
+				ap::image::Draw(&rendertarget, fx, cmd);
+				graphicsDevice->RenderPassEnd(cmd);
+			}
 		}
+		
 
 		ap::profiler::EndFrame(cmd);
 		graphicsDevice->SubmitCommandLists();
@@ -386,6 +424,8 @@ namespace ap
 		ap::profiler::EndRange(range); // Compose
 	}
 
+
+
 	void Application::SetWindow(ap::platform::window_type window, bool fullscreen)
 	{
 		this->window = window;
@@ -469,6 +509,7 @@ namespace ap
 			assert(success);
 			});
 
+
 		if (graphicsDevice->GetSwapChainColorSpace(&swapChain) == ColorSpace::HDR10_ST2084)
 		{
 			TextureDesc desc;
@@ -485,6 +526,28 @@ namespace ap
 			success = graphicsDevice->CreateRenderPass(&renderpassdesc, &renderpass);
 			assert(success);
 		}
+
+		if (isEditor)
+		{
+			TextureDesc desc;
+			desc.width = swapChain.desc.width;
+			desc.height = swapChain.desc.height;
+			desc.format = Format::R10G10B10A2_UNORM;
+			desc.bind_flags = BindFlag::RENDER_TARGET | BindFlag::SHADER_RESOURCE;
+			bool success = graphicsDevice->CreateTexture(&desc, nullptr, &rendertarget_imgui);
+			assert(success);
+			graphicsDevice->SetName(&rendertarget_imgui, "Application::rendertarget_imgui");
+
+			RenderPassDesc renderpassdesc;
+			renderpassdesc.attachments.push_back(RenderPassAttachment::RenderTarget(&rendertarget_imgui, RenderPassAttachment::LoadOp::CLEAR));
+			success = graphicsDevice->CreateRenderPass(&renderpassdesc, &renderpass_imgui);
+			assert(success);
+		}
+	}
+
+	void Application::ImGuiRender()
+	{
+
 	}
 
 }

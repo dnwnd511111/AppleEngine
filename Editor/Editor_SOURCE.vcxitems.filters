@@ -35,6 +35,9 @@
     <Filter Include="ModelImporter">
       <UniqueIdentifier>{915fb410-6e2f-4f1a-a6e5-e694a953591f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="rosources">
+      <UniqueIdentifier>{972fd1b3-bc3b-43cf-b93d-48399cd0f034}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Image Include="$(MSBuildThisFileDirectory)images\arealight.dds">

@@ -204,6 +204,13 @@ namespace ap::graphics
 		virtual const RenderPass* GetCurrentRenderPass(CommandList cmd) const = 0;
 
 
+
+		virtual void InitImGui(ap::platform::window_type window) =0;
+		virtual void DestoryImGui() = 0;
+		virtual void BeginImGui() = 0;
+		virtual void EndImGui() = 0;
+		virtual uint64_t CopyDescriptorToImGui(const Texture* texture, int subresource = -1) const =0;
+
 		// Some useful helpers:
 
 		struct GPULinearAllocator

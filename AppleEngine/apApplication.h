@@ -44,7 +44,14 @@ namespace ap
 		ap::graphics::Texture rendertarget;
 		ap::graphics::RenderPass renderpass;
 
+		// used when isImgui is true;
+		ap::graphics::Texture rendertarget_imgui;
+		ap::graphics::RenderPass renderpass_imgui;
+
+
 		std::string infodisplay_str;
+
+		
 
 	public:
 		virtual ~Application() = default;
@@ -54,6 +61,8 @@ namespace ap
 		ap::graphics::SwapChain swapChain;
 		ap::Canvas canvas;
 		ap::platform::window_type window;
+
+		bool isEditor = false;
 
 		// Runs the main engine loop
 		void Run();
@@ -90,6 +99,8 @@ namespace ap
 		// You need to call this before calling Run() or Initialize() if you want to render
 		void SetWindow(ap::platform::window_type, bool fullscreen = false);
 
+		//
+		virtual void ImGuiRender();
 
 		struct InfoDisplayer
 		{

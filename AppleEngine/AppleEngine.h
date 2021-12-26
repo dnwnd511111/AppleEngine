@@ -66,6 +66,11 @@
 #include "apUnorderedSet.h"
 #include "apVector.h"
 
+
+#include "imgui.h"
+#include "ImGuizmo.h"
+#include "imgui_internal.h"
+
 #ifdef _WIN32
 #ifdef PLATFORM_UWP
 //#pragma comment(lib,"AppleEngine_UWP.lib")
