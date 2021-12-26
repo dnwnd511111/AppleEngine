@@ -17,6 +17,8 @@ public:
 class Editor;
 class EditorComponent : public ap::RenderPath2D
 {
+private:
+	ap::Resource pointLightTex, spotLightTex, dirLightTex, areaLightTex, decalTex, forceFieldTex, emitterTex, hairTex, cameraTex, armatureTex, soundTex;
 public:
 
 	Editor* main = nullptr;
@@ -92,4 +94,5 @@ public:
 	EditorLoadingScreen loader;
 
 	void Initialize() override;
+	//void Compose(ap::graphics::CommandList cmd) override;
 };
