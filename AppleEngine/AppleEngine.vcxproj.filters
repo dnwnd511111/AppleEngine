@@ -187,6 +187,9 @@
     <ClCompile Include="apFont.cpp">
       <Filter>Engine\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="apImGui.cpp">
+      <Filter>Engine\ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\arial.h">
@@ -422,6 +425,12 @@
     </ClInclude>
     <ClInclude Include="apFont.h">
       <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="apImGuiColor.h">
+      <Filter>Engine\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="apImGui.h">
+      <Filter>Engine\ImGui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

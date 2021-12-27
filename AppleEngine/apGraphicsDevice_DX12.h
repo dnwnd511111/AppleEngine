@@ -459,7 +459,7 @@ namespace ap::graphics
 		void InitImGui(ap::platform::window_type window) ;
 		void DestoryImGui() ;
 		void BeginImGui() ;
-		void EndImGui() ;
+		void EndImGui(CommandList cmd) ;
 		uint64_t CopyDescriptorToImGui(const Texture* texture, int subresource = -1) const ;
 
 

@@ -111,6 +111,8 @@
     <ClInclude Include="apHairParticle.h" />
     <ClInclude Include="apHelper.h" />
     <ClInclude Include="apImage.h" />
+    <ClInclude Include="apImGui.h" />
+    <ClInclude Include="apImGuiColor.h" />
     <ClInclude Include="apInitializer.h" />
     <ClInclude Include="apInput.h" />
     <ClInclude Include="apJobSystem.h" />
@@ -185,6 +187,7 @@
     <ClCompile Include="apHairParticle.cpp" />
     <ClCompile Include="apHelper.cpp" />
     <ClCompile Include="apImage.cpp" />
+    <ClCompile Include="apImGui.cpp" />
     <ClCompile Include="apInitializer.cpp" />
     <ClCompile Include="apInput.cpp" />
     <ClCompile Include="apJobSystem.cpp" />

@@ -22,6 +22,15 @@
 #include <algorithm>
 #include <intrin.h> // _BitScanReverse64
 
+
+// ImGui
+#include "apImguiColor.h"
+#include "imgui.h"
+#include "ImGuizmo.h"
+#include "backends/imgui_impl_win32.h"
+#include "backends/imgui_impl_dx12.h"
+#pragma comment(lib, "dxgi.lib")
+
 using namespace Microsoft::WRL;
 
 namespace ap::graphics
@@ -5786,10 +5795,138 @@ using namespace dx12_internal;
 
 
 
+
+
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> imguiDescriptorHeap; // size 10000
+	uint64_t imguiDescriptorIndex = 1;   //  0 = ImguiFont
+
 	void GraphicsDevice_DX12::InitImGui(ap::platform::window_type window)
 	{
 
+
 #ifdef PLATFORM_WINDOWS_DESKTOP
+
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		desc.NumDescriptors = 10000;
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		HRESULT hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imguiDescriptorHeap));
+		assert(SUCCEEDED(hr));
+
+
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+		//io.ConfigViewportsNoDecoration = false;
+		//io.ConfigViewportsNoAutoMerge = true;
+		//io.ConfigViewportsNoTaskBarIcon = true;
+
+		io.Fonts->AddFontFromFileTTF("Resources/Fonts/Roboto/Roboto-Bold.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+		io.Fonts->AddFontFromFileTTF("Resources/Fonts/Roboto/Roboto-Regular.ttf", 24.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+		io.FontDefault = io.Fonts->AddFontFromFileTTF("Resources/Fonts/Roboto/Roboto-SemiMedium.ttf", 15.0f, nullptr, io.Fonts->GetGlyphRangesCyrillic());
+
+
+		// Set Style
+		{
+			ImGui::StyleColorsDark();
+
+			auto& style = ImGui::GetStyle();
+			auto& colors = ImGui::GetStyle().Colors;
+
+			// Headers
+			colors[ImGuiCol_Header] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::groupHeader);
+			colors[ImGuiCol_HeaderHovered] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::groupHeader);
+			colors[ImGuiCol_HeaderActive] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::groupHeader);
+
+			// Buttons
+			colors[ImGuiCol_Button] = ImColor(56, 56, 56, 200);
+			colors[ImGuiCol_ButtonHovered] = ImColor(70, 70, 70, 255);
+			colors[ImGuiCol_ButtonActive] = ImColor(56, 56, 56, 150);
+
+			// Frame BG
+			colors[ImGuiCol_FrameBg] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::propertyField);
+			colors[ImGuiCol_FrameBgHovered] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::propertyField);
+			colors[ImGuiCol_FrameBgActive] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::propertyField);
+
+			// Tabs
+			colors[ImGuiCol_Tab] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::titlebar);
+			colors[ImGuiCol_TabHovered] = ImColor(255, 225, 135, 30);
+			colors[ImGuiCol_TabActive] = ImColor(255, 225, 135, 60);
+			colors[ImGuiCol_TabUnfocused] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::titlebar);
+			colors[ImGuiCol_TabUnfocusedActive] = colors[ImGuiCol_TabHovered];
+
+			// Title
+			colors[ImGuiCol_TitleBg] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::titlebar);
+			colors[ImGuiCol_TitleBgActive] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::titlebar);
+			colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+
+			// Resize Grip
+			colors[ImGuiCol_ResizeGrip] = ImVec4(0.91f, 0.91f, 0.91f, 0.25f);
+			colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.81f, 0.81f, 0.81f, 0.67f);
+			colors[ImGuiCol_ResizeGripActive] = ImVec4(0.46f, 0.46f, 0.46f, 0.95f);
+
+			// Scrollbar
+			colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
+			colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.0f);
+			colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.0f);
+			colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.0f);
+
+			// Check Mark
+			colors[ImGuiCol_CheckMark] = ImColor(200, 200, 200, 255);
+
+			// Slider
+			colors[ImGuiCol_SliderGrab] = ImVec4(0.51f, 0.51f, 0.51f, 0.7f);
+			colors[ImGuiCol_SliderGrabActive] = ImVec4(0.66f, 0.66f, 0.66f, 1.0f);
+
+			// Text
+			colors[ImGuiCol_Text] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::text);
+
+			// Checkbox
+			colors[ImGuiCol_CheckMark] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::text);
+
+			// Separator
+			colors[ImGuiCol_Separator] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::backgroundDark);
+			colors[ImGuiCol_SeparatorActive] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::highlight);
+			colors[ImGuiCol_SeparatorHovered] = ImColor(39, 185, 242, 150);
+
+			// Window Background
+			colors[ImGuiCol_WindowBg] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::titlebar);
+			colors[ImGuiCol_ChildBg] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::background);
+			colors[ImGuiCol_PopupBg] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::backgroundPopup);
+			colors[ImGuiCol_Border] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::backgroundDark);
+
+			// Tables
+			colors[ImGuiCol_TableHeaderBg] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::groupHeader);
+			colors[ImGuiCol_TableBorderLight] = ImGui::ColorConvertU32ToFloat4(ap::imguicolor::backgroundDark);
+
+			// Menubar
+			colors[ImGuiCol_MenuBarBg] = ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+			//========================================================
+			/// Style
+			style.FrameRounding = 2.5f;
+			style.FrameBorderSize = 1.0f;
+			style.IndentSpacing = 11.0f;
+
+		}
+
+		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+		ImGuiStyle& style = ImGui::GetStyle();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		}
+		style.Colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, style.Colors[ImGuiCol_WindowBg].w);
+
+
+
 
 #else
 		assert(false && "not support other platforms")
@@ -5799,19 +5936,69 @@ using namespace dx12_internal;
 
 	void GraphicsDevice_DX12::DestoryImGui()
 	{
+		ImGui_ImplDX12_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
 	}
 
 	void GraphicsDevice_DX12::BeginImGui()
 	{
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		ImGuizmo::BeginFrame();
 	}
 
-	void GraphicsDevice_DX12::EndImGui()
+	void GraphicsDevice_DX12::EndImGui(CommandList cmd)
 	{
+		// Rendering
+		ImGui::Render();
+		GetCommandList(cmd)->SetDescriptorHeaps(1, imguiDescriptorHeap.GetAddressOf());
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), (ID3D12GraphicsCommandList*)GetCommandList(cmd));
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault(NULL, (void*)GetCommandList(cmd));
+		}
+
+		if (imguiDescriptorIndex > 9000) // heap size is 10000 , max bind number is 1000 
+		{
+			imguiDescriptorIndex = 1; //reset , 0 is font 
+		}
 	}
 
 	uint64_t GraphicsDevice_DX12::CopyDescriptorToImGui(const Texture* texture, int subresource) const
 	{
-		return uint64_t();
+		assert(imguiDescriptorIndex < 10000); // max descriptor size 1000
+
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuStart = imguiDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuStart = imguiDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = cpuStart;
+		cpuHandle.ptr += (imguiDescriptorIndex * resource_descriptor_size);
+
+		auto internal_state = to_internal(texture);
+		if (subresource == -1)
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = internal_state->srv.handle;
+			allocationhandler->device->CopyDescriptorsSimple(1, cpuHandle, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		}
+		else
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = internal_state->subresources_srv[subresource].handle;
+			allocationhandler->device->CopyDescriptorsSimple(1, cpuHandle, handle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		}
+
+		uint64_t ret = gpuStart.ptr + (imguiDescriptorIndex * resource_descriptor_size);
+
+		imguiDescriptorIndex++;
+
+		return ret;
 	}
 
 }
