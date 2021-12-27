@@ -39,6 +39,7 @@ void Editor::Initialize()
 
 	Application::Initialize();
 
+	graphicsDevice->InitImGui(window);
 
 	// With this mode, file data for resources will be kept around. This allows serializing embedded resource data inside scenes
 	ap::resourcemanager::SetMode(ap::resourcemanager::Mode::ALLOW_RETAIN_FILEDATA);
@@ -66,6 +67,9 @@ void Editor::Initialize()
 
 void Editor::ImGuiRender()
 {
+	ImGui::Begin("sdf");
+
+	ImGui::End();
 }
 
 

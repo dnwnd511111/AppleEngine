@@ -207,7 +207,9 @@ namespace ap
 
 
 			graphicsDevice->RenderPassBegin(&swapChain, cmd);
+			graphicsDevice->BeginImGui();
 			ImGuiRender();
+			graphicsDevice->EndImGui(cmd);
 			graphicsDevice->RenderPassEnd(cmd);
 
 		}
@@ -547,7 +549,7 @@ namespace ap
 
 	void Application::ImGuiRender()
 	{
-
+		
 	}
 
 }

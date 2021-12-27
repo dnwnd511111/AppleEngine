@@ -5798,8 +5798,8 @@ using namespace dx12_internal;
 
 
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> imguiDescriptorHeap; // size 10000
-	uint64_t imguiDescriptorIndex = 1;   //  0 = ImguiFont
+	static Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> imguiDescriptorHeap; // size 10000
+	static uint64_t imguiDescriptorIndex = 1;   //  0 = ImguiFont
 
 	void GraphicsDevice_DX12::InitImGui(ap::platform::window_type window)
 	{
@@ -5924,6 +5924,13 @@ using namespace dx12_internal;
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 		style.Colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, style.Colors[ImGuiCol_WindowBg].w);
+
+
+		ImGui_ImplWin32_Init(window);
+		ImGui_ImplDX12_Init(device.Get(), 3,
+			DXGI_FORMAT_R10G10B10A2_UNORM, imguiDescriptorHeap.Get(),
+			imguiDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			imguiDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
 
 
