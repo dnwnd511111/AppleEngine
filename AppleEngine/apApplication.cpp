@@ -107,7 +107,7 @@ namespace ap
 		}
 
 
-		if (!is_window_active && !ap::arguments::HasArgument("alwaysactive"))
+		if (!is_window_active && !ap::arguments::HasArgument("alwaysactive") && !isEditor)
 		{
 			// If the application is not active, disable Update loops:
 			deltaTimeAccumulator = 0;
@@ -306,13 +306,12 @@ namespace ap
 		}
 
 		// Draw the information display
-		if (infoDisplay.active)
+		if (infoDisplay.active && 0) //юс╫ц
 		{
 			infodisplay_str.clear();
 			if (infoDisplay.watermark)
 			{
 				infodisplay_str += "Apple Engine ";
-				infodisplay_str += ap::version::GetVersionString();
 				infodisplay_str += " ";
 
 #if defined(_ARM)

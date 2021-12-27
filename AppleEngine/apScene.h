@@ -1480,7 +1480,7 @@ namespace ap::scene
 		return camera;
 	}
 
-	// Helper function to open a wiscene file and add the contents to the global scene
+	// Helper function to open a apscene file and add the contents to the global scene
 	//	fileName		:	file path
 	//	transformMatrix	:	everything will be transformed by this matrix (optional)
 	//	attached		:	everything will be attached to a base entity
@@ -1488,7 +1488,7 @@ namespace ap::scene
 	//	returns INVALID_ENTITY if attached argument was false, else it returns the base entity handle
 	ap::ecs::Entity LoadModel(const std::string& fileName, const XMMATRIX& transformMatrix = XMMatrixIdentity(), bool attached = false);
 
-	// Helper function to open a wiscene file and add the contents to the specified scene. This is thread safe as it doesn't modify global scene
+	// Helper function to open a apscene file and add the contents to the specified scene. This is thread safe as it doesn't modify global scene
 	//	scene			:	the scene that will contain the model
 	//	fileName		:	file path
 	//	transformMatrix	:	everything will be transformed by this matrix (optional)

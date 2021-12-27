@@ -67,9 +67,286 @@ void Editor::Initialize()
 
 void Editor::ImGuiRender()
 {
-	ImGui::Begin("sdf");
+	//::ImGuiRender();
+	// 
+	// Note: Switch this to true to enable dockspace
+	static bool dockspaceOpen = true;
+	static bool opt_fullscreen_persistant = true;
+	bool opt_fullscreen = opt_fullscreen_persistant;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-	ImGui::End();
+	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+	// because it would be confusing to have two docking targets within each others.
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	if (opt_fullscreen)
+	{
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->Pos);
+		ImGui::SetNextWindowSize(viewport->Size);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	}
+	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+		window_flags |= ImGuiWindowFlags_NoBackground;
+
+	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
+	// all active windows docked into it will lose their parent and become undocked.
+	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
+	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+	ImGui::PopStyleVar();
+
+	if (opt_fullscreen)
+		ImGui::PopStyleVar(2);
+
+	// DockSpace
+	ImGuiIO& io = ImGui::GetIO();
+	ImGuiStyle& style = ImGui::GetStyle();
+	float minWinSizeX = style.WindowMinSize.x;
+	style.WindowMinSize.x = 250.0f;
+	if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+	{
+		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+	}
+	style.WindowMinSize.x = minWinSizeX;
+
+
+
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			
+			if (ImGui::MenuItem("New", "Ctrl+N"))
+			{
+				renderComponent.translator.selected.clear();
+				ap::renderer::ClearWorld(ap::scene::GetScene());
+			}
+
+			if (ImGui::MenuItem("Open...", "Ctrl+O"))
+			{
+				ap::helper::FileDialogParams params;
+				params.type = ap::helper::FileDialogParams::OPEN;
+				params.description = "Model formats (.apscene, .obj, .gltf, .glb)";
+				params.extensions.push_back("apscene");
+				params.extensions.push_back("obj");
+				params.extensions.push_back("gltf");
+				params.extensions.push_back("glb");
+				ap::helper::FileDialog(params, [&](std::string fileName) {
+					ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+
+						size_t camera_count_prev = ap::scene::GetScene().cameras.GetCount();
+
+						loader.addLoadingFunction([=](ap::jobsystem::JobArgs args) {
+							std::string extension = ap::helper::toUpper(ap::helper::GetExtensionFromFileName(fileName));
+
+							if (!extension.compare("APSCENE")) // engine-serialized
+							{
+								ap::scene::LoadModel(fileName);
+							}
+							else if (!extension.compare("OBJ")) // wavefront-obj
+							{
+								Scene scene;
+								ImportModel_OBJ(fileName, scene);
+								ap::scene::GetScene().Merge(scene);
+							}
+							else if (!extension.compare("GLTF")) // text-based gltf
+							{
+								Scene scene;
+								ImportModel_GLTF(fileName, scene);
+								ap::scene::GetScene().Merge(scene);
+							}
+							else if (!extension.compare("GLB")) // binary gltf
+							{
+								Scene scene;
+								ImportModel_GLTF(fileName, scene);
+								ap::scene::GetScene().Merge(scene);
+							}
+							});
+						loader.onFinished([=] {
+
+							// Detect when the new scene contains a new camera, and snap the camera onto it:
+							size_t camera_count = ap::scene::GetScene().cameras.GetCount();
+							if (camera_count > 0 && camera_count > camera_count_prev)
+							{
+								Entity entity = ap::scene::GetScene().cameras.GetEntity(camera_count_prev);
+								if (entity != INVALID_ENTITY)
+								{
+									TransformComponent* camera_transform = ap::scene::GetScene().transforms.GetComponent(entity);
+									if (camera_transform != nullptr)
+									{
+										//cameraWnd.camera_transform = *camera_transform;
+									}
+
+									CameraComponent* cam = ap::scene::GetScene().cameras.GetComponent(entity);
+									if (cam != nullptr)
+									{
+										ap::scene::GetCamera() = *cam;
+										// camera aspect should be always for the current screen
+										ap::scene::GetCamera().width = (float)renderComponent.renderPath->GetInternalResolution().x;
+										ap::scene::GetCamera().height = (float)renderComponent.renderPath->GetInternalResolution().y;
+									}
+								}
+							}
+
+							ActivatePath(&renderComponent, 0.2f, ap::Color::Black());
+							});
+
+						renderComponent.ResetHistory();
+						ActivatePath(&loader, 0.2f, ap::Color::Black());
+						});
+					});
+
+			}
+
+			if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
+			{
+				/*apHelper::FileDialogParams params;
+				params.type = apHelper::FileDialogParams::SAVE;
+				params.description = "Apple Scene";
+				params.extensions.push_back("apscene");
+
+				apHelper::FileDialog(params, [this](std::string fileName) {
+					apEvent::Subscribe_Once(SYSTEM_EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+						std::string filename = fileName;
+						std::string extension = apHelper::GetExtensionFromFileName(filename);
+						if (extension.compare("apscene"))
+						{
+							filename += ".apscene";
+						}
+						apArchive archive(filename, false);
+						if (archive.IsOpen())
+						{
+							scene->Serialize(archive);
+						}
+						else
+						{
+							apHelper::messageBox("Could not create " + fileName + "!");
+						}
+						});
+					});*/
+
+			}
+
+			if (ImGui::MenuItem("Exit"))
+			{
+				DestroyWindow(window);
+
+			}
+
+			ImGui::EndMenu();
+		}
+
+
+		if (ImGui::BeginMenu("Edit"))
+		{
+			
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("View"))
+		{
+		
+			ImGui::EndMenu();
+		}
+
+
+
+		ImGui::EndMenuBar();
+	}
+
+
+	//viewport
+	
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+		ImGui::Begin("Viewport");
+		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+		auto viewportOffset = ImGui::GetWindowPos();
+		viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+		viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+
+		viewportFocused = ImGui::IsWindowFocused();
+		viewportHovered = ImGui::IsWindowHovered();
+
+		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+		viewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+
+		uint64_t textureID;
+
+
+		textureID = graphicsDevice->CopyDescriptorToImGui(&rendertarget_imgui);
+		ImGui::Image((ImTextureID)(textureID), ImVec2{ viewportSize.x, viewportSize.y });
+
+
+
+
+		// Gizmos
+		
+		//if (selectedEntity && imGizmoType != -1)
+		//{
+		//	ImGuizmo::SetOrthographic(false);
+		//	ImGuizmo::SetDrawlist();
+
+		//	ImGuizmo::SetRect(viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x - viewportBounds[0].x, viewportBounds[1].y - viewportBounds[0].y);
+
+
+		//	auto& sceneCamera = scene->GetSceneCamera().GetComponent<CameraComponent>();
+
+		//	XMMATRIX view = sceneCamera.GetView();
+		//	//XMMATRIX projection = sceneCamera.GetProjection();
+		//	XMMATRIX projection = XMMatrixPerspectiveFovLH(sceneCamera.fov, sceneCamera.width / sceneCamera.height, sceneCamera.zNearP, sceneCamera.zFarP);
+
+
+		//	// Entity transform
+		//	auto& tc = selectedEntity.GetComponent<TransformComponent>();
+		//	XMMATRIX transform = tc.GetLocalMatrix();
+
+		//	// Snapping
+		//	bool snap = apInput::IsKeyPressed(Key::CONTROL);
+		//	float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+		//	// Snap to 45 degrees for rotation
+		//	if (imGizmoType == ImGuizmo::OPERATION::ROTATE)
+		//		snapValue = 45.0f;
+
+		//	float snapValues[3] = { snapValue, snapValue, snapValue };
+
+		//	ImGuizmo::Manipulate(&view.r[0].m128_f32[0], &projection.r[0].m128_f32[0],
+		//		(ImGuizmo::OPERATION)imGizmoType, ImGuizmo::LOCAL, &transform.r[0].m128_f32[0],
+		//		nullptr, snap ? snapValues : nullptr);
+
+		//	if (ImGuizmo::IsUsing())
+		//	{
+
+		//		XMVECTOR S, R, T;
+		//		XMMatrixDecompose(&S, &R, &T, transform);
+		//		XMStoreFloat4x4(&tc.world, transform);
+		//		tc.ApplyTransform();
+
+		//	}
+		//}
+
+		ImGui::End(); //Viewport
+		ImGui::PopStyleVar();
+
+	}
+
+
+	
+
+
+	ImGui::End(); // DockSpace Demo
+
+
 }
 
 
@@ -205,14 +482,7 @@ void EditorComponent::Load()
 	ap::renderer::SetToDrawGridHelper(true);
 	ap::renderer::SetToDrawDebugCameras(true);
 
-	ap::scene::TransformComponent camera_transform;
-	camera_transform.ClearTransform();
-	camera_transform.Translate(XMFLOAT3(0, 2, -10));
-	camera_transform.UpdateTransform();
-	ap::scene::GetCamera().TransformCamera(camera_transform);
-	ap::scene::GetCamera().UpdateCamera();
 
-	//
 
 	RenderPath2D::Load();
 }
@@ -241,9 +511,30 @@ void EditorComponent::Update(float dt)
 {
 	ap::profiler::range_id profrange = ap::profiler::BeginRangeCPU("Editor Update");
 
+
+
+	if (mainCamera == ap::ecs::INVALID_ENTITY || !ap::scene::GetScene().cameras.Contains(mainCamera))
+	{
+		if (ap::scene::GetScene().cameras.GetCount() > 0)
+		{
+			mainCamera = ap::scene::GetScene().cameras.GetEntity(0);
+		}
+		else
+		{
+			mainCamera = ap::scene::GetScene().Entity_CreateCamera("camera", GetLogicalWidth(), GetLogicalHeight());
+			ap::scene::GetScene().transforms.GetComponent(mainCamera)->Translate(XMFLOAT3(0, 2, -10));
+
+		}
+
+	}
+
+	
+
+
 	Scene& scene = ap::scene::GetScene();
 	CameraComponent& camera = ap::scene::GetCamera();
-
+	TransformComponent* cameraTransform = scene.transforms.GetComponent(mainCamera);
+	assert(cameraTransform != nullptr);
 
 
 
@@ -264,6 +555,10 @@ void EditorComponent::Update(float dt)
 
 
 	
+	//임시
+	static float rotationSpeed = 1.0f;
+
+
 
 	// Camera control:
 	XMFLOAT4 currentMouse = ap::input::GetPointer();
@@ -327,85 +622,93 @@ void EditorComponent::Update(float dt)
 		xDif += rightStick.x * jostickrotspeed;
 		yDif += rightStick.y * jostickrotspeed;
 
-		//xDif *= cameraWnd.rotationspeedSlider.GetValue();
-		//yDif *= cameraWnd.rotationspeedSlider.GetValue();
+		xDif *= rotationSpeed;
+		yDif *= rotationSpeed;
 
 
 		//camera 업데이트
-		//if (1)
-		//{
-		//	//임시
-		//	static XMFLOAT3 _move = {};
+		if (1)
+		{
+			//임시
+			static XMFLOAT3 _move = {};
+			static float acceleration = 0.18f;
+			static float movementSpeed = 10.0f;
 
-		//	// FPS Camera
-		//	const float clampedDT = std::min(dt, 0.1f); // if dt > 100 millisec, don't allow the camera to jump too far...
+			// FPS Camera
+			const float clampedDT = std::min(dt, 0.1f); // if dt > 100 millisec, don't allow the camera to jump too far...
 
-		//	const float speed = ((ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT) ? 10.0f : 1.0f) + rightTrigger.x * 10.0f) * clampedDT;//* cameraWnd.movespeedSlider.GetValue();
-		//	XMVECTOR move = XMLoadFloat3(&_move);
-		//	XMVECTOR moveNew = XMVectorSet(leftStick.x, 0, leftStick.y, 0);
+			const float speed = ((ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT) ? 10.0f : 1.0f) + rightTrigger.x * 10.0f) * clampedDT* movementSpeed;
+			XMVECTOR move = XMLoadFloat3(&_move);
+			XMVECTOR moveNew = XMVectorSet(leftStick.x, 0, leftStick.y, 0);
 
-		//	if (!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
-		//	{
-		//		// Only move camera if control not pressed
-		//		if (ap::input::Down((ap::input::BUTTON)'A') || ap::input::Down(ap::input::GAMEPAD_BUTTON_LEFT)) { moveNew += XMVectorSet(-1, 0, 0, 0); }
-		//		if (ap::input::Down((ap::input::BUTTON)'D') || ap::input::Down(ap::input::GAMEPAD_BUTTON_RIGHT)) { moveNew += XMVectorSet(1, 0, 0, 0); }
-		//		if (ap::input::Down((ap::input::BUTTON)'W') || ap::input::Down(ap::input::GAMEPAD_BUTTON_UP)) { moveNew += XMVectorSet(0, 0, 1, 0); }
-		//		if (ap::input::Down((ap::input::BUTTON)'S') || ap::input::Down(ap::input::GAMEPAD_BUTTON_DOWN)) { moveNew += XMVectorSet(0, 0, -1, 0); }
-		//		if (ap::input::Down((ap::input::BUTTON)'E') || ap::input::Down(ap::input::GAMEPAD_BUTTON_2)) { moveNew += XMVectorSet(0, 1, 0, 0); }
-		//		if (ap::input::Down((ap::input::BUTTON)'Q') || ap::input::Down(ap::input::GAMEPAD_BUTTON_1)) { moveNew += XMVectorSet(0, -1, 0, 0); }
-		//		moveNew += XMVector3Normalize(moveNew);
-		//	}
-		//	moveNew *= speed;
+			if (!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+			{
+				// Only move camera if control not pressed
+				if (ap::input::Down((ap::input::BUTTON)'A') || ap::input::Down(ap::input::GAMEPAD_BUTTON_LEFT)) { moveNew += XMVectorSet(-1, 0, 0, 0); }
+				if (ap::input::Down((ap::input::BUTTON)'D') || ap::input::Down(ap::input::GAMEPAD_BUTTON_RIGHT)) { moveNew += XMVectorSet(1, 0, 0, 0); }
+				if (ap::input::Down((ap::input::BUTTON)'W') || ap::input::Down(ap::input::GAMEPAD_BUTTON_UP)) { moveNew += XMVectorSet(0, 0, 1, 0); }
+				if (ap::input::Down((ap::input::BUTTON)'S') || ap::input::Down(ap::input::GAMEPAD_BUTTON_DOWN)) { moveNew += XMVectorSet(0, 0, -1, 0); }
+				if (ap::input::Down((ap::input::BUTTON)'E') || ap::input::Down(ap::input::GAMEPAD_BUTTON_2)) { moveNew += XMVectorSet(0, 1, 0, 0); }
+				if (ap::input::Down((ap::input::BUTTON)'Q') || ap::input::Down(ap::input::GAMEPAD_BUTTON_1)) { moveNew += XMVectorSet(0, -1, 0, 0); }
+				moveNew += XMVector3Normalize(moveNew);
+			}
+			moveNew *= speed;
 
-		//	move = XMVectorLerp(move, moveNew, clampedDT / 0.0166f);// cameraWnd.accelerationSlider.GetValue() * clampedDT / 0.0166f); // smooth the movement a bit
-		//	float moveLength = XMVectorGetX(XMVector3Length(move));
+			move = XMVectorLerp(move, moveNew, acceleration * clampedDT / 0.0166f); // smooth the movement a bit
+			float moveLength = XMVectorGetX(XMVector3Length(move));
 
-		//	if (moveLength < 0.0001f)
-		//	{
-		//		move = XMVectorSet(0, 0, 0, 0);
-		//	}
+			if (moveLength < 0.0001f)
+			{
+				move = XMVectorSet(0, 0, 0, 0);
+			}
 
-		//	if (abs(xDif) + abs(yDif) > 0 || moveLength > 0.0001f)
-		//	{
-		//		XMMATRIX camRot = XMMatrixRotationQuaternion(XMLoadFloat4(&cameraWnd.camera_transform.rotation_local));
-		//		XMVECTOR move_rot = XMVector3TransformNormal(move, camRot);
-		//		XMFLOAT3 _move;
-		//		XMStoreFloat3(&_move, move_rot);
-		//		cameraWnd.camera_transform.Translate(_move);
-		//		cameraWnd.camera_transform.RotateRollPitchYaw(XMFLOAT3(yDif, xDif, 0));
-		//		camera.SetDirty();
-		//	}
+			if (abs(xDif) + abs(yDif) > 0 || moveLength > 0.0001f)
+			{
+				XMMATRIX camRot = XMMatrixRotationQuaternion(XMLoadFloat4(&cameraTransform->rotation_local));
+				XMVECTOR move_rot = XMVector3TransformNormal(move, camRot);
+				XMFLOAT3 _move;
+				XMStoreFloat3(&_move, move_rot);
+				cameraTransform->Translate(_move);
+				cameraTransform->RotateRollPitchYaw(XMFLOAT3(yDif, xDif, 0));
+				camera.SetDirty();
+			}
 
-		//	cameraWnd.camera_transform.UpdateTransform();
-		//	XMStoreFloat3(&_move, move);
-		//}
-		//else
-		//{
-		//	// Orbital Camera
+			cameraTransform->UpdateTransform();
+			XMStoreFloat3(&_move, move);
+		}
+		else
+		{
+			// Orbital Camera
 
-		//	if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
-		//	{
-		//		XMVECTOR V = XMVectorAdd(camera.GetRight() * xDif, camera.GetUp() * yDif) * 10;
-		//		XMFLOAT3 vec;
-		//		XMStoreFloat3(&vec, V);
-		//		cameraWnd.camera_target.Translate(vec);
-		//	}
-		//	else if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL) || currentMouse.z != 0.0f)
-		//	{
-		//		cameraWnd.camera_transform.Translate(XMFLOAT3(0, 0, yDif * 4 + currentMouse.z));
-		//		cameraWnd.camera_transform.translation_local.z = std::min(0.0f, cameraWnd.camera_transform.translation_local.z);
-		//		camera.SetDirty();
-		//	}
-		//	else if (abs(xDif) + abs(yDif) > 0)
-		//	{
-		//		cameraWnd.camera_target.RotateRollPitchYaw(XMFLOAT3(yDif * 2, xDif * 2, 0));
-		//		camera.SetDirty();
-		//	}
+			if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
+			{
+				XMVECTOR V = XMVectorAdd(camera.GetRight() * xDif, camera.GetUp() * yDif) * 10;
+				XMFLOAT3 vec;
+				XMStoreFloat3(&vec, V);
+				cameraTransform->Translate(vec);
+			}
+			else if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL) || currentMouse.z != 0.0f)
+			{
+				cameraTransform->Translate(XMFLOAT3(0, 0, yDif * 4 + currentMouse.z));
+				cameraTransform->translation_local.z = std::min(0.0f, cameraTransform->translation_local.z);
+				camera.SetDirty();
+			}
+			else if (abs(xDif) + abs(yDif) > 0)
+			{
+				cameraTransform->RotateRollPitchYaw(XMFLOAT3(yDif * 2, xDif * 2, 0));
+				camera.SetDirty();
+			}
 
-		//	cameraWnd.camera_target.UpdateTransform();
-		//	cameraWnd.camera_transform.UpdateTransform_Parented(cameraWnd.camera_target);
-		//}
+			cameraTransform->UpdateTransform();
+		}
 
+
+		
+		// Update MainCamera
+		camera.TransformCamera(*cameraTransform);
+		camera.UpdateCamera();
+			
+		
 
 		// Begin picking:
 		//unsigned int pickMask = rendererWnd.GetPickType();

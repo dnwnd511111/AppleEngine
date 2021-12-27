@@ -21,6 +21,8 @@ private:
 	ap::Resource pointLightTex, spotLightTex, dirLightTex, areaLightTex, decalTex, forceFieldTex, emitterTex, hairTex, cameraTex, armatureTex, soundTex;
 public:
 
+	ap::ecs::Entity mainCamera = ap::ecs::INVALID_ENTITY;
+
 	Editor* main = nullptr;
 
 	std::unique_ptr<ap::RenderPath3D> renderPath;
@@ -92,6 +94,12 @@ class Editor : public ap::Application
 public:
 	EditorComponent renderComponent;
 	EditorLoadingScreen loader;
+
+	XMFLOAT2 viewportSize = { 0.0f, 0.0f };
+	XMFLOAT2 viewportBounds[2];
+	bool viewportFocused = false;
+	bool viewportHovered = false;
+
 
 	void Initialize() override;
 	void ImGuiRender() override;
