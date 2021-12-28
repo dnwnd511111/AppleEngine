@@ -71,6 +71,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
    
+   
+    ap::graphics::GetDevice()->DestoryImGui();
 
     return (int) msg.wParam;
 }

@@ -3,6 +3,7 @@
 #include "AppleEngine.h"
 #include "Translator.h"
 
+#include "HierarchyPanel.h"
 
 class EditorLoadingScreen : public ap::LoadingScreen
 {
@@ -87,6 +88,9 @@ public:
 	void ConsumeHistoryOperation(bool undo);
 
 
+	void DeleteSelectedEntities();
+
+
 };
 
 class Editor : public ap::Application
@@ -99,6 +103,9 @@ public:
 	XMFLOAT2 viewportBounds[2];
 	bool viewportFocused = false;
 	bool viewportHovered = false;
+
+	//panel
+	Panel::HierarchyPanel hierarchyPanel{this};
 
 
 	void Initialize() override;

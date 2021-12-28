@@ -5714,18 +5714,18 @@ void DrawDebugWorld(
 			for (int i = 0; i <= a; ++i)
 			{
 				verts[count++] = XMFLOAT4(i - a * 0.5f, h, -a * 0.5f, 1);
-				verts[count++] = (i == a / 2 ? XMFLOAT4(0, 0, 1, 1) : XMFLOAT4(col, col, col, 1));
+				verts[count++] = XMFLOAT4(col, col, col, 1);
 
 				verts[count++] = XMFLOAT4(i - a * 0.5f, h, +a * 0.5f, 1);
-				verts[count++] = (i == a / 2 ? XMFLOAT4(0, 0, 1, 1) : XMFLOAT4(col, col, col, 1));
+				verts[count++] = XMFLOAT4(col, col, col, 1);
 			}
 			for (int j = 0; j <= a; ++j)
 			{
 				verts[count++] = XMFLOAT4(-a * 0.5f, h, j - a * 0.5f, 1);
-				verts[count++] = (j == a / 2 ? XMFLOAT4(1, 0, 0, 1) : XMFLOAT4(col, col, col, 1));
+				verts[count++] = XMFLOAT4(col, col, col, 1);
 
 				verts[count++] = XMFLOAT4(+a * 0.5f, h, j - a * 0.5f, 1);
-				verts[count++] = (j == a / 2 ? XMFLOAT4(1, 0, 0, 1) : XMFLOAT4(col, col, col, 1));
+				verts[count++] = XMFLOAT4(col, col, col, 1);
 			}
 
 			gridVertexCount = arraysize(verts) / 2;
@@ -5738,7 +5738,7 @@ void DrawDebugWorld(
 
 		MiscCB sb;
 		XMStoreFloat4x4(&sb.g_xTransform, camera.GetViewProjection());
-		sb.g_xColor = float4(1, 1, 1, 1);
+		sb.g_xColor = float4(1.0, 1.0, 1.0, 0.5);
 
 		device->BindDynamicConstantBuffer(sb, CB_GETBINDSLOT(MiscCB), cmd);
 

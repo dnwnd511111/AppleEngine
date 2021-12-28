@@ -341,6 +341,22 @@ void Editor::ImGuiRender()
 	}
 
 
+	float dt = ap::scene::GetScene().dt;
+
+	bool isLoadingModel = activePath != &renderComponent;
+	// Render panels 
+	{
+		ImGui::Begin("Scene Hierarchy");
+		if (!isLoadingModel)
+			hierarchyPanel.ImGuiRender(dt);
+		ImGui::End();
+
+		ImGui::Begin("Properties");
+		if (!isLoadingModel)
+			hierarchyPanel.ImGuiRenderProperties(dt);
+		ImGui::End();
+	}
+	
 	
 
 
@@ -480,7 +496,7 @@ void EditorComponent::Load()
 
 	ap::renderer::SetToDrawDebugEnvProbes(true);
 	ap::renderer::SetToDrawGridHelper(true);
-	ap::renderer::SetToDrawDebugCameras(true);
+	//ap::renderer::SetToDrawDebugCameras(true);
 
 
 
@@ -532,7 +548,7 @@ void EditorComponent::Update(float dt)
 
 
 	Scene& scene = ap::scene::GetScene();
-	CameraComponent& camera = ap::scene::GetCamera();
+	CameraComponent& camera = *scene.cameras.GetComponent(mainCamera);
 	TransformComponent* cameraTransform = scene.transforms.GetComponent(mainCamera);
 	assert(cameraTransform != nullptr);
 
@@ -540,589 +556,582 @@ void EditorComponent::Update(float dt)
 
 	selectionOutlineTimer += dt;
 
-	bool clear_selected = false;
-	if (ap::input::Press(ap::input::KEYBOARD_BUTTON_ESCAPE))
+	if (main->viewportHovered)
 	{
-		if (0)
+
+
+		bool clear_selected = false;
+		if (ap::input::Press(ap::input::KEYBOARD_BUTTON_ESCAPE))
 		{
-		
-		}
-		else
-		{
-			clear_selected = true;
-		}
-	}
-
-
-	
-	//임시
-	static float rotationSpeed = 1.0f;
-
-
-
-	// Camera control:
-	XMFLOAT4 currentMouse = ap::input::GetPointer();
-	if (!ap::backlog::isActive() && !GetGUI().HasFocus())
-	{
-		static XMFLOAT4 originalMouse = XMFLOAT4(0, 0, 0, 0);
-		static bool camControlStart = true;
-		if (camControlStart)
-		{
-			originalMouse = ap::input::GetPointer();
-		}
-
-		float xDif = 0, yDif = 0;
-
-		if (ap::input::Down(ap::input::MOUSE_BUTTON_MIDDLE))
-		{
-			camControlStart = false;
-#if 0
-			// Mouse delta from previous frame:
-			xDif = currentMouse.x - originalMouse.x;
-			yDif = currentMouse.y - originalMouse.y;
-#else
-			// Mouse delta from hardware read:
-			xDif = ap::input::GetMouseState().delta_position.x;
-			yDif = ap::input::GetMouseState().delta_position.y;
-#endif
-			xDif = 0.1f * xDif * (1.0f / 60.0f);
-			yDif = 0.1f * yDif * (1.0f / 60.0f);
-			ap::input::SetPointer(originalMouse);
-			ap::input::HidePointer(true);
-		}
-		else
-		{
-			camControlStart = true;
-			ap::input::HidePointer(false);
-		}
-
-		const float buttonrotSpeed = 2.0f * dt;
-		if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LEFT))
-		{
-			xDif -= buttonrotSpeed;
-		}
-		if (ap::input::Down(ap::input::KEYBOARD_BUTTON_RIGHT))
-		{
-			xDif += buttonrotSpeed;
-		}
-		if (ap::input::Down(ap::input::KEYBOARD_BUTTON_UP))
-		{
-			yDif -= buttonrotSpeed;
-		}
-		if (ap::input::Down(ap::input::KEYBOARD_BUTTON_DOWN))
-		{
-			yDif += buttonrotSpeed;
-		}
-
-		const XMFLOAT4 leftStick = ap::input::GetAnalog(ap::input::GAMEPAD_ANALOG_THUMBSTICK_L, 0);
-		const XMFLOAT4 rightStick = ap::input::GetAnalog(ap::input::GAMEPAD_ANALOG_THUMBSTICK_R, 0);
-		const XMFLOAT4 rightTrigger = ap::input::GetAnalog(ap::input::GAMEPAD_ANALOG_TRIGGER_R, 0);
-
-		const float jostickrotspeed = 0.05f;
-		xDif += rightStick.x * jostickrotspeed;
-		yDif += rightStick.y * jostickrotspeed;
-
-		xDif *= rotationSpeed;
-		yDif *= rotationSpeed;
-
-
-		//camera 업데이트
-		if (1)
-		{
-			//임시
-			static XMFLOAT3 _move = {};
-			static float acceleration = 0.18f;
-			static float movementSpeed = 10.0f;
-
-			// FPS Camera
-			const float clampedDT = std::min(dt, 0.1f); // if dt > 100 millisec, don't allow the camera to jump too far...
-
-			const float speed = ((ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT) ? 10.0f : 1.0f) + rightTrigger.x * 10.0f) * clampedDT* movementSpeed;
-			XMVECTOR move = XMLoadFloat3(&_move);
-			XMVECTOR moveNew = XMVectorSet(leftStick.x, 0, leftStick.y, 0);
-
-			if (!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+			if (0)
 			{
-				// Only move camera if control not pressed
-				if (ap::input::Down((ap::input::BUTTON)'A') || ap::input::Down(ap::input::GAMEPAD_BUTTON_LEFT)) { moveNew += XMVectorSet(-1, 0, 0, 0); }
-				if (ap::input::Down((ap::input::BUTTON)'D') || ap::input::Down(ap::input::GAMEPAD_BUTTON_RIGHT)) { moveNew += XMVectorSet(1, 0, 0, 0); }
-				if (ap::input::Down((ap::input::BUTTON)'W') || ap::input::Down(ap::input::GAMEPAD_BUTTON_UP)) { moveNew += XMVectorSet(0, 0, 1, 0); }
-				if (ap::input::Down((ap::input::BUTTON)'S') || ap::input::Down(ap::input::GAMEPAD_BUTTON_DOWN)) { moveNew += XMVectorSet(0, 0, -1, 0); }
-				if (ap::input::Down((ap::input::BUTTON)'E') || ap::input::Down(ap::input::GAMEPAD_BUTTON_2)) { moveNew += XMVectorSet(0, 1, 0, 0); }
-				if (ap::input::Down((ap::input::BUTTON)'Q') || ap::input::Down(ap::input::GAMEPAD_BUTTON_1)) { moveNew += XMVectorSet(0, -1, 0, 0); }
-				moveNew += XMVector3Normalize(moveNew);
-			}
-			moveNew *= speed;
 
-			move = XMVectorLerp(move, moveNew, acceleration * clampedDT / 0.0166f); // smooth the movement a bit
-			float moveLength = XMVectorGetX(XMVector3Length(move));
-
-			if (moveLength < 0.0001f)
-			{
-				move = XMVectorSet(0, 0, 0, 0);
-			}
-
-			if (abs(xDif) + abs(yDif) > 0 || moveLength > 0.0001f)
-			{
-				XMMATRIX camRot = XMMatrixRotationQuaternion(XMLoadFloat4(&cameraTransform->rotation_local));
-				XMVECTOR move_rot = XMVector3TransformNormal(move, camRot);
-				XMFLOAT3 _move;
-				XMStoreFloat3(&_move, move_rot);
-				cameraTransform->Translate(_move);
-				cameraTransform->RotateRollPitchYaw(XMFLOAT3(yDif, xDif, 0));
-				camera.SetDirty();
-			}
-
-			cameraTransform->UpdateTransform();
-			XMStoreFloat3(&_move, move);
-		}
-		else
-		{
-			// Orbital Camera
-
-			if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
-			{
-				XMVECTOR V = XMVectorAdd(camera.GetRight() * xDif, camera.GetUp() * yDif) * 10;
-				XMFLOAT3 vec;
-				XMStoreFloat3(&vec, V);
-				cameraTransform->Translate(vec);
-			}
-			else if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL) || currentMouse.z != 0.0f)
-			{
-				cameraTransform->Translate(XMFLOAT3(0, 0, yDif * 4 + currentMouse.z));
-				cameraTransform->translation_local.z = std::min(0.0f, cameraTransform->translation_local.z);
-				camera.SetDirty();
-			}
-			else if (abs(xDif) + abs(yDif) > 0)
-			{
-				cameraTransform->RotateRollPitchYaw(XMFLOAT3(yDif * 2, xDif * 2, 0));
-				camera.SetDirty();
-			}
-
-			cameraTransform->UpdateTransform();
-		}
-
-
-		
-		// Update MainCamera
-		camera.TransformCamera(*cameraTransform);
-		camera.UpdateCamera();
-			
-		
-
-		// Begin picking:
-		//unsigned int pickMask = rendererWnd.GetPickType();
-		//Ray pickRay = ap::renderer::GetPickRay((long)currentMouse.x, (long)currentMouse.y, *this);
-		//{
-		//	hovered = ap::scene::PickResult();
-
-		//	if (pickMask & PICK_LIGHT)
-		//	{
-		//		for (size_t i = 0; i < scene.lights.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.lights.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_DECAL)
-		//	{
-		//		for (size_t i = 0; i < scene.decals.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.decals.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_FORCEFIELD)
-		//	{
-		//		for (size_t i = 0; i < scene.forces.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.forces.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_EMITTER)
-		//	{
-		//		for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.emitters.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_HAIR)
-		//	{
-		//		for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.hairs.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_ENVPROBE)
-		//	{
-		//		for (size_t i = 0; i < scene.probes.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.probes.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			if (Sphere(transform.GetPosition(), 1).intersects(pickRay))
-		//			{
-		//				float dis = ap::math::Distance(transform.GetPosition(), pickRay.origin);
-		//				if (dis < hovered.distance)
-		//				{
-		//					hovered = ap::scene::PickResult();
-		//					hovered.entity = entity;
-		//					hovered.distance = dis;
-		//				}
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_CAMERA)
-		//	{
-		//		for (size_t i = 0; i < scene.cameras.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.cameras.GetEntity(i);
-
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_ARMATURE)
-		//	{
-		//		for (size_t i = 0; i < scene.armatures.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.armatures.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-		//	if (pickMask & PICK_SOUND)
-		//	{
-		//		for (size_t i = 0; i < scene.sounds.GetCount(); ++i)
-		//		{
-		//			Entity entity = scene.sounds.GetEntity(i);
-		//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
-
-		//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-		//			float dis = XMVectorGetX(disV);
-		//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-		//			{
-		//				hovered = ap::scene::PickResult();
-		//				hovered.entity = entity;
-		//				hovered.distance = dis;
-		//			}
-		//		}
-		//	}
-
-		//	if (pickMask & PICK_OBJECT && hovered.entity == INVALID_ENTITY)
-		//	{
-		//		// Object picking only when mouse button down, because it can be slow with high polycount
-		//		if (
-		//			ap::input::Down(ap::input::MOUSE_BUTTON_LEFT) ||
-		//			ap::input::Down(ap::input::MOUSE_BUTTON_RIGHT) ||
-		//			paintToolWnd.GetMode() != PaintToolWindow::MODE_DISABLED
-		//			)
-		//		{
-		//			hovered = ap::scene::Pick(pickRay, pickMask);
-		//		}
-		//	}
-		//}
-
-		//// Interactions only when paint tool is disabled:
-		//if (paintToolWnd.GetMode() == PaintToolWindow::MODE_DISABLED)
-		//{
-		//	// Interact:
-		//	if (hovered.entity != INVALID_ENTITY)
-		//	{
-		//		const ObjectComponent* object = scene.objects.GetComponent(hovered.entity);
-		//		if (object != nullptr)
-		//		{
-		//			if (translator.selected.empty() && object->GetRenderTypes() & ap::enums::RENDERTYPE_WATER)
-		//			{
-		//				if (ap::input::Down(ap::input::MOUSE_BUTTON_LEFT))
-		//				{
-		//					// if water, then put a water ripple onto it:
-		//					scene.PutWaterRipple("images/ripple.png", hovered.position);
-		//				}
-		//			}
-		//			else if (decalWnd.placementCheckBox.GetCheck() && ap::input::Press(ap::input::MOUSE_BUTTON_LEFT))
-		//			{
-		//				// if not water or softbody, put a decal on it:
-		//				static int decalselector = 0;
-		//				decalselector = (decalselector + 1) % 2;
-		//				Entity entity = scene.Entity_CreateDecal("editorDecal", (decalselector == 0 ? "images/leaf.dds" : "images/blood1.png"));
-		//				TransformComponent& transform = *scene.transforms.GetComponent(entity);
-		//				transform.MatrixTransform(hovered.orientation);
-		//				transform.RotateRollPitchYaw(XMFLOAT3(XM_PIDIV2, 0, 0));
-		//				transform.Scale(XMFLOAT3(2, 2, 2));
-		//				scene.Component_Attach(entity, hovered.entity);
-
-		//				RefreshSceneGraphView();
-		//			}
-		//		}
-
-		//	}
-		//}
-
-		// Select...
-		static bool selectAll = false;
-		if (ap::input::Press(ap::input::MOUSE_BUTTON_RIGHT) || selectAll || clear_selected)
-		{
-
-			ap::Archive& archive = AdvanceHistory();
-			archive << HISTORYOP_SELECTION;
-			// record PREVIOUS selection state...
-			archive << translator.selected.size();
-			for (auto& x : translator.selected)
-			{
-				archive << x.entity;
-				archive << x.position;
-				archive << x.normal;
-				archive << x.subsetIndex;
-				archive << x.distance;
-			}
-
-			if (selectAll)
-			{
-				// Add everything to selection:
-				selectAll = false;
-				ClearSelected();
-
-				for (size_t i = 0; i < scene.transforms.GetCount(); ++i)
-				{
-					Entity entity = scene.transforms.GetEntity(i);
-					if (scene.hierarchy.Contains(entity))
-					{
-						// Parented objects won't be attached, but only the parents instead. Otherwise it would cause "double translation"
-						continue;
-					}
-					ap::scene::PickResult picked;
-					picked.entity = entity;
-					AddSelected(picked);
-				}
-			}
-			else if (hovered.entity != INVALID_ENTITY)
-			{
-				// Add the hovered item to the selection:
-
-				if (!translator.selected.empty() && ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
-				{
-					// Union selection:
-					ap::vector<ap::scene::PickResult> saved = translator.selected;
-					translator.selected.clear();
-					for (const ap::scene::PickResult& picked : saved)
-					{
-						AddSelected(picked);
-					}
-					AddSelected(hovered);
-				}
-				else
-				{
-					// Replace selection:
-					translator.selected.clear();
-					AddSelected(hovered);
-				}
 			}
 			else
 			{
 				clear_selected = true;
 			}
-
-			if (clear_selected)
-			{
-				ClearSelected();
-			}
-
-
-			// record NEW selection state...
-			archive << translator.selected.size();
-			for (auto& x : translator.selected)
-			{
-				archive << x.entity;
-				archive << x.position;
-				archive << x.normal;
-				archive << x.subsetIndex;
-				archive << x.distance;
-			}
-
-			
 		}
 
-		// Control operations...
-		if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+
+
+		//임시
+		static float rotationSpeed = 1.0f;
+
+
+
+		// Camera control:
+		XMFLOAT4 currentMouse = ap::input::GetPointer();
+		if (!ap::backlog::isActive() && !GetGUI().HasFocus())
 		{
-			// Select All
-			if (ap::input::Press((ap::input::BUTTON)'A'))
+			static XMFLOAT4 originalMouse = XMFLOAT4(0, 0, 0, 0);
+			static bool camControlStart = true;
+			if (camControlStart)
 			{
-				selectAll = true;
+				originalMouse = ap::input::GetPointer();
 			}
-			// Copy
-			if (ap::input::Press((ap::input::BUTTON)'C'))
-			{
-				auto prevSel = translator.selected;
 
-				clipboard.SetReadModeAndResetPos(false);
-				clipboard << prevSel.size();
-				for (auto& x : prevSel)
+			float xDif = 0, yDif = 0;
+
+			if (ap::input::Down(ap::input::MOUSE_BUTTON_MIDDLE))
+			{
+				camControlStart = false;
+#if 0
+				// Mouse delta from previous frame:
+				xDif = currentMouse.x - originalMouse.x;
+				yDif = currentMouse.y - originalMouse.y;
+#else
+				// Mouse delta from hardware read:
+				xDif = ap::input::GetMouseState().delta_position.x;
+				yDif = ap::input::GetMouseState().delta_position.y;
+#endif
+				xDif = 0.1f * xDif * (1.0f / 60.0f);
+				yDif = 0.1f * yDif * (1.0f / 60.0f);
+				ap::input::SetPointer(originalMouse);
+				ap::input::HidePointer(true);
+			}
+			else
+			{
+				camControlStart = true;
+				ap::input::HidePointer(false);
+			}
+
+			const float buttonrotSpeed = 2.0f * dt;
+			if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LEFT))
+			{
+				xDif -= buttonrotSpeed;
+			}
+			if (ap::input::Down(ap::input::KEYBOARD_BUTTON_RIGHT))
+			{
+				xDif += buttonrotSpeed;
+			}
+			if (ap::input::Down(ap::input::KEYBOARD_BUTTON_UP))
+			{
+				yDif -= buttonrotSpeed;
+			}
+			if (ap::input::Down(ap::input::KEYBOARD_BUTTON_DOWN))
+			{
+				yDif += buttonrotSpeed;
+			}
+
+			const XMFLOAT4 leftStick = ap::input::GetAnalog(ap::input::GAMEPAD_ANALOG_THUMBSTICK_L, 0);
+			const XMFLOAT4 rightStick = ap::input::GetAnalog(ap::input::GAMEPAD_ANALOG_THUMBSTICK_R, 0);
+			const XMFLOAT4 rightTrigger = ap::input::GetAnalog(ap::input::GAMEPAD_ANALOG_TRIGGER_R, 0);
+
+			const float jostickrotspeed = 0.05f;
+			xDif += rightStick.x * jostickrotspeed;
+			yDif += rightStick.y * jostickrotspeed;
+
+			xDif *= rotationSpeed;
+			yDif *= rotationSpeed;
+
+
+			//camera 업데이트
+			if (1)
+			{
+				//임시
+				static XMFLOAT3 _move = {};
+				static float acceleration = 0.18f;
+				static float movementSpeed = 10.0f;
+
+				// FPS Camera
+				const float clampedDT = std::min(dt, 0.1f); // if dt > 100 millisec, don't allow the camera to jump too far...
+
+				const float speed = ((ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT) ? 10.0f : 1.0f) + rightTrigger.x * 10.0f) * clampedDT * movementSpeed;
+				XMVECTOR move = XMLoadFloat3(&_move);
+				XMVECTOR moveNew = XMVectorSet(leftStick.x, 0, leftStick.y, 0);
+
+				if (!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
 				{
-					scene.Entity_Serialize(clipboard, x.entity);
+					// Only move camera if control not pressed
+					if (ap::input::Down((ap::input::BUTTON)'A') || ap::input::Down(ap::input::GAMEPAD_BUTTON_LEFT)) { moveNew += XMVectorSet(-1, 0, 0, 0); }
+					if (ap::input::Down((ap::input::BUTTON)'D') || ap::input::Down(ap::input::GAMEPAD_BUTTON_RIGHT)) { moveNew += XMVectorSet(1, 0, 0, 0); }
+					if (ap::input::Down((ap::input::BUTTON)'W') || ap::input::Down(ap::input::GAMEPAD_BUTTON_UP)) { moveNew += XMVectorSet(0, 0, 1, 0); }
+					if (ap::input::Down((ap::input::BUTTON)'S') || ap::input::Down(ap::input::GAMEPAD_BUTTON_DOWN)) { moveNew += XMVectorSet(0, 0, -1, 0); }
+					if (ap::input::Down((ap::input::BUTTON)'E') || ap::input::Down(ap::input::GAMEPAD_BUTTON_2)) { moveNew += XMVectorSet(0, 1, 0, 0); }
+					if (ap::input::Down((ap::input::BUTTON)'Q') || ap::input::Down(ap::input::GAMEPAD_BUTTON_1)) { moveNew += XMVectorSet(0, -1, 0, 0); }
+					moveNew += XMVector3Normalize(moveNew);
 				}
-			}
-			// Paste
-			if (ap::input::Press((ap::input::BUTTON)'V'))
-			{
-				auto prevSel = translator.selected;
-				translator.selected.clear();
+				moveNew *= speed;
 
-				clipboard.SetReadModeAndResetPos(true);
-				size_t count;
-				clipboard >> count;
-				for (size_t i = 0; i < count; ++i)
+				move = XMVectorLerp(move, moveNew, acceleration * clampedDT / 0.0166f); // smooth the movement a bit
+				float moveLength = XMVectorGetX(XMVector3Length(move));
+
+				if (moveLength < 0.0001f)
 				{
-					ap::scene::PickResult picked;
-					picked.entity = scene.Entity_Serialize(clipboard);
-					AddSelected(picked);
+					move = XMVectorSet(0, 0, 0, 0);
 				}
 
-				
-			}
-			// Duplicate Instances
-			if (ap::input::Press((ap::input::BUTTON)'D'))
-			{
-				auto prevSel = translator.selected;
-				translator.selected.clear();
-				for (auto& x : prevSel)
+				if (abs(xDif) + abs(yDif) > 0 || moveLength > 0.0001f)
 				{
-					ap::scene::PickResult picked;
-					picked.entity = scene.Entity_Duplicate(x.entity);
-					AddSelected(picked);
+					XMMATRIX camRot = XMMatrixRotationQuaternion(XMLoadFloat4(&cameraTransform->rotation_local));
+					XMVECTOR move_rot = XMVector3TransformNormal(move, camRot);
+					XMFLOAT3 _move;
+					XMStoreFloat3(&_move, move_rot);
+					cameraTransform->Translate(_move);
+					cameraTransform->RotateRollPitchYaw(XMFLOAT3(yDif, xDif, 0));
+					camera.SetDirty();
 				}
 
-				
+				cameraTransform->UpdateTransform();
+				XMStoreFloat3(&_move, move);
 			}
-			// Put Instances
-			if (clipboard.IsOpen() && hovered.subsetIndex >= 0 && ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT) && ap::input::Press(ap::input::MOUSE_BUTTON_LEFT))
+			else
 			{
-				clipboard.SetReadModeAndResetPos(true);
-				size_t count;
-				clipboard >> count;
-				for (size_t i = 0; i < count; ++i)
+				// Orbital Camera
+
+				if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
 				{
-					Entity entity = scene.Entity_Serialize(clipboard);
-					TransformComponent* transform = scene.transforms.GetComponent(entity);
-					if (transform != nullptr)
+					XMVECTOR V = XMVectorAdd(camera.GetRight() * xDif, camera.GetUp() * yDif) * 10;
+					XMFLOAT3 vec;
+					XMStoreFloat3(&vec, V);
+					cameraTransform->Translate(vec);
+				}
+				else if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL) || currentMouse.z != 0.0f)
+				{
+					cameraTransform->Translate(XMFLOAT3(0, 0, yDif * 4 + currentMouse.z));
+					cameraTransform->translation_local.z = std::min(0.0f, cameraTransform->translation_local.z);
+					camera.SetDirty();
+				}
+				else if (abs(xDif) + abs(yDif) > 0)
+				{
+					cameraTransform->RotateRollPitchYaw(XMFLOAT3(yDif * 2, xDif * 2, 0));
+					camera.SetDirty();
+				}
+
+				cameraTransform->UpdateTransform();
+			}
+
+
+
+			// Begin picking:
+			//unsigned int pickMask = rendererWnd.GetPickType();
+			//Ray pickRay = ap::renderer::GetPickRay((long)currentMouse.x, (long)currentMouse.y, *this);
+			//{
+			//	hovered = ap::scene::PickResult();
+
+			//	if (pickMask & PICK_LIGHT)
+			//	{
+			//		for (size_t i = 0; i < scene.lights.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.lights.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_DECAL)
+			//	{
+			//		for (size_t i = 0; i < scene.decals.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.decals.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_FORCEFIELD)
+			//	{
+			//		for (size_t i = 0; i < scene.forces.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.forces.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_EMITTER)
+			//	{
+			//		for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.emitters.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_HAIR)
+			//	{
+			//		for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.hairs.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_ENVPROBE)
+			//	{
+			//		for (size_t i = 0; i < scene.probes.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.probes.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			if (Sphere(transform.GetPosition(), 1).intersects(pickRay))
+			//			{
+			//				float dis = ap::math::Distance(transform.GetPosition(), pickRay.origin);
+			//				if (dis < hovered.distance)
+			//				{
+			//					hovered = ap::scene::PickResult();
+			//					hovered.entity = entity;
+			//					hovered.distance = dis;
+			//				}
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_CAMERA)
+			//	{
+			//		for (size_t i = 0; i < scene.cameras.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.cameras.GetEntity(i);
+
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_ARMATURE)
+			//	{
+			//		for (size_t i = 0; i < scene.armatures.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.armatures.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+			//	if (pickMask & PICK_SOUND)
+			//	{
+			//		for (size_t i = 0; i < scene.sounds.GetCount(); ++i)
+			//		{
+			//			Entity entity = scene.sounds.GetEntity(i);
+			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+			//			float dis = XMVectorGetX(disV);
+			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+			//			{
+			//				hovered = ap::scene::PickResult();
+			//				hovered.entity = entity;
+			//				hovered.distance = dis;
+			//			}
+			//		}
+			//	}
+
+			//	if (pickMask & PICK_OBJECT && hovered.entity == INVALID_ENTITY)
+			//	{
+			//		// Object picking only when mouse button down, because it can be slow with high polycount
+			//		if (
+			//			ap::input::Down(ap::input::MOUSE_BUTTON_LEFT) ||
+			//			ap::input::Down(ap::input::MOUSE_BUTTON_RIGHT) ||
+			//			paintToolWnd.GetMode() != PaintToolWindow::MODE_DISABLED
+			//			)
+			//		{
+			//			hovered = ap::scene::Pick(pickRay, pickMask);
+			//		}
+			//	}
+			//}
+
+			//// Interactions only when paint tool is disabled:
+			//if (paintToolWnd.GetMode() == PaintToolWindow::MODE_DISABLED)
+			//{
+			//	// Interact:
+			//	if (hovered.entity != INVALID_ENTITY)
+			//	{
+			//		const ObjectComponent* object = scene.objects.GetComponent(hovered.entity);
+			//		if (object != nullptr)
+			//		{
+			//			if (translator.selected.empty() && object->GetRenderTypes() & ap::enums::RENDERTYPE_WATER)
+			//			{
+			//				if (ap::input::Down(ap::input::MOUSE_BUTTON_LEFT))
+			//				{
+			//					// if water, then put a water ripple onto it:
+			//					scene.PutWaterRipple("images/ripple.png", hovered.position);
+			//				}
+			//			}
+			//			else if (decalWnd.placementCheckBox.GetCheck() && ap::input::Press(ap::input::MOUSE_BUTTON_LEFT))
+			//			{
+			//				// if not water or softbody, put a decal on it:
+			//				static int decalselector = 0;
+			//				decalselector = (decalselector + 1) % 2;
+			//				Entity entity = scene.Entity_CreateDecal("editorDecal", (decalselector == 0 ? "images/leaf.dds" : "images/blood1.png"));
+			//				TransformComponent& transform = *scene.transforms.GetComponent(entity);
+			//				transform.MatrixTransform(hovered.orientation);
+			//				transform.RotateRollPitchYaw(XMFLOAT3(XM_PIDIV2, 0, 0));
+			//				transform.Scale(XMFLOAT3(2, 2, 2));
+			//				scene.Component_Attach(entity, hovered.entity);
+
+			//				RefreshSceneGraphView();
+			//			}
+			//		}
+
+			//	}
+			//}
+
+			// Select...
+			static bool selectAll = false;
+			if (ap::input::Press(ap::input::MOUSE_BUTTON_RIGHT) || selectAll || clear_selected)
+			{
+
+				ap::Archive& archive = AdvanceHistory();
+				archive << HISTORYOP_SELECTION;
+				// record PREVIOUS selection state...
+				archive << translator.selected.size();
+				for (auto& x : translator.selected)
+				{
+					archive << x.entity;
+					archive << x.position;
+					archive << x.normal;
+					archive << x.subsetIndex;
+					archive << x.distance;
+				}
+
+				if (selectAll)
+				{
+					// Add everything to selection:
+					selectAll = false;
+					ClearSelected();
+
+					for (size_t i = 0; i < scene.transforms.GetCount(); ++i)
 					{
-						transform->translation_local = {};
-						//transform->MatrixTransform(hovered.orientation);
-						transform->Translate(hovered.position);
+						Entity entity = scene.transforms.GetEntity(i);
+						if (scene.hierarchy.Contains(entity))
+						{
+							// Parented objects won't be attached, but only the parents instead. Otherwise it would cause "double translation"
+							continue;
+						}
+						ap::scene::PickResult picked;
+						picked.entity = entity;
+						AddSelected(picked);
+					}
+				}
+				else if (hovered.entity != INVALID_ENTITY)
+				{
+					// Add the hovered item to the selection:
+
+					if (!translator.selected.empty() && ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
+					{
+						// Union selection:
+						ap::vector<ap::scene::PickResult> saved = translator.selected;
+						translator.selected.clear();
+						for (const ap::scene::PickResult& picked : saved)
+						{
+							AddSelected(picked);
+						}
+						AddSelected(hovered);
+					}
+					else
+					{
+						// Replace selection:
+						translator.selected.clear();
+						AddSelected(hovered);
+					}
+				}
+				else
+				{
+					clear_selected = true;
+				}
+
+				if (clear_selected)
+				{
+					ClearSelected();
+				}
+
+
+				// record NEW selection state...
+				archive << translator.selected.size();
+				for (auto& x : translator.selected)
+				{
+					archive << x.entity;
+					archive << x.position;
+					archive << x.normal;
+					archive << x.subsetIndex;
+					archive << x.distance;
+				}
+
+
+			}
+
+			if(main->viewportFocused)
+			{
+
+				// Control operations...
+				if (ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+				{
+					// Select All
+					if (ap::input::Press((ap::input::BUTTON)'A'))
+					{
+						selectAll = true;
+					}
+					// Copy
+					if (ap::input::Press((ap::input::BUTTON)'C'))
+					{
+						auto prevSel = translator.selected;
+
+						clipboard.SetReadModeAndResetPos(false);
+						clipboard << prevSel.size();
+						for (auto& x : prevSel)
+						{
+							scene.Entity_Serialize(clipboard, x.entity);
+						}
+					}
+					// Paste
+					if (ap::input::Press((ap::input::BUTTON)'V'))
+					{
+						auto prevSel = translator.selected;
+						translator.selected.clear();
+
+						clipboard.SetReadModeAndResetPos(true);
+						size_t count;
+						clipboard >> count;
+						for (size_t i = 0; i < count; ++i)
+						{
+							ap::scene::PickResult picked;
+							picked.entity = scene.Entity_Serialize(clipboard);
+							AddSelected(picked);
+						}
+
+
+					}
+					// Duplicate Instances
+					if (ap::input::Press((ap::input::BUTTON)'D'))
+					{
+						auto prevSel = translator.selected;
+						translator.selected.clear();
+						for (auto& x : prevSel)
+						{
+							ap::scene::PickResult picked;
+							picked.entity = scene.Entity_Duplicate(x.entity);
+							AddSelected(picked);
+						}
+
+
+					}
+					// Put Instances
+					if (clipboard.IsOpen() && hovered.subsetIndex >= 0 && ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT) && ap::input::Press(ap::input::MOUSE_BUTTON_LEFT))
+					{
+						clipboard.SetReadModeAndResetPos(true);
+						size_t count;
+						clipboard >> count;
+						for (size_t i = 0; i < count; ++i)
+						{
+							Entity entity = scene.Entity_Serialize(clipboard);
+							TransformComponent* transform = scene.transforms.GetComponent(entity);
+							if (transform != nullptr)
+							{
+								transform->translation_local = {};
+								//transform->MatrixTransform(hovered.orientation);
+								transform->Translate(hovered.position);
+							}
+						}
+
+
+					}
+					// Undo
+					if (ap::input::Press((ap::input::BUTTON)'Z'))
+					{
+						ConsumeHistoryOperation(true);
+
+
+					}
+					// Redo
+					if (ap::input::Press((ap::input::BUTTON)'Y'))
+					{
+						ConsumeHistoryOperation(false);
+
+
 					}
 				}
 
-				
-			}
-			// Undo
-			if (ap::input::Press((ap::input::BUTTON)'Z'))
-			{
-				ConsumeHistoryOperation(true);
 
-				
+				// Delete
+				DeleteSelectedEntities();
 			}
-			// Redo
-			if (ap::input::Press((ap::input::BUTTON)'Y'))
-			{
-				ConsumeHistoryOperation(false);
 
-				
-			}
 		}
+
+
+		
 
 	}
 
+	camera = *scene.cameras.GetComponent(mainCamera);
+	cameraTransform = scene.transforms.GetComponent(mainCamera);
 
-	// Delete
-	if (ap::input::Press(ap::input::KEYBOARD_BUTTON_DELETE))
-	{
-		ap::Archive& archive = AdvanceHistory();
-		archive << HISTORYOP_DELETE;
+	// Update MainCamera
+	camera.TransformCamera(*cameraTransform);
+	camera.UpdateCamera();
+	ap::scene::GetCamera() = camera;
 
-		archive << translator.selected.size();
-		for (auto& x : translator.selected)
-		{
-			archive << x.entity;
-		}
-		for (auto& x : translator.selected)
-		{
-			scene.Entity_Serialize(archive, x.entity);
-		}
-		for (auto& x : translator.selected)
-		{
-			scene.Entity_Remove(x.entity);
-		}
-
-		translator.selected.clear();
-
-	}
-
-	
 
 
 	// Clear highlite state:
@@ -1873,4 +1882,32 @@ void EditorComponent::ConsumeHistoryOperation(bool undo)
 	}
 
 	
+}
+
+void EditorComponent::DeleteSelectedEntities()
+{
+	Scene& scene = GetScene();
+
+	if (ap::input::Press(ap::input::KEYBOARD_BUTTON_DELETE))
+	{
+		ap::Archive& archive = AdvanceHistory();
+		archive << HISTORYOP_DELETE;
+
+		archive << translator.selected.size();
+		for (auto& x : translator.selected)
+		{
+			archive << x.entity;
+		}
+		for (auto& x : translator.selected)
+		{
+			scene.Entity_Serialize(archive, x.entity);
+		}
+		for (auto& x : translator.selected)
+		{
+			scene.Entity_Remove(x.entity);
+		}
+
+		translator.selected.clear();
+
+	}
 }

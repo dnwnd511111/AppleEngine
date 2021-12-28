@@ -11,6 +11,12 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)xatlas.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Translator.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)HierarchyPanel.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)BasePanel.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Editor.h" />
@@ -27,6 +33,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)json.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)xatlas.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Translator.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)HierarchyPanel.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)BasePanel.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Images">
@@ -37,6 +49,9 @@
     </Filter>
     <Filter Include="rosources">
       <UniqueIdentifier>{972fd1b3-bc3b-43cf-b93d-48399cd0f034}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Panels">
+      <UniqueIdentifier>{49a61760-ccb9-406c-9456-73ea1c3e500e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

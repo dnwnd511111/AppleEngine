@@ -15,8 +15,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Editor.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)HierarchyPanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)json.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ModelImporter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)BasePanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)tiny_gltf.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)tiny_obj_loader.h" />
@@ -24,7 +26,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)xatlas.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)BasePanel.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Editor.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)HierarchyPanel.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ModelImporter_GLTF.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ModelImporter_OBJ.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
