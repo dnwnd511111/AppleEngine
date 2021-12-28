@@ -5,7 +5,9 @@
 #include "apGraphicsDevice_DX12.h"
 #include "apTextureHelper.h"
 #include "apHelper.h"
+#include "AppleEngine.h"
 #pragma warning(disable : 4996)
+
 
 
 #include <filesystem>
@@ -778,9 +780,18 @@ namespace ap::imgui
 
 
 
-	bool DrawImage(const char* label, ap::scene::MaterialComponent::TextureMap* textureMap)
+	bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex)
 	{
 		bool modified = false;
+
+		ap::scene::Scene& scene = ap::scene::GetScene();
+
+		ap::scene::MaterialComponent* material = scene.materials.GetComponent(materialEntity);
+
+		if (material == nullptr)
+			return false;
+
+		ap::scene::MaterialComponent::TextureMap* textureMap = &material->textures[textureIndex];
 
 
 		ImGui::Text(label);
@@ -791,15 +802,17 @@ namespace ap::imgui
 
 		const ap::graphics::Texture* texture = static_cast<const ap::graphics::Texture*>(textureMap->GetGPUResource());
 		
-		if (!texture->IsValid())
+		bool textureIsValid = texture;
+		if (!textureIsValid)
 		{
 			texture = ap::texturehelper::getWhite();
 		}
+		
 
 		uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(texture);;
 		ImGui::Image((void*)textureID, ImVec2(70.f, 70.0f));
 
-		/*if (ImGui::IsItemHovered())
+		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -811,27 +824,32 @@ namespace ap::imgui
 
 			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
-				if (textureMap->resource && textureMap->resource->texture.IsValid())
+				if (textureIsValid)
 				{
-					textureMap->resource = nullptr;
+					textureMap->resource = {};
 
 				}
+				else
+				{
+					ap::helper::FileDialogParams params;
+					params.type = ap::helper::FileDialogParams::OPEN;
+					params.description = "Texture";
+					params.extensions.push_back("dds");
+					params.extensions.push_back("png");
+					params.extensions.push_back("jpg");
+					params.extensions.push_back("jpeg");
+					params.extensions.push_back("tga");
+					params.extensions.push_back("bmp");
 
-				ap::helper::FileDialogParams params;
-				params.type = ap::helper::FileDialogParams::OPEN;
-				params.description = "Texture";
-				params.extensions.push_back("dds");
-				params.extensions.push_back("png");
-				params.extensions.push_back("jpg");
-				params.extensions.push_back("jpeg");
-				params.extensions.push_back("tga");
-				params.extensions.push_back("bmp");
-				ap::helper::FileDialog(params, [&textureMap](std::string fileName) {
-					ap::event::Subscribe_Once(SYSTEM_EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
-						textureMap->resource = ap::resourcemanager::Load(fileName, ap::resourcemanager::IMPORT_RETAIN_FILEDATA);
-						textureMap->name = fileName;
+					
+					ap::helper::FileDialog(params, [material, textureIndex](std::string fileName) {
+						ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+							material->textures[textureIndex].name = fileName;
+							material->textures[textureIndex].resource = ap::resourcemanager::Load(fileName, ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+							});
 						});
-					});
+				}
+
 
 				modified = true;
 			}
@@ -848,7 +866,7 @@ namespace ap::imgui
 		}
 
 
-		if (ImGui::BeginDragDropTarget())
+		/*if (ImGui::BeginDragDropTarget())
 		{
 			auto data = ImGui::AcceptDragDropPayload("Asset");
 			if (data)

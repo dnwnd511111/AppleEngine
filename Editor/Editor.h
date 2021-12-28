@@ -110,4 +110,7 @@ public:
 
 	void Initialize() override;
 	void ImGuiRender() override;
+
+private:
+	void ImGuiRender_PlaceActors();
 };

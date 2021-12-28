@@ -51,7 +51,8 @@ namespace Panel
 		if (editor->renderComponent.translator.selected.size() == 1)
 		{
 			Entity entity = editor->renderComponent.translator.selected[0].entity;
-			DrawComponents(entity);
+			int subsetIdx = editor->renderComponent.translator.selected[0].subsetIndex;
+			DrawComponents(entity, subsetIdx);
 		}
 
 	}
@@ -161,19 +162,17 @@ namespace Panel
 	}
 
 
-	void HierarchyPanel::DrawComponents(ap::ecs::Entity entity)
+	void HierarchyPanel::DrawComponents(ap::ecs::Entity entity, int subsetIdx)
 	{
 
 		Scene& scene = GetScene();
 
 		
+		ObjectComponent* object = scene.objects.GetComponent(entity);
 		NameComponent* name = scene.names.GetComponent(entity);
 		LayerComponent* layer = scene.layers.GetComponent(entity);
 		TransformComponent* transform = scene.transforms.GetComponent(entity);
-		MaterialComponent* material = scene.materials.GetComponent(entity);
-		MeshComponent* mesh =scene.meshes.GetComponent(entity);
 		ImpostorComponent* imposter = scene.impostors.GetComponent(entity);
-		ObjectComponent* object = scene.objects.GetComponent(entity);
 		RigidBodyPhysicsComponent* rigidbody = scene.rigidbodies.GetComponent(entity);
 		SoftBodyPhysicsComponent* softbody = scene.softbodies.GetComponent(entity);
 		ArmatureComponent* armature =scene.armatures.GetComponent(entity);
@@ -316,7 +315,7 @@ namespace Panel
 					ImGui::Separator();
 					PropertyGridSpacing();
 
-					DrawSliderFloat("Range", light.range_local, 0.0f, 200.0f);
+					DrawSliderFloat("Range", light.range_local, 0.0f, 1000.0f);
 					DrawColorEdit3("Color", light.color);
 
 					DrawSliderFloat("Energy", light.energy, 0.0f, 64.0f);
@@ -500,6 +499,252 @@ namespace Panel
 		}
 
 		
+
+
+		
+		
+
+		if (object)
+		{
+			MeshComponent* mesh = scene.meshes.GetComponent(object->meshID);
+			
+
+			if (mesh)
+			{
+
+
+				assert(mesh->subsets.size() > 0);
+				if (subsetIdx == -1)
+					subsetIdx = 0;
+				MaterialComponent*  material = scene.materials.GetComponent(mesh->subsets[subsetIdx].materialID);
+				
+
+
+
+				if (material)
+				{
+					DrawComponent("Material", material, [=](MaterialComponent& material)
+						{
+
+
+							BeginPropertyGrid();
+							PropertyGridSpacing();
+
+
+							{
+								bool isCastingShadow = material.IsCastingShadow();
+								if (DrawCheckbox("Cast shadow", isCastingShadow))
+									material.SetCastShadow(isCastingShadow);
+
+
+								bool IsReceiveShadow = material.IsReceiveShadow();
+								if (DrawCheckbox("Receive shadow", IsReceiveShadow))
+									material.SetReceiveShadow(IsReceiveShadow);
+
+								bool IsUsingVertexColors = material.IsUsingVertexColors();
+								if (DrawCheckbox("Use vertex colors", IsUsingVertexColors))
+									material.SetUseVertexColors(IsUsingVertexColors);
+
+								bool IsUsingSpecularGlossinessWorkflow = material.IsUsingSpecularGlossinessWorkflow();
+								if (DrawCheckbox("Use Specular-Glossiness", IsUsingSpecularGlossinessWorkflow))
+									material.SetUseSpecularGlossinessWorkflow(IsUsingSpecularGlossinessWorkflow);
+
+								bool IsOcclusionEnabled_Primary = material.IsOcclusionEnabled_Primary();
+								if (DrawCheckbox("Occlusion-Primary", IsOcclusionEnabled_Primary))
+									material.SetOcclusionEnabled_Primary(IsOcclusionEnabled_Primary);
+
+								bool IsOcclusionEnabled_Secondary = material.IsOcclusionEnabled_Secondary();
+								if (DrawCheckbox("Occlusion-Secondary", IsOcclusionEnabled_Secondary))
+									material.SetOcclusionEnabled_Secondary(IsOcclusionEnabled_Secondary);
+
+								bool IsUsingWind = material.IsUsingWind();
+								if (DrawCheckbox("Use wind", IsUsingWind))
+									material.SetUseWind(IsUsingWind);
+
+								bool IsDoubleSided = material.IsDoubleSided();
+								if (DrawCheckbox("Double sided", IsDoubleSided))
+									material.SetDoubleSided(IsDoubleSided);
+
+							}
+
+							PropertyGridSpacing();
+							ImGui::Separator();
+							{
+								int selectedItem = material.userBlendMode;
+								const std::vector<std::string> items =
+								{
+									"OPAQUE",
+									"ALPHA",
+									"PREMULTIPLIED",
+									"ADDITIVE",
+									"MULTIPLY"
+								};
+								if (DrawCombo("Blend Mode", items, items.size(), &selectedItem))
+									material.userBlendMode = (ap::enums::BLENDMODE)selectedItem;
+							}
+
+							{
+								int selectedItem = material.shaderType;
+								std::vector<std::string> items =
+								{
+									"SHADERTYPE_PBR"						  ,
+									"SHADERTYPE_PBR_PLANARREFLECTION"		  ,
+									"SHADERTYPE_PBR_PARALLAXOCCLUSIONMAPPING" ,
+									"SHADERTYPE_PBR_ANISOTROPIC"			  ,
+									"SHADERTYPE_WATER"						  ,
+									"SHADERTYPE_CARTOON"					  ,
+									"SHADERTYPE_UNLIT"						  ,
+									"SHADERTYPE_PBR_CLOTH"					  ,
+									"SHADERTYPE_PBR_CLEARCOAT"				  ,
+									"SHADERTYPE_PBR_CLOTH_CLEARCOAT"		  ,
+									"SHADERTYPE_RAIN"		                  ,
+
+								};
+
+								for (auto& x : ap::renderer::GetCustomShaders())
+								{
+									items.push_back(("Custom_" + x.name));
+								}
+
+								if (DrawCombo("Shader Type", items, items.size(), &selectedItem))
+								{
+									material.shaderType = (MaterialComponent::SHADERTYPE)selectedItem;
+
+									if (selectedItem >= MaterialComponent::SHADERTYPE_COUNT)
+									{
+										material.SetCustomShaderID(selectedItem - MaterialComponent::SHADERTYPE_COUNT);
+									}
+									else
+									{
+										material.DisableCustomShader();
+									}
+
+									if (selectedItem == 4) //default water
+									{
+										material.baseColor = { 10.0f / 255.f, 63.f / 255.f, 168.f / 255.f, 5.0f / 255.f };
+										material.specularColor = { 1.0f,1.0f,1.0f,1.0f };
+										material.emissiveColor = { 1.0f,1.0f,1.0f,0.0f };
+										material.roughness = 0.2f;
+										material.reflectance = 0.10f;
+										material.metalness = 0.0f;
+										material.refraction = 0.027f;
+
+										material.transmission = 0.0f;
+										material.normalMapStrength = 1.0f;
+
+										material.texAnimFrameRate = 60.f;
+										material.texAnimDirection = { 0.0004, -0.0004 };
+										material.texMulAdd = { 1.0f,1.0f,0.0f, 0.0f };
+
+									}
+
+								}
+
+
+							}
+
+							{
+								int selectedItem = (int)material.shadingRate;
+								const std::vector<std::string> items =
+								{
+									"1X1",
+									"1X2",
+									"2X1",
+									"2X2",
+									"2X4",
+									"4X2",
+									"4X4",
+								};
+								if (DrawCombo("Shading Rate", items, items.size(), &selectedItem))
+									material.shadingRate = (ap::graphics::ShadingRate)selectedItem;
+							}
+
+							PropertyGridSpacing();
+							ImGui::Separator();
+
+							PropertyGridSpacing();
+							DrawColorEdit4("BaseColor", material.baseColor);
+							DrawColorEdit4("SpecularColor", material.specularColor);
+							DrawColorEdit3("EmissiveColor", (float*)&material.emissiveColor);
+							DrawSliderFloat("EmissiveAlpha", material.emissiveColor.w, 0.0f, 10.0f);
+							PropertyGridSpacing();
+							ImGui::Separator();
+
+							PropertyGridSpacing();
+							DrawSliderFloat("Roughness", material.roughness, 0.0f, 1.0f);
+							DrawSliderFloat("Reflectance", material.reflectance, 0.0f, 1.0f);
+							DrawSliderFloat("Matalness", material.metalness, 0.0f, 1.0f);
+							DrawSliderFloat("Refraction", material.refraction, 0.0f, 1.0f);
+							PropertyGridSpacing();
+
+							ImGui::Separator();
+							PropertyGridSpacing();
+							DrawSliderFloat("Transmission", material.transmission, 0.0f, 1.0f);
+							DrawSliderFloat("NormalMapStrength", material.normalMapStrength, 0.0f, 8.0f);
+							DrawSliderFloat("AlphaRef", material.alphaRef, 0.0f, 1.0f - 1.0f / 256.0f);
+							PropertyGridSpacing();
+
+							ImGui::Separator();
+							PropertyGridSpacing();
+							DrawSliderFloat("Texcoord anim FPS", material.texAnimFrameRate, 0, 60);
+							DrawSliderFloat("Texcoord anim U", material.texAnimDirection.x, -0.02f, 0.02f, "%.6f");
+							DrawSliderFloat("Texcoord anim V", material.texAnimDirection.y, -0.02f, 0.02f, "%.6f");
+							DrawSliderFloat("Texture TileSize X", material.texMulAdd.x, 0.0f, 10.0f);
+							DrawSliderFloat("Texture TileSize Y", material.texMulAdd.y, 0.0f, 10.0f);
+							PropertyGridSpacing();
+
+
+
+							const char* textureNames[] =
+							{
+								"BaseColorMap			   ",
+								"NormalMap				   ",
+								"SurfaceMap				   ",
+								"EmissiveMap			   ",
+								"DisplacementMap		   ",
+								"OcclusionMap			   ",
+								"TransmissionMap		   ",
+								"SheenColorMap			   ",
+								"SheenRoughnessMap		   ",
+								"ClearcoatMap			   ",
+								"ClearcoatRoughnessMap	   ",
+								"ClearcoatNormalMap		   ",
+								"SpecularMap			   "
+							};
+
+
+
+							for (int i = 0; i < MaterialComponent::TEXTURESLOT::TEXTURESLOT_COUNT; i++)
+							{
+								DrawImage(textureNames[i], mesh->subsets[subsetIdx].materialID, i);
+								if (i != MaterialComponent::TEXTURESLOT::TEXTURESLOT_COUNT - 1)
+								{
+									ImGui::Separator();
+									PropertyGridSpacing();
+
+								}
+							}
+
+
+							PropertyGridSpacing();
+
+							EndPropertyGrid();
+
+							material.SetDirty();
+						}, false);
+				}
+			}
+
+
+		}
+
+		
+
+		
+
+
+
+
 
 
 	}

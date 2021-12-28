@@ -51,7 +51,7 @@ namespace ap::imgui
 	bool DrawButton2(const char* label, const ImVec2& size = ImVec2(90.0f, 20.0f));
 	void DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, bool isScale = false, float columnWidth = 100.0f);
 
-	bool DrawImage(const char* label, ap::scene::MaterialComponent::TextureMap* textureMap);
+	bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex);
 	bool DrawImage(const char* label, const ap::graphics::Texture* texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
 
 

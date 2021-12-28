@@ -72,7 +72,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
    
    
-    ap::graphics::GetDevice()->DestoryImGui();
+    
+   
+        
+
+
 
     return (int) msg.wParam;
 }
@@ -90,12 +94,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_EDITOR));
+    wcex.hIcon          = 0;
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = 0;
     wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.hIconSm        = 0;
 
     return RegisterClassExW(&wcex);
 }
@@ -109,16 +113,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     bool fullscreen = false;
     bool borderless = false;
     bool allow_hdr = true;
-    std::string voidStr = "";
+    
 
     std::ifstream file("config.ini");
     if (file.is_open())
     {
         int enabled;
-        file >> voidStr >> enabled;
+        file  >> enabled;
         if (enabled != 0)
         {
-            file >> voidStr >> x >> voidStr >> y >> voidStr >> w >> voidStr >> h >> voidStr >> fullscreen >> voidStr >> borderless >> voidStr >> allow_hdr;
+            file  >> x  >> y  >> w  >> h  >> fullscreen  >> borderless  >> allow_hdr;
             editor.allow_hdr = allow_hdr;
         }
     }
@@ -261,6 +265,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     break;
     case WM_DESTROY:
+
+        ap::graphics::GetDevice()->DestoryImGui();
+
+
+        RECT rc;
+        ::GetWindowRect(editor.window, &rc);
+        
+
+        if (1)
+        {
+            int x = rc.left, y = rc.top, w = rc.right- rc.left, h = rc.bottom-rc.top;
+            bool fullscreen = false;
+            bool borderless = false;
+            bool allow_hdr = editor.allow_hdr;
+        
+
+            int enabled = 1;
+            std::string voidStr = " ";
+
+            std::ofstream file("config.ini");
+            if (file.is_open())
+            {
+                file << enabled << voidStr;
+                if (enabled != 0)
+                {
+                    file << voidStr << x << voidStr << y << voidStr << w << voidStr << h << voidStr << fullscreen << voidStr << borderless << voidStr << allow_hdr;
+                }
+                file.close();
+              
+            }
+
+            
+
+        }
         PostQuitMessage(0);
         break;
     default:

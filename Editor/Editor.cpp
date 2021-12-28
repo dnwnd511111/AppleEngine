@@ -6,6 +6,8 @@
 #include "ModelImporter.h"
 #include "Translator.h"
 
+#include "apImGui.h"
+
 #include <string>
 #include <cassert>
 #include <cmath>
@@ -17,6 +19,8 @@ using namespace ap::primitive;
 using namespace ap::rectpacker;
 using namespace ap::scene;
 using namespace ap::ecs;
+
+using namespace ap::imgui;
 
 
 void EditorLoadingScreen::Load()
@@ -355,6 +359,12 @@ void Editor::ImGuiRender()
 		if (!isLoadingModel)
 			hierarchyPanel.ImGuiRenderProperties(dt);
 		ImGui::End();
+
+		ImGui::Begin("Place Actors");
+		ImGuiRender_PlaceActors();
+		ImGui::End();
+
+
 	}
 	
 	
@@ -362,6 +372,117 @@ void Editor::ImGuiRender()
 
 	ImGui::End(); // DockSpace Demo
 
+
+}
+
+void Editor::ImGuiRender_PlaceActors()
+{
+
+	Scene& scene = ap::scene::GetScene();
+	CameraComponent& camera = ap::scene::GetCamera();
+
+
+	XMFLOAT3 lightColor = { 1,1,1 };
+	XMFLOAT3 frontCamPos;
+	XMStoreFloat3(&frontCamPos,(XMLoadFloat3(&camera.Eye) + (XMLoadFloat3(&camera.At) * 10.0f)));
+
+	static std::string entityType;
+
+	ImGui::Text("Add Entity");
+	PropertyGridSpacing();
+
+	BeginPropertyGrid();
+	ImGui::Columns(3);
+	if (DrawButton("Point", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateLight("Point", frontCamPos, lightColor, 2.0f, 60.0f);
+	}
+
+	if (DrawButton("Spot", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateLight("Spot", frontCamPos, lightColor, 2.0f, 60.0f,ap::scene::LightComponent::LightType::SPOT);
+
+	}
+
+	if (DrawButton("Directinoal", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateLight("Directional", frontCamPos, lightColor, 2.0f, 60.0f, ap::scene::LightComponent::LightType::DIRECTIONAL);
+	}
+
+	if (DrawButton("EnvProbe", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateEnvironmentProbe("EnvProbe", frontCamPos);
+	}
+
+	if (DrawButton("Emitter", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateEmitter("Emitter", frontCamPos);
+
+	}
+
+	EndPropertyGrid();
+
+
+
+	PropertyGridSpacing();
+	PropertyGridSpacing();
+	PropertyGridSpacing();
+	ImGui::Separator();
+
+	float geoWidth = 60;
+	float geoHeight = 20;
+
+
+	{
+		static std::string data;
+
+
+		float scale = 3.0f;
+		ImGui::Text("Geometry");
+		PropertyGridSpacing();
+		BeginPropertyGrid();
+		ImGui::Columns(4);
+
+
+		const std::string basePath = "resources/models/Geometry/";
+
+		if (DrawButton("Cube", ImVec2(geoWidth, geoHeight)))
+		{
+			ImportModel_OBJ(basePath+"cube.obj", scene);
+		}
+
+		if (DrawButton("Sphere", ImVec2(geoWidth, geoHeight)))
+		{
+			ImportModel_OBJ(basePath + "uvsphere.obj", scene);
+		}
+		if (DrawButton("Cylinder", ImVec2(geoWidth, geoHeight)))
+		{
+			ImportModel_OBJ(basePath + "cylinder.obj", scene);
+		}
+		if (DrawButton("Torus", ImVec2(geoWidth, geoHeight)))
+		{
+			ImportModel_OBJ(basePath + "Torus.obj", scene);
+		}
+
+		//if (DrawButton("teapot", ImVec2(geoWidth, geoHeight)))
+		//{
+		//	ImportModel_OBJ("assets/models/Geometry/teapot.obj", scene);
+		//}
+
+		if (DrawButton("Suzanne", ImVec2(geoWidth, geoHeight)))
+		{
+			ImportModel_OBJ(basePath + "suzanne.obj", scene);
+		}
+
+		if (DrawButton("Plane", ImVec2(geoWidth, geoHeight)))
+		{
+			ImportModel_OBJ(basePath + "plane.obj", scene);
+		}
+
+
+
+		EndPropertyGrid();
+	}
 
 }
 
