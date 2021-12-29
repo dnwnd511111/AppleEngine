@@ -2,8 +2,24 @@
 
 #include "AppleEngine.h"
 #include "Translator.h"
-
+#include "ImGuizmo.h"
 #include "HierarchyPanel.h"
+
+
+enum PICKTYPE
+{
+	PICK_VOID = 0,
+	PICK_OBJECT = ap::enums::RENDERTYPE_ALL,
+	PICK_LIGHT = 8,
+	PICK_DECAL = 16,
+	PICK_ENVPROBE = 32,
+	PICK_FORCEFIELD = 64,
+	PICK_EMITTER = 128,
+	PICK_HAIR = 256,
+	PICK_CAMERA = 512,
+	PICK_ARMATURE = 1024,
+	PICK_SOUND = 2048,
+};
 
 class EditorLoadingScreen : public ap::LoadingScreen
 {
@@ -87,10 +103,11 @@ public:
 	ap::Archive& AdvanceHistory();
 	void ConsumeHistoryOperation(bool undo);
 
-
 	void DeleteSelectedEntities();
 
-
+	//
+	uint32_t pickType = ~0;
+	
 };
 
 class Editor : public ap::Application
@@ -103,6 +120,9 @@ public:
 	XMFLOAT2 viewportBounds[2];
 	bool viewportFocused = false;
 	bool viewportHovered = false;
+
+
+
 
 	//panel
 	Panel::HierarchyPanel hierarchyPanel{this};

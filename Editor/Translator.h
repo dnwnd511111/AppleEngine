@@ -2,16 +2,18 @@
 #include "CommonInclude.h"
 #include "apCanvas.h"
 #include "apVector.h"
+#include "ImGuizmo.h"
 
 class Translator
 {
 private:
+public:
 	XMFLOAT4 prevPointer = XMFLOAT4(0, 0, 0, 0);
-	XMFLOAT4X4 dragDeltaMatrix = ap::math::IDENTITY_MATRIX;
 	bool dragging = false;
 	bool dragStarted = false;
 	bool dragEnded = false;
-public:
+	XMFLOAT4X4 dragDeltaMatrix = ap::math::IDENTITY_MATRIX;
+
 	void Create();
 
 	void Update(const ap::Canvas& canvas);
@@ -22,8 +24,15 @@ public:
 	// Apply translator to selection
 	void PostTranslate();
 
+	void RefreshTopParent();
+
 	ap::scene::TransformComponent transform;
+	XMMATRIX archiveMatrix;
+	XMMATRIX deltaMatrix;
+
+	
 	ap::vector<ap::scene::PickResult> selected;
+	std::unordered_map<ap::ecs::Entity, bool> topParents;
 
 	bool enabled = false;
 
@@ -43,6 +52,7 @@ public:
 
 	bool isTranslator = true, isScalator = false, isRotator = false;
 
+	ImGuizmo::OPERATION imGizmoType = (ImGuizmo::OPERATION)-1;
 
 	// Check if the drag started in this exact frame
 	bool IsDragStarted() const { return dragStarted; };

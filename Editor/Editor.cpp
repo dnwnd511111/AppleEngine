@@ -275,15 +275,18 @@ void Editor::ImGuiRender()
 		ImGui::Begin("Viewport");
 		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
 		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-		auto viewportOffset = ImGui::GetWindowPos();
-		viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-		viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+		auto windowOffset = ImGui::GetWindowPos();
+		
+		float dpi = canvas.GetDPIScaling();
+		
+		viewportBounds[0] = { (viewportMinRegion.x + windowOffset.x)/ dpi, (viewportMinRegion.y + windowOffset.y)/ dpi };
+		viewportBounds[1] = { (viewportMaxRegion.x + windowOffset.x)/ dpi, (viewportMaxRegion.y + windowOffset.y)/ dpi };
 
 		viewportFocused = ImGui::IsWindowFocused();
 		viewportHovered = ImGui::IsWindowHovered();
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		viewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+		viewportSize = { (viewportPanelSize.x)/ dpi, (viewportPanelSize.y)/ dpi };
 
 		uint64_t textureID;
 
@@ -294,50 +297,97 @@ void Editor::ImGuiRender()
 
 
 
-		// Gizmos
+		// ImGizmos
+
+		renderComponent.translator.dragStarted = false;
+		renderComponent.translator.dragEnded = false;
+
+		if (renderComponent.translator.selected.size() == 1 && (renderComponent.translator.imGizmoType != (ImGuizmo::OPERATION)-1))
+		{
+			static XMMATRIX preMatrix = XMMatrixIdentity();
+
 		
-		//if (selectedEntity && imGizmoType != -1)
-		//{
-		//	ImGuizmo::SetOrthographic(false);
-		//	ImGuizmo::SetDrawlist();
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
 
-		//	ImGuizmo::SetRect(viewportBounds[0].x, viewportBounds[0].y, viewportBounds[1].x - viewportBounds[0].x, viewportBounds[1].y - viewportBounds[0].y);
+			POINT p;
+			p.x = viewportBounds[0].x * dpi;
+			p.y = viewportBounds[0].y * dpi;
 
+			ScreenToClient(window, &p);
 
-		//	auto& sceneCamera = scene->GetSceneCamera().GetComponent<CameraComponent>();
-
-		//	XMMATRIX view = sceneCamera.GetView();
-		//	//XMMATRIX projection = sceneCamera.GetProjection();
-		//	XMMATRIX projection = XMMatrixPerspectiveFovLH(sceneCamera.fov, sceneCamera.width / sceneCamera.height, sceneCamera.zNearP, sceneCamera.zFarP);
+			ImGuizmo::SetRect(p.x, p.y, viewportSize.x* dpi, viewportSize.y* dpi);
 
 
-		//	// Entity transform
-		//	auto& tc = selectedEntity.GetComponent<TransformComponent>();
-		//	XMMATRIX transform = tc.GetLocalMatrix();
+			Scene& scene = GetScene();
 
-		//	// Snapping
-		//	bool snap = apInput::IsKeyPressed(Key::CONTROL);
-		//	float snapValue = 0.5f; // Snap to 0.5m for translation/scale
-		//	// Snap to 45 degrees for rotation
-		//	if (imGizmoType == ImGuizmo::OPERATION::ROTATE)
-		//		snapValue = 45.0f;
+			CameraComponent* cameraComponent = scene.cameras.GetComponent(renderComponent.mainCamera);
 
-		//	float snapValues[3] = { snapValue, snapValue, snapValue };
+			TransformComponent* transformComponent = scene.transforms.GetComponent(renderComponent.translator.selected[0].entity);
 
-		//	ImGuizmo::Manipulate(&view.r[0].m128_f32[0], &projection.r[0].m128_f32[0],
-		//		(ImGuizmo::OPERATION)imGizmoType, ImGuizmo::LOCAL, &transform.r[0].m128_f32[0],
-		//		nullptr, snap ? snapValues : nullptr);
+			XMMATRIX view;
+			XMMATRIX projection;
+			XMMATRIX preLocalMatrix = transformComponent->GetLocalMatrix();
+			XMMATRIX localMatrix = preLocalMatrix;
 
-		//	if (ImGuizmo::IsUsing())
-		//	{
+			if (cameraComponent != nullptr)
+			{
+				view = cameraComponent->GetView();
+				projection = XMMatrixPerspectiveFovLH(cameraComponent->fov, cameraComponent->width / cameraComponent->height, cameraComponent->zNearP, cameraComponent->zFarP);
+			}
 
-		//		XMVECTOR S, R, T;
-		//		XMMatrixDecompose(&S, &R, &T, transform);
-		//		XMStoreFloat4x4(&tc.world, transform);
-		//		tc.ApplyTransform();
 
-		//	}
-		//}
+			ImGuizmo::Manipulate(&view.r[0].m128_f32[0], &projection.r[0].m128_f32[0],
+				(ImGuizmo::OPERATION)renderComponent.translator.imGizmoType, ImGuizmo::LOCAL, &localMatrix.r[0].m128_f32[0],
+				nullptr, nullptr);
+
+			transformComponent->ClearTransform();
+			transformComponent->MatrixTransform(localMatrix);
+			
+
+			renderComponent.translator.deltaMatrix = XMMatrixInverse(nullptr, preLocalMatrix) * localMatrix;
+
+
+
+			if (ImGuizmo::IsUsing())
+			{
+				if (!renderComponent.translator.dragging)
+				{
+					preMatrix = preLocalMatrix;
+					renderComponent.translator.dragStarted = true;
+					renderComponent.translator.dragDeltaMatrix = ap::math::IDENTITY_MATRIX;
+				}
+
+				renderComponent.translator.dragging = true;
+			}
+			else
+			{
+				if (renderComponent.translator.dragging)
+				{
+					renderComponent.translator.dragEnded = true;
+					{
+						XMFLOAT4X4 temp;
+						XMStoreFloat4x4(&temp, XMMatrixInverse(nullptr, preMatrix) * localMatrix);
+						ap::Archive& archive = renderComponent.AdvanceHistory();
+						archive << EditorComponent::HISTORYOP_TRANSLATOR;
+						archive << temp;
+					}
+
+				}
+				renderComponent.translator.dragging = false;
+			}
+
+		}
+		else
+		{
+			if (renderComponent.translator.dragging)
+			{
+				renderComponent.translator.dragEnded = true;
+			}
+			renderComponent.translator.dragging = false;
+			
+		}
+		
 
 		ImGui::End(); //Viewport
 		ImGui::PopStyleVar();
@@ -702,7 +752,30 @@ void EditorComponent::Update(float dt)
 
 
 		// Camera control:
-		XMFLOAT4 currentMouse = ap::input::GetPointer();
+		XMFLOAT4 editorMouse = ap::input::GetPointer();
+		float screenW = GetLogicalWidth();
+		float screenH = GetLogicalHeight();
+		float ratioX = screenW / (main->viewportSize.x );
+		float ratioY = screenH / (main->viewportSize.y );
+
+		POINT p;
+		p.x = main->viewportBounds[0].x;
+		p.y = main->viewportBounds[0].y;
+		ScreenToClient(main->window, &p);
+
+		editorMouse.x = editorMouse.x - p.x;
+		editorMouse.y = editorMouse.y - p.y;
+		editorMouse.x *= ratioX;
+		editorMouse.y *= ratioY;
+
+		
+		XMFLOAT4 currentMouse = editorMouse;
+
+
+		
+
+
+
 		if (!ap::backlog::isActive() && !GetGUI().HasFocus())
 		{
 			static XMFLOAT4 originalMouse = XMFLOAT4(0, 0, 0, 0);
@@ -782,7 +855,7 @@ void EditorComponent::Update(float dt)
 				XMVECTOR move = XMLoadFloat3(&_move);
 				XMVECTOR moveNew = XMVectorSet(leftStick.x, 0, leftStick.y, 0);
 
-				if (!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+				if (!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL) && ap::input::Down(ap::input::MOUSE_BUTTON_MIDDLE))
 				{
 					// Only move camera if control not pressed
 					if (ap::input::Down((ap::input::BUTTON)'A') || ap::input::Down(ap::input::GAMEPAD_BUTTON_LEFT)) { moveNew += XMVectorSet(-1, 0, 0, 0); }
@@ -793,6 +866,18 @@ void EditorComponent::Update(float dt)
 					if (ap::input::Down((ap::input::BUTTON)'Q') || ap::input::Down(ap::input::GAMEPAD_BUTTON_1)) { moveNew += XMVectorSet(0, -1, 0, 0); }
 					moveNew += XMVector3Normalize(moveNew);
 				}
+				else if(!ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+				{
+					if (ap::input::Down((ap::input::BUTTON)'Q'))
+						translator.imGizmoType = (ImGuizmo::OPERATION)-1;
+					if (ap::input::Down((ap::input::BUTTON)'W'))
+						translator.imGizmoType = ImGuizmo::OPERATION::TRANSLATE;
+					if (ap::input::Down((ap::input::BUTTON)'E'))
+						translator.imGizmoType = ImGuizmo::OPERATION::ROTATE;
+					if (ap::input::Down((ap::input::BUTTON)'R'))
+						translator.imGizmoType = ImGuizmo::OPERATION::SCALE;
+				}
+
 				moveNew *= speed;
 
 				move = XMVectorLerp(move, moveNew, acceleration * clampedDT / 0.0166f); // smooth the movement a bit
@@ -846,181 +931,181 @@ void EditorComponent::Update(float dt)
 
 
 			// Begin picking:
-			//unsigned int pickMask = rendererWnd.GetPickType();
-			//Ray pickRay = ap::renderer::GetPickRay((long)currentMouse.x, (long)currentMouse.y, *this);
-			//{
-			//	hovered = ap::scene::PickResult();
+			unsigned int pickMask = pickType;
+			Ray pickRay = ap::renderer::GetPickRay((long)currentMouse.x, (long)currentMouse.y, *this);
+			{
+				hovered = ap::scene::PickResult();
 
-			//	if (pickMask & PICK_LIGHT)
-			//	{
-			//		for (size_t i = 0; i < scene.lights.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.lights.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+				if (pickMask & PICK_LIGHT)
+				{
+					for (size_t i = 0; i < scene.lights.GetCount(); ++i)
+					{
+						Entity entity = scene.lights.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_DECAL)
-			//	{
-			//		for (size_t i = 0; i < scene.decals.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.decals.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_DECAL)
+				{
+					for (size_t i = 0; i < scene.decals.GetCount(); ++i)
+					{
+						Entity entity = scene.decals.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_FORCEFIELD)
-			//	{
-			//		for (size_t i = 0; i < scene.forces.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.forces.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_FORCEFIELD)
+				{
+					for (size_t i = 0; i < scene.forces.GetCount(); ++i)
+					{
+						Entity entity = scene.forces.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_EMITTER)
-			//	{
-			//		for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.emitters.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_EMITTER)
+				{
+					for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
+					{
+						Entity entity = scene.emitters.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_HAIR)
-			//	{
-			//		for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.hairs.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_HAIR)
+				{
+					for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
+					{
+						Entity entity = scene.hairs.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_ENVPROBE)
-			//	{
-			//		for (size_t i = 0; i < scene.probes.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.probes.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_ENVPROBE)
+				{
+					for (size_t i = 0; i < scene.probes.GetCount(); ++i)
+					{
+						Entity entity = scene.probes.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			if (Sphere(transform.GetPosition(), 1).intersects(pickRay))
-			//			{
-			//				float dis = ap::math::Distance(transform.GetPosition(), pickRay.origin);
-			//				if (dis < hovered.distance)
-			//				{
-			//					hovered = ap::scene::PickResult();
-			//					hovered.entity = entity;
-			//					hovered.distance = dis;
-			//				}
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_CAMERA)
-			//	{
-			//		for (size_t i = 0; i < scene.cameras.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.cameras.GetEntity(i);
+						if (Sphere(transform.GetPosition(), 1).intersects(pickRay))
+						{
+							float dis = ap::math::Distance(transform.GetPosition(), pickRay.origin);
+							if (dis < hovered.distance)
+							{
+								hovered = ap::scene::PickResult();
+								hovered.entity = entity;
+								hovered.distance = dis;
+							}
+						}
+					}
+				}
+				if (pickMask & PICK_CAMERA)
+				{
+					for (size_t i = 0; i < scene.cameras.GetCount(); ++i)
+					{
+						Entity entity = scene.cameras.GetEntity(i);
 
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_ARMATURE)
-			//	{
-			//		for (size_t i = 0; i < scene.armatures.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.armatures.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_ARMATURE)
+				{
+					for (size_t i = 0; i < scene.armatures.GetCount(); ++i)
+					{
+						Entity entity = scene.armatures.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
-			//	if (pickMask & PICK_SOUND)
-			//	{
-			//		for (size_t i = 0; i < scene.sounds.GetCount(); ++i)
-			//		{
-			//			Entity entity = scene.sounds.GetEntity(i);
-			//			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
+				if (pickMask & PICK_SOUND)
+				{
+					for (size_t i = 0; i < scene.sounds.GetCount(); ++i)
+					{
+						Entity entity = scene.sounds.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
 
-			//			XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
-			//			float dis = XMVectorGetX(disV);
-			//			if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
-			//			{
-			//				hovered = ap::scene::PickResult();
-			//				hovered.entity = entity;
-			//				hovered.distance = dis;
-			//			}
-			//		}
-			//	}
+						XMVECTOR disV = XMVector3LinePointDistance(XMLoadFloat3(&pickRay.origin), XMLoadFloat3(&pickRay.origin) + XMLoadFloat3(&pickRay.direction), transform.GetPositionV());
+						float dis = XMVectorGetX(disV);
+						if (dis > 0.01f && dis < ap::math::Distance(transform.GetPosition(), pickRay.origin) * 0.05f && dis < hovered.distance)
+						{
+							hovered = ap::scene::PickResult();
+							hovered.entity = entity;
+							hovered.distance = dis;
+						}
+					}
+				}
 
-			//	if (pickMask & PICK_OBJECT && hovered.entity == INVALID_ENTITY)
-			//	{
-			//		// Object picking only when mouse button down, because it can be slow with high polycount
-			//		if (
-			//			ap::input::Down(ap::input::MOUSE_BUTTON_LEFT) ||
-			//			ap::input::Down(ap::input::MOUSE_BUTTON_RIGHT) ||
-			//			paintToolWnd.GetMode() != PaintToolWindow::MODE_DISABLED
-			//			)
-			//		{
-			//			hovered = ap::scene::Pick(pickRay, pickMask);
-			//		}
-			//	}
-			//}
+				if (pickMask & PICK_OBJECT && hovered.entity == INVALID_ENTITY)
+				{
+					// Object picking only when mouse button down, because it can be slow with high polycount
+					if (
+						ap::input::Down(ap::input::MOUSE_BUTTON_LEFT) ||
+						ap::input::Down(ap::input::MOUSE_BUTTON_RIGHT) //||
+						//paintToolWnd.GetMode() != PaintToolWindow::MODE_DISABLED
+						)
+					{
+						hovered = ap::scene::Pick(pickRay, pickMask);
+					}
+				}
+			}
 
 			//// Interactions only when paint tool is disabled:
 			//if (paintToolWnd.GetMode() == PaintToolWindow::MODE_DISABLED)
@@ -1285,15 +1370,7 @@ void EditorComponent::Update(float dt)
 		}
 	}
 
-	translator.Update(*this);
-
-	if (translator.IsDragEnded())
-	{
-		ap::Archive& archive = AdvanceHistory();
-		archive << HISTORYOP_TRANSLATOR;
-		archive << translator.GetDragDeltaMatrix();
-	}
-
+	
 	
 
 	//camera.TransformCamera(cameraWnd.camera_transform);
@@ -1806,11 +1883,6 @@ void EditorComponent::Compose(CommandList cmd) const
 	}*/
 
 
-	if (translator.enabled)
-	{
-		translator.Draw(camera, cmd); 
-	}
-
 	RenderPath2D::Compose(cmd);
 }
 
@@ -1818,6 +1890,7 @@ void EditorComponent::Compose(CommandList cmd) const
 void EditorComponent::ClearSelected()
 {
 	translator.selected.clear();
+	
 }
 void EditorComponent::AddSelected(Entity entity)
 {
@@ -2032,3 +2105,4 @@ void EditorComponent::DeleteSelectedEntities()
 
 	}
 }
+

@@ -399,7 +399,7 @@ void Translator::Update(const ap::Canvas& canvas)
 			dragging = false;
 		}
 
-		PostTranslate();
+		//PostTranslate();
 
 	}
 	else
@@ -601,6 +601,24 @@ void Translator::PostTranslate()
 			}
 		}
 	}
+}
+
+void Translator::RefreshTopParent()
+{
+	Scene& scene = GetScene();
+
+	topParents = {};
+	for (auto& e : selected)
+		topParents.insert({ e.entity, 0 });
+	
+	for (auto& e : selected)
+	{
+		HierarchyComponent* hier =  scene.hierarchy.GetComponent(e.entity);
+		if ((hier == nullptr) || (topParents.count(hier->parentID) == 0) )
+			topParents[e.entity] = true;
+
+	}
+
 }
 
 
