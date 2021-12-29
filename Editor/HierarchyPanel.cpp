@@ -82,7 +82,7 @@ namespace Panel
 
 		bool opened = ImGui::TreeNodeEx((void*)(uint32_t)entity, flags, name);
 		
-		if (ImGui::IsItemClicked() && ap::input::Down(ap::input::KEYBOARD_BUTTON_LCONTROL))
+		if (ImGui::IsItemClicked() && ap::input::Down(ap::input::KEYBOARD_BUTTON_LSHIFT))
 		{
 			editor->renderComponent.AddSelected(entity);
 		}

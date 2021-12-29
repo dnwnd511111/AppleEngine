@@ -1948,6 +1948,12 @@ namespace ap::scene
 		archive.SetReadModeAndResetPos(true);
 		Entity root = Entity_Serialize(archive);
 
+		HierarchyComponent* hier  = hierarchy.GetComponent(root);
+		if(hier)
+		{
+			hier->parentID = ap::ecs::INVALID_ENTITY;
+		}
+
 		return root;
 	}
 	Entity Scene::Entity_CreateMaterial(

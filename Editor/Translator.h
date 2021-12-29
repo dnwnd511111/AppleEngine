@@ -28,7 +28,6 @@ public:
 
 	ap::scene::TransformComponent transform;
 	XMMATRIX archiveMatrix;
-	XMMATRIX deltaMatrix;
 
 	
 	ap::vector<ap::scene::PickResult> selected;

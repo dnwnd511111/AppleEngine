@@ -285,6 +285,8 @@ void Editor::ImGuiRender()
 		viewportFocused = ImGui::IsWindowFocused();
 		viewportHovered = ImGui::IsWindowHovered();
 
+		ImGui::GetIO().WantCaptureKeyboard = !viewportFocused;
+
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		viewportSize = { (viewportPanelSize.x)/ dpi, (viewportPanelSize.y)/ dpi };
 
@@ -302,62 +304,21 @@ void Editor::ImGuiRender()
 		renderComponent.translator.dragStarted = false;
 		renderComponent.translator.dragEnded = false;
 
-		if (renderComponent.translator.selected.size() == 1 && (renderComponent.translator.imGizmoType != (ImGuizmo::OPERATION)-1))
+		if (renderComponent.translator.selected.size() > 0 && (renderComponent.translator.imGizmoType != (ImGuizmo::OPERATION)-1))
 		{
-			static XMMATRIX preMatrix = XMMatrixIdentity();
-
-		
-			ImGuizmo::SetOrthographic(false);
-			ImGuizmo::SetDrawlist();
-
-			POINT p;
-			p.x = viewportBounds[0].x * dpi;
-			p.y = viewportBounds[0].y * dpi;
-
-			ScreenToClient(window, &p);
-
-			ImGuizmo::SetRect(p.x, p.y, viewportSize.x* dpi, viewportSize.y* dpi);
 
 
-			Scene& scene = GetScene();
+			renderComponent.translator.PreTranslate();
 
-			CameraComponent* cameraComponent = scene.cameras.GetComponent(renderComponent.mainCamera);
-
-			TransformComponent* transformComponent = scene.transforms.GetComponent(renderComponent.translator.selected[0].entity);
-
-			XMMATRIX view;
-			XMMATRIX projection;
-			XMMATRIX preLocalMatrix = transformComponent->GetLocalMatrix();
-			XMMATRIX localMatrix = preLocalMatrix;
-
-			if (cameraComponent != nullptr)
-			{
-				view = cameraComponent->GetView();
-				projection = XMMatrixPerspectiveFovLH(cameraComponent->fov, cameraComponent->width / cameraComponent->height, cameraComponent->zNearP, cameraComponent->zFarP);
-			}
-
-
-			ImGuizmo::Manipulate(&view.r[0].m128_f32[0], &projection.r[0].m128_f32[0],
-				(ImGuizmo::OPERATION)renderComponent.translator.imGizmoType, ImGuizmo::LOCAL, &localMatrix.r[0].m128_f32[0],
-				nullptr, nullptr);
-
-			transformComponent->ClearTransform();
-			transformComponent->MatrixTransform(localMatrix);
+			static XMMATRIX matrixDragged = XMMatrixIdentity();
+			static XMMATRIX matrixStarted = XMMatrixIdentity();
 			
-
-			renderComponent.translator.deltaMatrix = XMMatrixInverse(nullptr, preLocalMatrix) * localMatrix;
-
-
-
 			if (ImGuizmo::IsUsing())
 			{
 				if (!renderComponent.translator.dragging)
 				{
-					preMatrix = preLocalMatrix;
 					renderComponent.translator.dragStarted = true;
-					renderComponent.translator.dragDeltaMatrix = ap::math::IDENTITY_MATRIX;
 				}
-
 				renderComponent.translator.dragging = true;
 			}
 			else
@@ -365,18 +326,81 @@ void Editor::ImGuiRender()
 				if (renderComponent.translator.dragging)
 				{
 					renderComponent.translator.dragEnded = true;
-					{
-						XMFLOAT4X4 temp;
-						XMStoreFloat4x4(&temp, XMMatrixInverse(nullptr, preMatrix) * localMatrix);
-						ap::Archive& archive = renderComponent.AdvanceHistory();
-						archive << EditorComponent::HISTORYOP_TRANSLATOR;
-						archive << temp;
-					}
-
 				}
 				renderComponent.translator.dragging = false;
-			}
+				
 
+				if (renderComponent.translator.dragEnded)
+				{
+					XMFLOAT4X4 temp;
+					XMStoreFloat4x4(&temp, XMMatrixInverse(nullptr, matrixStarted)* matrixDragged);
+					ap::Archive& archive = renderComponent.AdvanceHistory();
+					archive << EditorComponent::HISTORYOP_TRANSLATOR;
+					archive << temp;
+				}
+
+
+
+				matrixDragged = renderComponent.translator.transform.GetLocalMatrix();
+				matrixStarted = renderComponent.translator.transform.GetLocalMatrix();
+			}
+			
+
+
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			POINT p;
+			p.x = viewportBounds[0].x * dpi;
+			p.y = viewportBounds[0].y * dpi;
+			ScreenToClient(window, &p);
+			ImGuizmo::SetRect(p.x, p.y, viewportSize.x* dpi, viewportSize.y* dpi);
+
+			Scene& scene = GetScene();
+			CameraComponent* cameraComponent = scene.cameras.GetComponent(renderComponent.mainCamera);
+			XMMATRIX view;
+			XMMATRIX projection;
+			XMMATRIX preMatrix = matrixDragged;
+			XMMATRIX delta = XMMatrixIdentity();
+			if (cameraComponent != nullptr)
+			{
+				view = cameraComponent->GetView();
+				projection = XMMatrixPerspectiveFovLH(cameraComponent->fov, cameraComponent->width / cameraComponent->height, cameraComponent->zNearP, cameraComponent->zFarP);
+			}
+			ImGuizmo::Manipulate(&view.r[0].m128_f32[0], &projection.r[0].m128_f32[0],
+				(ImGuizmo::OPERATION)renderComponent.translator.imGizmoType, ImGuizmo::LOCAL, &matrixDragged.r[0].m128_f32[0],
+				&delta.r[0].m128_f32[0]);
+
+
+			if (ImGuizmo::IsUsing())
+			{
+
+
+				if (renderComponent.translator.imGizmoType == (ImGuizmo::OPERATION::SCALE))
+				{
+
+					XMVECTOR S, R, T;
+					XMMatrixDecompose(&S, &R, &T, preMatrix);
+					XMVECTOR S1, R1, T1;
+					XMMatrixDecompose(&S1, &R1, &T1, matrixDragged);
+
+					XMVECTOR scale = XMVectorReciprocal(S) * S1;
+					XMFLOAT3 scale1;
+					XMStoreFloat3(&scale1, scale);
+					renderComponent.translator.transform.Scale(scale1);
+
+				}
+				else
+				{
+					renderComponent.translator.transform.MatrixTransform(delta);
+				}
+				renderComponent.translator.transform.UpdateTransform();
+			}
+			
+			renderComponent.translator.PostTranslate();
+
+
+
+	
 		}
 		else
 		{
@@ -698,6 +722,7 @@ void EditorComponent::Update(float dt)
 {
 	ap::profiler::range_id profrange = ap::profiler::BeginRangeCPU("Editor Update");
 
+	
 
 
 	if (mainCamera == ap::ecs::INVALID_ENTITY || !ap::scene::GetScene().cameras.Contains(mainCamera))
@@ -1170,8 +1195,10 @@ void EditorComponent::Update(float dt)
 					for (size_t i = 0; i < scene.transforms.GetCount(); ++i)
 					{
 						Entity entity = scene.transforms.GetEntity(i);
-						if (scene.hierarchy.Contains(entity))
+						auto* hier = scene.hierarchy.GetComponent(entity);
+						if ((hier && hier->parentID != ap::ecs::INVALID_ENTITY) || entity == mainCamera)
 						{
+							
 							// Parented objects won't be attached, but only the parents instead. Otherwise it would cause "double translation"
 							continue;
 						}
