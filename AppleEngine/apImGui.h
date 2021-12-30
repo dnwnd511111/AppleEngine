@@ -26,6 +26,10 @@ namespace ap::imgui
 	void ShiftCursorY(float distance);
 	void ShiftCursor(float x, float y);
 
+    bool IsItemDisabled();
+    ImRect GetItemRect();
+    ImRect RectExpanded(const ImRect& rect, float x, float y);
+
 	bool PropertyGridHeader(const std::string& name, bool openByDefault = true);
 	void BeginCheckboxGroup(const char* label);
 	void EndCheckboxGroup();

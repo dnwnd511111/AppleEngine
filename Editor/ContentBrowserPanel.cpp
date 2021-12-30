@@ -188,6 +188,8 @@ namespace Panel
 				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.35f));
 
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
+
 				float panelWidth = ImGui::GetContentRegionAvail().x;
 				int columnCount = (int)(panelWidth / cellSize);
 				if (columnCount < 1)
@@ -242,7 +244,9 @@ namespace Panel
 							}
 							uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(&contentIcons[iconType].GetTexture(), mipmap);
 
-
+							
+							ScopedStyle border(ImGuiStyleVar_FrameBorderSize, 0.0f);
+							ScopedStyle padding(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
 							ImageButton((ImTextureID)textureID, { (float)thumbnailSize, (float)thumbnailSize });
 
 							if (selectedPath == directoryEntry.path())
@@ -285,6 +289,7 @@ namespace Panel
 
 
 				ImGui::PopStyleColor(2);
+				ImGui::PopStyleVar();
 				ImGui::Columns(1);
 			}
 			ImGui::EndChild();
@@ -302,7 +307,7 @@ namespace Panel
 
 	void ContentBrowserPanel::RenderTopBar()
 	{
-		ImGui::BeginChild("##top_bar", ImVec2(0, 40));
+		ImGui::BeginChild("##top_bar", ImVec2(0, 30));
 		{
 			
 			const ap::graphics::Texture& tex1 = contentIcons[ICON_BTN_BACK].GetTexture();
@@ -357,7 +362,6 @@ namespace Panel
 
 			ImGui::SameLine(contentRegionAvailable.x - lineHeight * 1.f);
 			
-
 
 			if (OptionsButton())
 			{

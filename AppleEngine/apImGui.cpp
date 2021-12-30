@@ -76,17 +76,17 @@ namespace ap::imgui
 		s_UIContextID--;
 	}
 
-	inline bool IsItemDisabled()
+	bool IsItemDisabled()
 	{
 		return ImGui::GetItemFlags() & ImGuiItemFlags_Disabled;
 	}
 
-	inline ImRect GetItemRect()
+	ImRect GetItemRect()
 	{
 		return ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
 	}
 
-	inline ImRect RectExpanded(const ImRect& rect, float x, float y)
+	ImRect RectExpanded(const ImRect& rect, float x, float y)
 	{
 		ImRect result = rect;
 		result.Min.x -= x;
