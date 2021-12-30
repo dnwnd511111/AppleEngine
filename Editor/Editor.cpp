@@ -462,7 +462,7 @@ void Editor::ImGuiRender_PlaceActors()
 
 	static std::string entityType;
 
-	ImGui::Text("Add Entity");
+	ImGui::Text("Entity");
 	PropertyGridSpacing();
 
 	BeginPropertyGrid();
@@ -493,6 +493,22 @@ void Editor::ImGuiRender_PlaceActors()
 		scene.Entity_CreateEmitter("Emitter", frontCamPos);
 
 	}
+
+	if (DrawButton("Sound", ImVec2(70, 20)))
+	{
+		ap::helper::FileDialogParams params;
+		params.type = ap::helper::FileDialogParams::OPEN;
+		params.description = "Sound";
+		params.extensions = ap::resourcemanager::GetSupportedSoundExtensions();
+		ap::helper::FileDialog(params, [=](std::string fileName) {
+			ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+				Entity entity = GetScene().Entity_CreateSound("Sound", fileName);
+				});
+			});
+
+
+	}
+
 
 	EndPropertyGrid();
 
@@ -1636,7 +1652,7 @@ void EditorComponent::Compose(CommandList cmd) const
 	fx.customRotation = &R;
 	fx.customProjection = &VP;
 
-	/*if (rendererWnd.GetPickType() & PICK_LIGHT)
+	if (pickType & PICK_LIGHT)
 	{
 		for (size_t i = 0; i < scene.lights.GetCount(); ++i)
 		{
@@ -1683,7 +1699,7 @@ void EditorComponent::Compose(CommandList cmd) const
 	}
 
 
-	if (rendererWnd.GetPickType() & PICK_DECAL)
+	if (pickType & PICK_DECAL)
 	{
 		for (size_t i = 0; i < scene.decals.GetCount(); ++i)
 		{
@@ -1716,7 +1732,7 @@ void EditorComponent::Compose(CommandList cmd) const
 		}
 	}
 
-	if (rendererWnd.GetPickType() & PICK_FORCEFIELD)
+	if (pickType & PICK_FORCEFIELD)
 	{
 		for (size_t i = 0; i < scene.forces.GetCount(); ++i)
 		{
@@ -1748,7 +1764,7 @@ void EditorComponent::Compose(CommandList cmd) const
 		}
 	}
 
-	if (rendererWnd.GetPickType() & PICK_CAMERA)
+	if (pickType & PICK_CAMERA)
 	{
 		for (size_t i = 0; i < scene.cameras.GetCount(); ++i)
 		{
@@ -1781,7 +1797,7 @@ void EditorComponent::Compose(CommandList cmd) const
 		}
 	}
 
-	if (rendererWnd.GetPickType() & PICK_ARMATURE)
+	if (pickType & PICK_ARMATURE)
 	{
 		for (size_t i = 0; i < scene.armatures.GetCount(); ++i)
 		{
@@ -1813,7 +1829,7 @@ void EditorComponent::Compose(CommandList cmd) const
 		}
 	}
 
-	if (rendererWnd.GetPickType() & PICK_EMITTER)
+	if (pickType & PICK_EMITTER)
 	{
 		for (size_t i = 0; i < scene.emitters.GetCount(); ++i)
 		{
@@ -1845,7 +1861,7 @@ void EditorComponent::Compose(CommandList cmd) const
 		}
 	}
 
-	if (rendererWnd.GetPickType() & PICK_HAIR)
+	if (pickType & PICK_HAIR)
 	{
 		for (size_t i = 0; i < scene.hairs.GetCount(); ++i)
 		{
@@ -1877,7 +1893,7 @@ void EditorComponent::Compose(CommandList cmd) const
 		}
 	}
 
-	if (rendererWnd.GetPickType() & PICK_SOUND)
+	if (pickType & PICK_SOUND)
 	{
 		for (size_t i = 0; i < scene.sounds.GetCount(); ++i)
 		{
@@ -1907,7 +1923,7 @@ void EditorComponent::Compose(CommandList cmd) const
 
 			ap::image::Draw(&soundTex.GetTexture(), fx, cmd);
 		}
-	}*/
+	}
 
 
 	RenderPath2D::Compose(cmd);

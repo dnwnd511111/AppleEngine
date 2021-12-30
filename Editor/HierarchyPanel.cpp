@@ -499,6 +499,112 @@ namespace Panel
 		}
 
 		
+		if (sound)
+		{
+			DrawComponent("Sound", sound, [](SoundComponent& sound)
+				{
+					BeginPropertyGrid();
+					PropertyGridSpacing();
+
+
+					{
+						static int selectedItem = 0;
+						const std::vector<std::string> items =
+						{
+							"DEFAULT",
+							"GENERIC",
+							"FOREST",
+							"PADDEDCELL",
+							"ROOM",
+							"BATHROOM",
+							"LIVINGROOM",
+							"STONEROOM",
+							"AUDITORIUM",
+							"CONCERTHALL",
+							"CAVE",
+							"ARENA",
+							"HANGAR",
+							"CARPETEDHALLWAY",
+							"HALLWAY",
+							"STONECORRIDOR",
+							"ALLEY",
+							"CITY",
+							"MOUNTAINS",
+							"QUARRY",
+							"PLAIN",
+							"PARKINGLOT",
+							"SEWERPIPE",
+							"UNDERWATER",
+							"SMALLROOM",
+							"MEDIUMROOM",
+							"LARGEROOM",
+							"MEDIUMHALL",
+							"LARGEHALL",
+							"PLATE",
+
+
+						};
+						if (DrawCombo("Global Reverb", items, items.size(), &selectedItem))
+							ap::audio::SetReverb((ap::audio::REVERB_PRESET)selectedItem);
+					}
+
+					{
+						int selectedItem = (ap::audio::SUBMIX_TYPE)sound.soundinstance.type;
+						const std::vector<std::string> items =
+						{
+							"SOUNDEFFECT",
+							"MUSIC",
+							"USER0",
+							"USER1",
+
+						};
+						if (DrawCombo("Submix", items, items.size(), &selectedItem))
+						{
+							sound.soundinstance.type = (ap::audio::SUBMIX_TYPE)selectedItem;
+							ap::audio::CreateSoundInstance(&sound.soundResource.GetSound(), &sound.soundinstance);
+						}
+					}
+
+					const char* buttonLabel = sound.IsPlaying() ?  "Stop": "Play";
+
+
+					if (DrawButton2(buttonLabel))
+					{
+						if (sound.IsPlaying())
+							sound.Stop();
+						else
+							sound.Play();
+						
+					}
+
+					bool IsLooped = sound.IsLooped();
+					if (DrawCheckbox("Looped", IsLooped))
+					{
+						sound.SetLooped(IsLooped);
+					}
+
+					bool IsEnableReverb = sound.soundinstance.IsEnableReverb();
+					if (DrawCheckbox("Reverb", IsEnableReverb))
+					{
+						sound.soundinstance.SetEnableReverb(IsEnableReverb);
+						ap::audio::CreateSoundInstance(&sound.soundResource.GetSound(), &sound.soundinstance);
+					}
+
+					bool IsDisable3D = sound.IsDisable3D();
+					if (DrawCheckbox("2D", IsDisable3D))
+					{
+						sound.SetDisable3D(IsDisable3D);
+						ap::audio::CreateSoundInstance(&sound.soundResource.GetSound(), &sound.soundinstance);
+					}
+
+
+					DrawSliderFloat("Volume", sound.volume, 0.0f, 1.0f);
+
+					
+
+					EndPropertyGrid();
+				});
+		}
 
 
 		
