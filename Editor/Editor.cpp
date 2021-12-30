@@ -212,30 +212,32 @@ void Editor::ImGuiRender()
 
 			if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
 			{
-				/*apHelper::FileDialogParams params;
-				params.type = apHelper::FileDialogParams::SAVE;
-				params.description = "Apple Scene";
+				ap::helper::FileDialogParams params;
+				params.type = ap::helper::FileDialogParams::SAVE;
+				params.description = "Apple Scene (.apscene)";
 				params.extensions.push_back("apscene");
 
-				apHelper::FileDialog(params, [this](std::string fileName) {
-					apEvent::Subscribe_Once(SYSTEM_EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
-						std::string filename = fileName;
-						std::string extension = apHelper::GetExtensionFromFileName(filename);
-						if (extension.compare("apscene"))
-						{
-							filename += ".apscene";
-						}
-						apArchive archive(filename, false);
+				ap::helper::FileDialog(params, [params,this](std::string fileName) {
+					ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [fileName, params, this](uint64_t userdata) {
+						std::string filename = ap::helper::ReplaceExtension(fileName, params.extensions.front());
+						ap::Archive archive =  ap::Archive(filename, false);
 						if (archive.IsOpen())
 						{
-							scene->Serialize(archive);
+							Scene& scene = ap::scene::GetScene();
+
+							//ap::resourcemanager::Mode embed_mode = (ap::resourcemanager::GetMode());
+							//ap::resourcemanager::SetMode(embed_mode);
+
+							scene.Serialize(archive);
+							
+							this->renderComponent.ResetHistory();
 						}
 						else
 						{
-							apHelper::messageBox("Could not create " + fileName + "!");
+							ap::helper::messageBox("Could not create " + fileName + "!");
 						}
 						});
-					});*/
+					});
 
 			}
 
@@ -349,11 +351,8 @@ void Editor::ImGuiRender()
 
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
-			POINT p;
-			p.x = viewportBounds[0].x * dpi;
-			p.y = viewportBounds[0].y * dpi;
-			ScreenToClient(window, &p);
-			ImGuizmo::SetRect(p.x, p.y, viewportSize.x* dpi, viewportSize.y* dpi);
+			
+			ImGuizmo::SetRect(viewportBounds[0].x* dpi, viewportBounds[0].y* dpi, viewportSize.x* dpi, viewportSize.y* dpi);
 
 			Scene& scene = GetScene();
 			CameraComponent* cameraComponent = scene.cameras.GetComponent(renderComponent.mainCamera);
@@ -436,6 +435,10 @@ void Editor::ImGuiRender()
 
 		ImGui::Begin("Place Actors");
 		ImGuiRender_PlaceActors();
+		ImGui::End();
+
+		ImGui::Begin("Content Browser", NULL, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+		contentBrowserPanel.ImGuiRender(dt);
 		ImGui::End();
 
 
@@ -683,17 +686,17 @@ void EditorComponent::Load()
 #endif // PLATFORM_UWP
 
 	ap::jobsystem::context ctx;
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { pointLightTex = ap::resourcemanager::Load("images/pointlight.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { spotLightTex = ap::resourcemanager::Load("images/spotlight.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { dirLightTex = ap::resourcemanager::Load("images/directional_light.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { areaLightTex = ap::resourcemanager::Load("images/arealight.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { decalTex = ap::resourcemanager::Load("images/decal.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { forceFieldTex = ap::resourcemanager::Load("images/forcefield.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { emitterTex = ap::resourcemanager::Load("images/emitter.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { hairTex = ap::resourcemanager::Load("images/hair.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { cameraTex = ap::resourcemanager::Load("images/camera.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { armatureTex = ap::resourcemanager::Load("images/armature.dds"); });
-	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { soundTex = ap::resourcemanager::Load("images/sound.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { pointLightTex = ap::resourcemanager::Load("resources/images/pointlight.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { spotLightTex = ap::resourcemanager::Load("resources/images/spotlight.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { dirLightTex = ap::resourcemanager::Load("resources/images/directional_light.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { areaLightTex = ap::resourcemanager::Load("resources/images/arealight.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { decalTex = ap::resourcemanager::Load("resources/images/decal.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { forceFieldTex = ap::resourcemanager::Load("resources/images/forcefield.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { emitterTex = ap::resourcemanager::Load("resources/images/emitter.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { hairTex = ap::resourcemanager::Load("resources/images/hair.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { cameraTex = ap::resourcemanager::Load("resources/images/camera.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { armatureTex = ap::resourcemanager::Load("resources/images/armature.dds"); });
+	ap::jobsystem::Execute(ctx, [this](ap::jobsystem::JobArgs args) { soundTex = ap::resourcemanager::Load("resources/images/sound.dds"); });
 	// wait for ctx is at the end of this function!
 
 	translator.Create();

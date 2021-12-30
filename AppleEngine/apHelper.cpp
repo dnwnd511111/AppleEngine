@@ -798,7 +798,8 @@ namespace ap::helper
 #ifdef _WIN32
 #ifndef PLATFORM_UWP
 
-		std::thread([=] {
+		//std::thread([=] {
+
 
 			char szFile[256];
 
@@ -866,7 +867,7 @@ namespace ap::helper
 				onSuccess(ofn.lpstrFile);
 			}
 
-			}).detach();
+			//}).detach();
 
 #else
 		auto filedialoghelper = [](FileDialogParams params, std::function<void(std::string fileName)> onSuccess) -> winrt::fire_and_forget {

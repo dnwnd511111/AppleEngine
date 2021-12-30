@@ -3,8 +3,9 @@
 #include "AppleEngine.h"
 #include "Translator.h"
 #include "ImGuizmo.h"
-#include "HierarchyPanel.h"
 
+#include "HierarchyPanel.h"
+#include "ContentBrowserPanel.h"
 
 enum PICKTYPE
 {
@@ -126,7 +127,7 @@ public:
 
 	//panel
 	Panel::HierarchyPanel hierarchyPanel{this};
-
+	Panel::ContentBrowserPanel contentBrowserPanel{ this };
 
 	void Initialize() override;
 	void ImGuiRender() override;
