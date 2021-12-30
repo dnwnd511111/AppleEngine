@@ -62,6 +62,11 @@ namespace ap::imgui
 	bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex);
 	bool DrawImage(const char* label, const ap::graphics::Texture* texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
 
+	void DrawButtonImage(ImTextureID image, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImRect rectangle);
+	void DrawButtonImage(ImTextureID imageNormal, ImTextureID imageHovered, ImTextureID imagePressed, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImVec2 rectMin, ImVec2 rectMax);
+	
+	
+	
 	bool SearchWidget(std::string& searchString, const char* hint = "Search...", bool* grabFocus = nullptr);
 
 

@@ -34,6 +34,8 @@ namespace Panel
 		
 		bool isContentBrowserHovered;
 
+		std::string searchStr;
+
 		ap::Resource contentIcons[ICON_COUNT];
 
 	};

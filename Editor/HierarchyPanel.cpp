@@ -19,6 +19,28 @@ namespace Panel
 	{
 	}
 
+	
+	bool LoopChildren(ap::ecs::Entity entity, std::string& input)
+	{
+		Scene& scene = GetScene();
+		HierarchyComponent* hier = scene.hierarchy.GetComponent(entity);
+		NameComponent* name = scene.names.GetComponent(entity);
+
+		bool ret = false;
+		if (name && name->name.find(input) != std::string::npos)
+			ret = true;
+
+		if (hier)
+		{
+			for (auto& child : hier->childrenID)
+				ret |= LoopChildren(child, input);
+
+		}
+
+		return ret;
+	}
+	
+
 	void HierarchyPanel::ImGuiRender(float dt)
 	{
 		
@@ -27,16 +49,27 @@ namespace Panel
 
 		Scene& scene = GetScene();
 
-		std::string input;
-		SearchWidget(input);
+		static std::string inputStr;
+		ImGui::PushItemWidth(-1);
+		SearchWidget(inputStr);
+		ImGui::PopItemWidth();
+
+
 
 		for (int i = 0; i < scene.transforms.GetCount(); i++)
 		{
 			Entity entity = scene.transforms.GetEntity(i);
 			HierarchyComponent* hierarchyComponent = scene.hierarchy.GetComponent(entity);
+			NameComponent* name = scene.names.GetComponent(entity);
+
 			if (hierarchyComponent == nullptr || hierarchyComponent->parentID == ap::ecs::INVALID_ENTITY)
 			{
+
+				if (inputStr.size() != 0 && !LoopChildren(entity,inputStr))
+					continue;
+
 				DrawEntityNode(entity);
+
 			}
 
 		}

@@ -101,6 +101,8 @@ namespace Panel
 						//std::string filenameString = relativePath.filename().string();
 						std::string filenameString = path.filename().string();
 
+						if (filenameString.find(searchStr) == std::string::npos)
+							continue;
 
 
 						ICON_TYPE iconType = ICON_COUNT;
@@ -256,6 +258,12 @@ namespace Panel
 			{
 				//추가해야함
 			}
+
+			ImGui::SameLine();
+			
+			ImGui::PushItemWidth(300);
+			SearchWidget(searchStr);
+			ImGui::PopItemWidth();
 			
 			
 		}

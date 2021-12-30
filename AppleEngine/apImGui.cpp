@@ -986,6 +986,22 @@ namespace ap::imgui
 
 	}
 
+	void DrawButtonImage(ImTextureID image, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImRect rectangle)
+	{
+		DrawButtonImage(image, image, image, tintNormal, tintHovered, tintPressed, rectangle.Min, rectangle.Max);
+	}
+
+	void DrawButtonImage(ImTextureID imageNormal, ImTextureID imageHovered, ImTextureID imagePressed, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImVec2 rectMin, ImVec2 rectMax)
+	{
+		auto* drawList = ImGui::GetWindowDrawList();
+		if (ImGui::IsItemActive())
+			drawList->AddImage((imagePressed), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintPressed);
+		else if (ImGui::IsItemHovered())
+			drawList->AddImage((imageHovered), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintHovered);
+		else
+			drawList->AddImage((imageNormal), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintNormal);
+	}
+
 
 	bool SearchWidget(std::string& searchString, const char* hint, bool* grabFocus )
 	{
@@ -993,8 +1009,8 @@ namespace ap::imgui
 		PushID();
 
 		ShiftCursorY(1.0f);
-
-		/*const bool layoutSuspended = []
+		
+		const bool layoutSuspended = []
 		{
 			ImGuiWindow* window = ImGui::GetCurrentWindow();
 			if (window->DC.CurrentLayout)
@@ -1003,7 +1019,7 @@ namespace ap::imgui
 				return true;
 			}
 			return false;
-		}();*/
+		}();
 
 		bool modified = false;
 		bool searching = false;
@@ -1053,13 +1069,11 @@ namespace ap::imgui
 
 		ImGui::SameLine(areaPosX + 5.0f);
 
-		/*if (layoutSuspended)
-			ImGui::ResumeLayout();*/
+		if (layoutSuspended)
+			ImGui::ResumeLayout();
 
-		//ImGuiWindow* window = ImGui::GetCurrentWindow();
-		//ImGui::BeginLayout(window->GetID(str_id), ImGuiLayoutType_Horizontal, size, align);
-
-		//ImGui::BeginHorizontal(GenerateID(), ImGui::GetItemRectSize());
+		
+		ImGui::BeginHorizontal(GenerateID(), ImGui::GetItemRectSize());
 		const ImVec2 iconSize(ImGui::GetTextLineHeight(), ImGui::GetTextLineHeight());
 
 		// Search icon
@@ -1084,35 +1098,35 @@ namespace ap::imgui
 			}
 		}
 
-		//ImGui::Spring();
+		ImGui::Spring();
 
-		// Clear icon
-		//if (searching)
-		//{
-		//	const float spacingX = 4.0f;
-		//	const float lineHeight = ImGui::GetItemRectSize().y - framePaddingY / 2.0f;
+		 //Clear icon
+		if (searching)
+		{
+			const float spacingX = 4.0f;
+			const float lineHeight = ImGui::GetItemRectSize().y - framePaddingY / 2.0f;
 
-		//	if (ImGui::InvisibleButton(GenerateID(), ImVec2{ lineHeight, lineHeight }))
-		//	{
-		//		searchString.clear();
-		//		modified = true;
-		//	}
+			if (ImGui::InvisibleButton(GenerateID(), ImVec2{ lineHeight, lineHeight }))
+			{
+				searchString.clear();
+				modified = true;
+			}
 
-		//	if (ImGui::IsMouseHoveringRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()))
-		//		ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
+			if (ImGui::IsMouseHoveringRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()))
+				ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
+			uint64_t textureid = ap::graphics::GetDevice()->CopyDescriptorToImGui(&s_ClearIcon.GetTexture());
+			DrawButtonImage((void*)textureid, IM_COL32(160, 160, 160, 200),
+				IM_COL32(170, 170, 170, 255),
+				IM_COL32(160, 160, 160, 150),
+				RectExpanded(ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()), -2.0f, -2.0f));
 
-		//	DrawButtonImage(s_ClearIcon, IM_COL32(160, 160, 160, 200),
-		//		IM_COL32(170, 170, 170, 255),
-		//		IM_COL32(160, 160, 160, 150),
-		//		UI::RectExpanded(UI::GetItemRect(), -2.0f, -2.0f));
+			ImGui::Spring(-1.0f, spacingX * 2.0f);
+		}
 
-		//	//ImGui::Spring(-1.0f, spacingX * 2.0f);
-		//}
-
-		//ImGui::EndHorizontal();
+		ImGui::EndHorizontal();
 		ShiftCursorY(-1.0f);
 		PopID();
-
+		
 		ImGui::PopStyleVar(); //ImGuiStyleVar_FramePadding
 		ImGui::PopStyleVar(); //ImGuiStyleVar_FrameRounding
 
