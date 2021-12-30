@@ -181,116 +181,126 @@ namespace Panel
 			ImGui::BeginChild("##directory_structure", ImVec2(0, ImGui::GetWindowHeight() - 65));
 			{
 				//draw topbar
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 				RenderTopBar();
+				ImGui::PopStyleVar();
+
 
 				ImGui::Separator();
 
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.35f));
-
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
-
-				float panelWidth = ImGui::GetContentRegionAvail().x;
-				int columnCount = (int)(panelWidth / cellSize);
-				if (columnCount < 1)
-					columnCount = 1;
-
-				ImGui::Columns(columnCount, 0, false);
-
-				std::function<void(ICON_TYPE)> renderDirectory = [&](ICON_TYPE type)
+				ImGui::BeginChild("Scrolling");
 				{
 
-					for (auto& directoryEntry : std::filesystem::directory_iterator(currentDirectory))
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.35f));
+
+					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
+
+					float panelWidth = ImGui::GetContentRegionAvail().x;
+					int columnCount = (int)(panelWidth / cellSize);
+					if (columnCount < 1)
+						columnCount = 1;
+
+					ImGui::Columns(columnCount, 0, false);
+
+					std::function<void(ICON_TYPE)> renderDirectory = [&](ICON_TYPE type)
 					{
-						const auto& path = directoryEntry.path();
-						std::string filenameString = path.filename().string();
 
-						if (filenameString.find(searchStr) == std::string::npos)
-							continue;
-
-
-						ICON_TYPE iconType = ICON_COUNT;
-
-						if (directoryEntry.is_directory())
+						for (auto& directoryEntry : std::filesystem::directory_iterator(currentDirectory))
 						{
-							iconType = ICON_FOLDER;
+							const auto& path = directoryEntry.path();
+							std::string filenameString = path.filename().string();
+
+							if (filenameString.find(searchStr) == std::string::npos)
+								continue;
+
+
+							ICON_TYPE iconType = ICON_COUNT;
+
+							if (directoryEntry.is_directory())
+							{
+								iconType = ICON_FOLDER;
+							}
+							else if (directoryEntry.path().extension() == ".png")
+							{
+								iconType = ICON_PNG;
+							}
+							else if (directoryEntry.path().extension() == ".dds" || directoryEntry.path().extension() == ".jpg")
+							{
+								iconType = ICON_FILE;
+							}
+
+
+							if (iconType == type)
+							{
+								if (selectedPath == directoryEntry.path())
+								{
+									ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.75f));
+								}
+
+								const ap::graphics::Texture& tex = contentIcons[iconType].GetTexture();
+
+								int mipmap = -1;
+
+								if (0)//tex.desc.mip_levels > 1)
+								{
+									//tex.desc.width
+									mipmap = tex.desc.mip_levels - std::floor(std::log2(thumbnailSize) + 1);
+
+								}
+								uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(&contentIcons[iconType].GetTexture(), mipmap);
+
+
+								ScopedStyle border(ImGuiStyleVar_FrameBorderSize, 0.0f);
+								ScopedStyle padding(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+								ImageButton((ImTextureID)textureID, { (float)thumbnailSize, (float)thumbnailSize });
+
+								if (selectedPath == directoryEntry.path())
+								{
+									ImGui::PopStyleColor();
+								}
+
+								if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+								{
+									selectedPath = directoryEntry.path();
+								}
+
+								if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+								{
+									ImGui::SetDragDropPayload("Asset", (const void*)&selectedPath, sizeof(selectedPath));
+
+									ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ 30.0f, 30.0f });
+									ImGui::EndDragDropSource();
+
+								}
+
+								if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+								{
+									if (directoryEntry.is_directory())
+										currentDirectory /= path.filename();
+								}
+
+								ImGui::TextWrapped(filenameString.c_str());
+
+								ImGui::NextColumn();
+							}
+
+
 						}
-						else if (directoryEntry.path().extension() == ".png")
-						{
-							iconType = ICON_PNG;
-						}
-						else if (directoryEntry.path().extension() == ".dds" || directoryEntry.path().extension() == ".jpg")
-						{
-							iconType = ICON_FILE;
-						}
+					};
+
+					renderDirectory(ICON_FOLDER);
+					renderDirectory(ICON_PNG);
+					renderDirectory(ICON_FILE);
 
 
-						if (iconType == type)
-						{
-							if (selectedPath == directoryEntry.path())
-							{
-								ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.75f));
-							}
+					ImGui::PopStyleColor(2);
+					ImGui::PopStyleVar();
+					ImGui::Columns(1);
 
-							const ap::graphics::Texture& tex = contentIcons[iconType].GetTexture();
-
-							int mipmap = -1;
-
-							if (0)//tex.desc.mip_levels > 1)
-							{
-								//tex.desc.width
-								mipmap = tex.desc.mip_levels - std::floor(std::log2(thumbnailSize)+1) ;
-
-							}
-							uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(&contentIcons[iconType].GetTexture(), mipmap);
-
-							
-							ScopedStyle border(ImGuiStyleVar_FrameBorderSize, 0.0f);
-							ScopedStyle padding(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-							ImageButton((ImTextureID)textureID, { (float)thumbnailSize, (float)thumbnailSize });
-
-							if (selectedPath == directoryEntry.path())
-							{
-								ImGui::PopStyleColor();
-							}
-
-							if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-							{
-								selectedPath = directoryEntry.path();
-							}
-
-							if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-							{
-								ImGui::SetDragDropPayload("Asset", (const void*)&selectedPath, sizeof(selectedPath));
-
-								ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ 30.0f, 30.0f });
-								ImGui::EndDragDropSource();
-
-							}
-
-							if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-							{
-								if (directoryEntry.is_directory())
-									currentDirectory /= path.filename();
-							}
-
-							ImGui::TextWrapped(filenameString.c_str());
-
-							ImGui::NextColumn();
-						}
-
-
-					}
-				};
-
-				renderDirectory(ICON_FOLDER);
-				renderDirectory(ICON_PNG);
-				renderDirectory(ICON_FILE);
-
-
-				ImGui::PopStyleColor(2);
-				ImGui::PopStyleVar();
-				ImGui::Columns(1);
+				}
+				ImGui::EndChild();
+			
 			}
 			ImGui::EndChild();
 
