@@ -27,6 +27,9 @@ namespace Panel
 
 		Scene& scene = GetScene();
 
+		std::string input;
+		SearchWidget(input);
+
 		for (int i = 0; i < scene.transforms.GetCount(); i++)
 		{
 			Entity entity = scene.transforms.GetEntity(i);

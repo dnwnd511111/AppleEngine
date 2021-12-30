@@ -139,7 +139,7 @@ namespace Panel
 							uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(&contentIcons[iconType].GetTexture(), mipmap);
 
 
-							ImGui::ImageButton((ImTextureID)textureID, { (float)thumbnailSize, (float)thumbnailSize });
+							ImageButton((ImTextureID)textureID, { (float)thumbnailSize, (float)thumbnailSize });
 
 							if (selectedPath == directoryEntry.path())
 							{

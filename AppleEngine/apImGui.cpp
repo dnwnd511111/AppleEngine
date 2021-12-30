@@ -15,23 +15,51 @@
 namespace ap::imgui
 {
 
+
+
+
 	static int s_UIContextID = 0;
 	static uint32_t s_Counter = 0;
 	static char s_IDBuffer[16];
 
 	static int s_CheckboxCount = 0;
 
-	inline void ShiftCursorX(float distance)
+
+	ap::Resource s_SearchIcon;
+	ap::Resource s_ClearIcon;
+	ap::Resource s_GearIcon;
+	
+	void Initialize()
+	{
+		s_SearchIcon = ap::resourcemanager::Load("Resources/images/icon_search_24px.png");
+		s_ClearIcon = ap::resourcemanager::Load("Resources/images/close.png");
+		s_GearIcon = ap::resourcemanager::Load("Resources/images/gear_icon.png");
+
+
+	}
+
+	static const char* GenerateID()
+	{
+		s_IDBuffer[0] = '#';
+		s_IDBuffer[1] = '#';
+		memset(s_IDBuffer + 2, 0, 14);
+		sprintf_s(s_IDBuffer + 2, 14, "%o", s_Counter++);
+
+		return &s_IDBuffer[0];
+	}
+
+
+	void ShiftCursorX(float distance)
 	{
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + distance);
 	}
 
-	inline void ShiftCursorY(float distance)
+	void ShiftCursorY(float distance)
 	{
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + distance);
 	}
 
-	inline void ShiftCursor(float x, float y)
+	void ShiftCursor(float x, float y)
 	{
 		const ImVec2 cursor = ImGui::GetCursorPos();
 		ImGui::SetCursorPos(ImVec2(cursor.x + x, cursor.y + y));
@@ -883,7 +911,7 @@ namespace ap::imgui
 		}
 
 
-		/*if (ImGui::BeginDragDropTarget())
+		if (ImGui::BeginDragDropTarget())
 		{
 			auto data = ImGui::AcceptDragDropPayload("Asset");
 			if (data)
@@ -891,14 +919,14 @@ namespace ap::imgui
 				std::filesystem::path assetPath = *((std::filesystem::path*)data->Data);
 				if (assetPath.extension() == ".png" || assetPath.extension() == ".dds" || assetPath.extension() == ".jpg")
 				{
-					textureMap->resource = apResourceManager::Load(assetPath.string().c_str(), apResourceManager::IMPORT_RETAIN_FILEDATA);
+					textureMap->resource = ap::resourcemanager::Load(assetPath.string().c_str(), ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
 					textureMap->name = assetPath.string().c_str();
 					modified = true;
 				}
 
 			}
 			ImGui::EndDragDropTarget();
-		}*/
+		}
 
 
 
@@ -957,6 +985,144 @@ namespace ap::imgui
 
 
 	}
+
+
+	bool SearchWidget(std::string& searchString, const char* hint, bool* grabFocus )
+	{
+
+		PushID();
+
+		ShiftCursorY(1.0f);
+
+		/*const bool layoutSuspended = []
+		{
+			ImGuiWindow* window = ImGui::GetCurrentWindow();
+			if (window->DC.CurrentLayout)
+			{
+				ImGui::SuspendLayout();
+				return true;
+			}
+			return false;
+		}();*/
+
+		bool modified = false;
+		bool searching = false;
+
+		const float areaPosX = ImGui::GetCursorPosX();
+		const float framePaddingY = ImGui::GetStyle().FramePadding.y;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(28.0f, framePaddingY));
+
+
+		constexpr uint32_t BuffSize = 256;
+		char searchBuffer[BuffSize]{};
+		strcpy_s<BuffSize>(searchBuffer, searchString.c_str());
+
+		
+
+		if (ImGui::InputText(GenerateID(), searchBuffer, BuffSize))
+		{
+			searchString = searchBuffer;
+			modified = true;
+		}
+		else if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			searchString = searchBuffer;
+			modified = true;
+		}
+
+		searching = searchBuffer[0] != 0;
+		
+
+		if (grabFocus && *grabFocus)
+		{
+			if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+				&& !ImGui::IsAnyItemActive()
+				&& !ImGui::IsMouseClicked(0))
+			{
+				ImGui::SetKeyboardFocusHere(-1);
+			}
+
+			if (ImGui::IsItemFocused())
+				*grabFocus = false;
+		}
+
+		DrawItemActivityOutline(3.0f, true, ap::imguicolor::accent);
+		ImGui::SetItemAllowOverlap();
+
+		ImGui::SameLine(areaPosX + 5.0f);
+
+		/*if (layoutSuspended)
+			ImGui::ResumeLayout();*/
+
+		//ImGuiWindow* window = ImGui::GetCurrentWindow();
+		//ImGui::BeginLayout(window->GetID(str_id), ImGuiLayoutType_Horizontal, size, align);
+
+		//ImGui::BeginHorizontal(GenerateID(), ImGui::GetItemRectSize());
+		const ImVec2 iconSize(ImGui::GetTextLineHeight(), ImGui::GetTextLineHeight());
+
+		// Search icon
+		{
+			const float iconYOffset = framePaddingY - 3.0f;
+			ShiftCursorY(iconYOffset);
+			
+			uint64_t textureid = ap::graphics::GetDevice()->CopyDescriptorToImGui(&s_SearchIcon.GetTexture());
+			ImGui::Image((void*)textureid, iconSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.0f, 1.0f, 1.0f, 0.2f));
+			ShiftCursorY(-iconYOffset);
+
+			// Hint
+			if (!searching)
+			{
+				ShiftCursorY(-framePaddingY + 1.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, ap::imguicolor::textDarker);
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, framePaddingY));
+				ImGui::TextUnformatted(hint);
+				ShiftCursorY(-1.0f);
+				ImGui::PopStyleVar();
+				ImGui::PopStyleColor();
+			}
+		}
+
+		//ImGui::Spring();
+
+		// Clear icon
+		//if (searching)
+		//{
+		//	const float spacingX = 4.0f;
+		//	const float lineHeight = ImGui::GetItemRectSize().y - framePaddingY / 2.0f;
+
+		//	if (ImGui::InvisibleButton(GenerateID(), ImVec2{ lineHeight, lineHeight }))
+		//	{
+		//		searchString.clear();
+		//		modified = true;
+		//	}
+
+		//	if (ImGui::IsMouseHoveringRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax()))
+		//		ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
+
+		//	DrawButtonImage(s_ClearIcon, IM_COL32(160, 160, 160, 200),
+		//		IM_COL32(170, 170, 170, 255),
+		//		IM_COL32(160, 160, 160, 150),
+		//		UI::RectExpanded(UI::GetItemRect(), -2.0f, -2.0f));
+
+		//	//ImGui::Spring(-1.0f, spacingX * 2.0f);
+		//}
+
+		//ImGui::EndHorizontal();
+		ShiftCursorY(-1.0f);
+		PopID();
+
+		ImGui::PopStyleVar(); //ImGuiStyleVar_FramePadding
+		ImGui::PopStyleVar(); //ImGuiStyleVar_FrameRounding
+
+		return modified;
+
+	}
+
+
+	
+
 
 
 

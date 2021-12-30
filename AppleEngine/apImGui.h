@@ -19,6 +19,12 @@ namespace ap::graphics
 
 namespace ap::imgui
 {
+	void Initialize();
+
+
+	void ShiftCursorX(float distance);
+	void ShiftCursorY(float distance);
+	void ShiftCursor(float x, float y);
 
 	bool PropertyGridHeader(const std::string& name, bool openByDefault = true);
 	void BeginCheckboxGroup(const char* label);
@@ -56,7 +62,7 @@ namespace ap::imgui
 	bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex);
 	bool DrawImage(const char* label, const ap::graphics::Texture* texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
 
-
+	bool SearchWidget(std::string& searchString, const char* hint = "Search...", bool* grabFocus = nullptr);
 
 
 
