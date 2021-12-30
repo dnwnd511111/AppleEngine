@@ -57,18 +57,155 @@ namespace ap::imgui
 	bool DrawButton2(const char* label, const ImVec2& size = ImVec2(90.0f, 20.0f));
 	void DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, bool isScale = false, float columnWidth = 100.0f);
 
+	//gonna be deleted
 	bool ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
 
 	bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex);
-	bool DrawImage(const char* label, const ap::graphics::Texture* texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
+	bool DrawImage(const char* label, ImTextureID texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
+	void DrawImage(ImTextureID image, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& tint_col = ImVec4(1, 1, 1, 1), const ImVec4& border_col = ImVec4(0, 0, 0, 0));
 
 	void DrawButtonImage(ImTextureID image, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImRect rectangle);
 	void DrawButtonImage(ImTextureID imageNormal, ImTextureID imageHovered, ImTextureID imagePressed, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImVec2 rectMin, ImVec2 rectMax);
 	
-	
-	
-	bool SearchWidget(std::string& searchString, const char* hint = "Search...", bool* grabFocus = nullptr);
+	// Utility
 
+
+    class ScopedStyle
+    {
+    public:
+        ScopedStyle(const ScopedStyle&) = delete;
+        ScopedStyle operator=(const ScopedStyle&) = delete;
+        template<typename T>
+        ScopedStyle(ImGuiStyleVar styleVar, T value) { ImGui::PushStyleVar(styleVar, value); }
+        ~ScopedStyle() { ImGui::PopStyleVar(); }
+    };
+
+    class ScopedColour
+    {
+    public:
+        ScopedColour(const ScopedColour&) = delete;
+        ScopedColour operator=(const ScopedColour&) = delete;
+        template<typename T>
+        ScopedColour(ImGuiCol colourId, T colour) { ImGui::PushStyleColor(colourId, colour); }
+        ~ScopedColour() { ImGui::PopStyleColor(); }
+    };
+
+    class ScopedFont
+    {
+    public:
+        ScopedFont(const ScopedFont&) = delete;
+        ScopedFont operator=(const ScopedFont&) = delete;
+        ScopedFont(ImFont* font) { ImGui::PushFont(font); }
+        ~ScopedFont() { ImGui::PopFont(); }
+    };
+
+    class ScopedID
+    {
+    public:
+        ScopedID(const ScopedID&) = delete;
+        ScopedID operator=(const ScopedID&) = delete;
+        template<typename T>
+        ScopedID(T id) { ImGui::PushID(id); }
+        ~ScopedID() { ImGui::PopID(); }
+    };
+
+    class ScopedColourStack
+    {
+    public:
+        ScopedColourStack(const ScopedColourStack&) = delete;
+        ScopedColourStack operator=(const ScopedColourStack&) = delete;
+
+        template <typename ColourType, typename... OtherColours>
+        ScopedColourStack(ImGuiCol firstColourID, ColourType firstColour, OtherColours&& ... otherColourPairs)
+            : m_Count((sizeof... (otherColourPairs) / 2) + 1)
+        {
+            static_assert ((sizeof... (otherColourPairs) & 1u) == 0,
+                "ScopedColourStack constructor expects a list of pairs of colour IDs and colours as its arguments");
+
+            PushColour(firstColourID, firstColour, std::forward<OtherColours>(otherColourPairs)...);
+        }
+
+        ~ScopedColourStack() { ImGui::PopStyleColor(m_Count); }
+
+    private:
+        int m_Count;
+
+        template <typename ColourType, typename... OtherColours>
+        void PushColour(ImGuiCol colourID, ColourType colour, OtherColours&& ... otherColourPairs)
+        {
+            if constexpr (sizeof... (otherColourPairs) == 0)
+            {
+                ImGui::PushStyleColor(colourID, colour);
+            }
+            else
+            {
+                ImGui::PushStyleColor(colourID, colour);
+                PushColour(std::forward<OtherColours>(otherColourPairs)...);
+            }
+        }
+    };
+
+    class ScopedStyleStack
+    {
+    public:
+        ScopedStyleStack(const ScopedStyleStack&) = delete;
+        ScopedStyleStack operator=(const ScopedStyleStack&) = delete;
+
+        template <typename ValueType, typename... OtherStylePairs>
+        ScopedStyleStack(ImGuiStyleVar firstStyleVar, ValueType firstValue, OtherStylePairs&& ... otherStylePairs)
+            : m_Count((sizeof... (otherStylePairs) / 2) + 1)
+        {
+            static_assert ((sizeof... (otherStylePairs) & 1u) == 0,
+                "ScopedStyleStack constructor expects a list of pairs of colour IDs and colours as its arguments");
+
+            PushStyle(firstStyleVar, firstValue, std::forward<OtherStylePairs>(otherStylePairs)...);
+        }
+
+        ~ScopedStyleStack() { ImGui::PopStyleVar(m_Count); }
+
+    private:
+        int m_Count;
+
+        template <typename ValueType, typename... OtherStylePairs>
+        void PushStyle(ImGuiStyleVar styleVar, ValueType value, OtherStylePairs&& ... otherStylePairs)
+        {
+            if constexpr (sizeof... (otherStylePairs) == 0)
+            {
+                ImGui::PushStyleVar(styleVar, value);
+            }
+            else
+            {
+                ImGui::PushStyleVar(styleVar, value);
+                PushStyle(std::forward<OtherStylePairs>(otherStylePairs)...);
+            }
+        }
+    };
+
+
+	ImU32 ColourWithValue(const ImColor& color, float value);
+	ImU32 ColourWithSaturation(const ImColor& color, float saturation);
+	ImU32 ColourWithHue(const ImColor& color, float hue);
+	ImU32 ColourWithMultipliedValue(const ImColor& color, float multiplier);
+	ImU32 ColourWithMultipliedSaturation(const ImColor& color, float multiplier);
+	ImU32 ColourWithMultipliedHue(const ImColor& color, float multiplier);
+
+
+
+
+
+	bool BeginPopup(const char* str_id, ImGuiWindowFlags flags = 0);
+	void EndPopup();
+
+	bool SearchWidget(std::string& searchString, const char* hint = "Search...", bool* grabFocus = nullptr);
+	bool OptionsButton();
+
+
+
+
+	// CustomTreeNode
+	bool TreeNodeWithIcon(ImTextureID icon, ImGuiID id, ImGuiTreeNodeFlags flags, const char* label, const char* label_end, ImColor iconTint = IM_COL32_WHITE);
+	bool TreeNodeWithIcon(ImTextureID icon, const void* ptr_id, ImGuiTreeNodeFlags flags, ImColor iconTint, const char* fmt, ...);
+	bool TreeNodeWithIcon(ImTextureID icon, const char* label, ImGuiTreeNodeFlags flags, ImColor iconTint = IM_COL32_WHITE);
 
 
 }

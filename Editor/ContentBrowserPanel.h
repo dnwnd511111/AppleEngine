@@ -27,6 +27,8 @@ namespace Panel
 			
 	private:
 		void RenderTopBar();
+		void IterateDirectroy(const std::filesystem::directory_entry& entry);
+		
 
 	private:
 		std::filesystem::path currentDirectory;
@@ -34,9 +36,14 @@ namespace Panel
 		
 		bool isContentBrowserHovered;
 
+		float thumbnailSize = 75.0f;
+
 		std::string searchStr;
 
 		ap::Resource contentIcons[ICON_COUNT];
+
+		std::unordered_map<std::string, bool> directries;        // bool = opened
+
 
 	};
 

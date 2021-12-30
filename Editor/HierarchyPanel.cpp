@@ -20,7 +20,7 @@ namespace Panel
 	}
 
 	
-	bool LoopChildren(ap::ecs::Entity entity, std::string& input)
+	bool IterateChildren(ap::ecs::Entity entity, std::string& input)
 	{
 		Scene& scene = GetScene();
 		HierarchyComponent* hier = scene.hierarchy.GetComponent(entity);
@@ -33,7 +33,7 @@ namespace Panel
 		if (hier)
 		{
 			for (auto& child : hier->childrenID)
-				ret |= LoopChildren(child, input);
+				ret |= IterateChildren(child, input);
 
 		}
 
@@ -65,7 +65,7 @@ namespace Panel
 			if (hierarchyComponent == nullptr || hierarchyComponent->parentID == ap::ecs::INVALID_ENTITY)
 			{
 
-				if (inputStr.size() != 0 && !LoopChildren(entity,inputStr))
+				if (inputStr.size() != 0 && !IterateChildren(entity,inputStr))
 					continue;
 
 				DrawEntityNode(entity);

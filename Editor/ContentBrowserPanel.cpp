@@ -2,7 +2,7 @@
 #include "ContentBrowserPanel.h"
 #include "Editor.h"
 #include "apResourceManager.h"
-
+#include "apImGui.h"
 
 
 
@@ -21,6 +21,104 @@ namespace Panel
 		currentDirectory(s_AssetPath)
 	{
 	}
+
+	void  ContentBrowserPanel::IterateDirectroy(const std::filesystem::directory_entry& entry)
+	{
+
+		for (auto& directoryEntry : std::filesystem::directory_iterator(entry))
+		{
+			if (!directoryEntry.is_directory())
+				continue;
+
+
+			const auto& path = directoryEntry.path();
+			std::string name = path.filename().string();
+			bool isOpened = directries[path.string()];
+			bool isActiveDirectory = currentDirectory == path;
+			ImGuiTreeNodeFlags flags = ((isActiveDirectory || isOpened) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanFullWidth;
+			std::string id = name + "_TreeNode";
+
+
+			auto* window = ImGui::GetCurrentWindow();
+			window->DC.CurrLineSize.y = 20.0f;
+			window->DC.CurrLineTextBaseOffset = 3.0f;
+
+
+			const ImRect itemRect = { window->WorkRect.Min.x, window->DC.CursorPos.y,
+						  window->WorkRect.Max.x, window->DC.CursorPos.y + window->DC.CurrLineSize.y };
+
+			const bool isItemClicked = [&itemRect, &id]
+			{
+				if (ImGui::ItemHoverable(itemRect, ImGui::GetID(id.c_str())))
+				{
+					return ImGui::IsMouseDown(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+				}
+				return false;
+			}();
+
+			const bool isWindowFocused = ImGui::IsWindowFocused();
+
+
+			auto fillWithColour = [&](const ImColor& colour)
+			{
+				const ImU32 bgColour = ImGui::ColorConvertFloat4ToU32(colour);
+				ImGui::GetWindowDrawList()->AddRectFilled(itemRect.Min, itemRect.Max, bgColour);
+			};
+
+
+			const ap::graphics::Texture& tex = contentIcons[ICON_FOLDER].GetTexture();
+			int mipmap = -1;
+			uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(&tex, mipmap);
+
+			if (window->SkipItems)
+				continue;
+
+
+
+			// Fill background
+			//----------------
+			if (isActiveDirectory || isItemClicked)
+			{
+				if (isWindowFocused)
+					fillWithColour(ap::imguicolor::selection);
+				else
+				{
+					const ImColor col = ColourWithMultipliedValue(ap::imguicolor::selection, 0.8f);
+					fillWithColour(ColourWithMultipliedSaturation(col, 0.7f));
+				}
+
+				currentDirectory = path;
+				ImGui::PushStyleColor(ImGuiCol_Text, ap::imguicolor::backgroundDark);
+			}
+
+			
+			bool open =TreeNodeWithIcon((ImTextureID)textureID, window->GetID(id.c_str()), flags,name.c_str(), nullptr);
+
+			if (isActiveDirectory || isItemClicked)
+				ImGui::PopStyleColor();
+
+			// Fixing slight overlap
+			ShiftCursorY(3.0f);
+
+			if (open && directoryEntry.is_directory())
+			{
+				directries[path.string()] = true;
+				IterateDirectroy(directoryEntry);
+			}
+			else if(directoryEntry.is_directory())
+			{
+				directries[path.string()] = false;
+			}
+
+			if (open)
+				ImGui::TreePop();
+
+
+		}
+
+		
+	}
+
 
 	void ContentBrowserPanel::ImGuiRender(float dt)
 	{
@@ -59,7 +157,6 @@ namespace Panel
 			BeginPropertyGrid();
 
 			static float padding = 16.0f;
-			static int thumbnailSize = 75;
 			float cellSize = thumbnailSize + padding;
 
 			ImGui::SetColumnOffset(1, 300.0f);
@@ -67,8 +164,15 @@ namespace Panel
 			{
 				if (ImGui::CollapsingHeader("Content", nullptr, ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					//for (auto& [handle, directory] : m_BaseDirectory->SubDirectories)
-						//RenderDirectoryHeirarchy(directory);
+					ScopedStyle spacing(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+					ScopedColourStack itemBg(ImGuiCol_Header, IM_COL32_DISABLE,
+						ImGuiCol_HeaderActive, IM_COL32_DISABLE);
+
+
+					std::filesystem::directory_entry a(s_AssetPath);
+					IterateDirectroy(a);
+
+
 				}
 			}
 			ImGui::EndChild();
@@ -97,8 +201,6 @@ namespace Panel
 					for (auto& directoryEntry : std::filesystem::directory_iterator(currentDirectory))
 					{
 						const auto& path = directoryEntry.path();
-						//const auto& relativePath = std::filesystem::relative(path, s_AssetPath);
-						//std::string filenameString = relativePath.filename().string();
 						std::string filenameString = path.filename().string();
 
 						if (filenameString.find(searchStr) == std::string::npos)
@@ -187,22 +289,6 @@ namespace Panel
 			}
 			ImGui::EndChild();
 
-			//drawBottomBar
-
-			ImGui::BeginChild("##panel_controls", ImVec2(ImGui::GetColumnWidth() - 12, 30), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-			{
-				ImGui::Separator();
-				ImGui::Columns(4, 0, false);
-				//
-				// 
-				//
-				ImGui::NextColumn();
-				ImGui::NextColumn();
-				ImGui::NextColumn();
-				ImGui::SetNextItemWidth(ImGui::GetColumnWidth());
-				ImGui::SliderInt("##column_count", &thumbnailSize, 50, 150);
-			}
-			ImGui::EndChild();
 
 			EndPropertyGrid();
 
@@ -266,6 +352,29 @@ namespace Panel
 			ImGui::PopItemWidth();
 			
 			
+			ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+			float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+
+			ImGui::SameLine(contentRegionAvailable.x - lineHeight * 1.f);
+			
+
+
+			if (OptionsButton())
+			{
+				ImGui::OpenPopup("ContentBrowserSettings");
+			}
+
+			if (ap::imgui::BeginPopup("ContentBrowserSettings"))
+			{
+
+
+				ImGui::SliderFloat("##thumbnail_size", &thumbnailSize, 75.0f, 512.0f, "%.0f");
+				ImGui::SetTooltip("Thumnail Size");
+
+				EndPopup();
+			}
+			
+
 		}
 		ImGui::EndChild();
 

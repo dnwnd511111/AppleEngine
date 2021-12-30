@@ -26,12 +26,28 @@ using namespace ap::imgui;
 void EditorLoadingScreen::Load()
 {
 
+	font = ap::SpriteFont("Loading...", ap::font::Params(0, 0, 36, ap::font::APFALIGN_CENTER, ap::font::APFALIGN_CENTER));
+	AddFont(&font);
+
+	sprite = ap::Sprite("resources/images/apple.png");
+	sprite.anim.opa = 1;
+	sprite.anim.repeatable = true;
+	sprite.params.siz = XMFLOAT2(128, 128);
+	sprite.params.pivot = XMFLOAT2(0.5f, 1.0f);
+	sprite.params.quality = ap::image::QUALITY_LINEAR;
+	sprite.params.blendFlag = ap::enums::BLENDMODE_ALPHA;
+	AddSprite(&sprite);
+
+
 	LoadingScreen::Load();
 	
 }
 
 void EditorLoadingScreen::Update(float dt)
 {
+	font.params.posX = GetLogicalWidth() * 0.5f;
+	font.params.posY = GetLogicalHeight() * 0.5f;
+	sprite.params.pos = XMFLOAT3(GetLogicalWidth() * 0.5f, GetLogicalHeight() * 0.5f - font.TextHeight(), 0);
 
 	LoadingScreen::Update(dt);
 
