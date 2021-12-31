@@ -197,6 +197,19 @@ namespace Panel
 
 	}
 
+	void InvalidateProbes()
+	{
+		Scene& scene = GetScene();
+
+		for (int i = 0; i < scene.probes.GetCount(); i++)
+		{
+			Entity entity = scene.probes.GetEntity(i);
+			EnvironmentProbeComponent* otherProbe = scene.probes.GetComponent(entity);
+			otherProbe->SetDirty();
+		}
+	}
+
+
 
 	void HierarchyPanel::DrawComponents(ap::ecs::Entity entity, int subsetIdx)
 	{
@@ -220,7 +233,7 @@ namespace Panel
 		AnimationComponent* animation =scene.animations.GetComponent(entity);
 		ap::EmittedParticleSystem* emitter = scene.emitters.GetComponent(entity);
 		ap::HairParticleSystem* hair = scene.hairs.GetComponent(entity);
-		WeatherComponent* weather = scene.weathers.GetComponent(entity);
+		WeatherComponent* weather = &scene.weathers[0];
 		SoundComponent* sound = scene.sounds.GetComponent(entity);
 		InverseKinematicsComponent* kinematic = scene.inverse_kinematics.GetComponent(entity);
 		SpringComponent* spring = scene.springs.GetComponent(entity);
@@ -259,6 +272,30 @@ namespace Panel
 
 		}
 
+		if (transform)
+		{
+			DrawComponent("Transform", transform, [](TransformComponent& transform)
+				{
+
+					PropertyGridSpacing();
+					DrawVec3Control("Translation", transform.translation_local);
+					XMFLOAT3 euler = ap::math::QuaternionToRollPitchYaw(transform.rotation_local);
+
+					euler.x = XMConvertToDegrees(euler.x);
+					euler.y = XMConvertToDegrees(euler.y);
+					euler.z = XMConvertToDegrees(euler.z);
+
+					DrawVec3Control("Rotation", euler);
+					XMStoreFloat4(&transform.rotation_local, XMQuaternionRotationRollPitchYaw(XMConvertToRadians(euler.x), XMConvertToRadians(euler.y), XMConvertToRadians(euler.z)));
+					DrawVec3Control("Scale", transform.scale_local, 1.0f, true);
+
+					PropertyGridSpacing();
+					transform.SetDirty();
+
+
+				});
+		}
+
 
 		if (camera)
 		{
@@ -270,7 +307,7 @@ namespace Panel
 					PropertyGridSpacing();
 
 					
-					if (DrawButton2("Reset"))
+					if (DrawButton2("Reset", true))
 					{
 						camera.zNearP = 0.1f;
 						camera.zFarP = 800.0f;
@@ -297,31 +334,296 @@ namespace Panel
 				; 
 				});
 
-		}
 
-		if (transform)
-		{
-			DrawComponent("Transform", transform, [](TransformComponent& transform)
+			DrawComponent("Weather", weather, [](WeatherComponent& weather)
 				{
+					BeginPropertyGrid();
+					PropertyGridSpacing();
+
+					
+
+					{
+
+						static int selectedIdx = 0;
+						const std::vector<std::string> items =
+						{
+							"Default",
+							"Daytime",
+							"Sunset",
+							"Cloudy",
+							"Night"
+
+						};
+						if (DrawCombo("WeatherPreset", items, items.size(), &selectedIdx))
+						{
+
+							const float  fogStart = 0.10f;
+							const float  fogEnd = 3000.0f;
+
+							switch (selectedIdx)
+							{
+							case 0:
+							{
+								// Default
+								weather = WeatherComponent();
+								break;
+							}
+							case 1:
+							{
+								//Daytime
+								weather.ambient = XMFLOAT3(33.0f / 255.0f, 47.0f / 255.0f, 127.0f / 255.0f);
+								weather.horizon = XMFLOAT3(101.0f / 255.0f, 101.0f / 255.0f, 227.0f / 255.0f);
+								weather.zenith = XMFLOAT3(99.0f / 255.0f, 133.0f / 255.0f, 255.0f / 255.0f);
+								weather.cloudiness = 0.4f;
+								weather.fogStart = 100;
+								weather.fogEnd = 1000;
+								weather.fogHeightSky = 0;
+								break;
+							}
+							case 2:
+							{
+								//Sunset
+								weather.ambient = XMFLOAT3(86.0f / 255.0f, 29.0f / 255.0f, 29.0f / 255.0f);
+								weather.horizon = XMFLOAT3(121.0f / 255.0f, 28.0f / 255.0f, 22.0f / 255.0f);
+								weather.zenith = XMFLOAT3(146.0f / 255.0f, 51.0f / 255.0f, 51.0f / 255.0f);
+								weather.cloudiness = 0.36f;
+								weather.fogStart = 50;
+								weather.fogEnd = 600;
+								weather.fogHeightSky = 0;
+								break;
+							}
+							case 3:
+							{
+								//Cloudy
+								weather.ambient = XMFLOAT3(0.1f, 0.1f, 0.1f);
+								weather.horizon = XMFLOAT3(0.38f, 0.38f, 0.38f);
+								weather.zenith = XMFLOAT3(0.42f, 0.42f, 0.42f);
+								weather.cloudiness = 0.75f;
+								weather.fogStart = 0;
+								weather.fogEnd = 500;
+								weather.fogHeightSky = 0;
+								break;
+							}
+							case 4:
+							{
+								//Night
+								weather.ambient = XMFLOAT3(12.0f / 255.0f, 21.0f / 255.0f, 77.0f / 255.0f);
+								weather.horizon = XMFLOAT3(10.0f / 255.0f, 33.0f / 255.0f, 70.0f / 255.0f);
+								weather.zenith = XMFLOAT3(4.0f / 255.0f, 20.0f / 255.0f, 51.0f / 255.0f);
+								weather.cloudiness = 0.28f;
+								weather.fogStart = 10;
+								weather.fogEnd = 400;
+								weather.fogHeightSky = 0;
+								break;
+							}
+							default:
+								break;
+							}
+
+							InvalidateProbes();
+
+						}
+
+					}
+					
+					PropertyGridSpacing();
+					ImGui::Separator();
+					PropertyGridSpacing();
+					PropertyGridSpacing();
+
+					DrawColorEdit3("Ambient Color", weather.ambient);
+					DrawColorEdit3("Horizon Color", weather.horizon);
+					DrawColorEdit3("Zenith Color", weather.zenith);
+					
+					
+
 
 					PropertyGridSpacing();
-					DrawVec3Control("Translation", transform.translation_local);
-					XMFLOAT3 euler = ap::math::QuaternionToRollPitchYaw(transform.rotation_local);
+					ImGui::Separator();
+					PropertyGridSpacing();
+					PropertyGridSpacing();
 
-					euler.x = XMConvertToDegrees(euler.x);
-					euler.y = XMConvertToDegrees(euler.y);
-					euler.z = XMConvertToDegrees(euler.z);
+					//weather
 
-					DrawVec3Control("Rotation", euler);
-					XMStoreFloat4(&transform.rotation_local, XMQuaternionRotationRollPitchYaw(XMConvertToRadians(euler.x), XMConvertToRadians(euler.y), XMConvertToRadians(euler.z)));
-					DrawVec3Control("Scale", transform.scale_local, 1.0f, true);
+					bool IsHeightFog = weather.IsHeightFog();
+					if (DrawCheckbox("Height Fog", IsHeightFog))
+					{
+						weather.SetHeightFog(IsHeightFog);
+					}
+
+					bool IsSimpleSky = weather.IsSimpleSky();
+					if (DrawCheckbox("Simple Sky", IsSimpleSky))
+					{
+						weather.SetSimpleSky(IsSimpleSky);
+					}
+					
+					bool IsRealisticSky = weather.IsRealisticSky();
+					if (DrawCheckbox("Realistic Sky", IsRealisticSky))
+					{
+						weather.SetRealisticSky(IsRealisticSky);
+					}
+
+
+					static float windDirection =0.0f;
+					static float windMagnitude = 0.0f;
+					
+
+
+					DrawSliderFloat("Fog Start", weather.fogStart,0,5000);
+					DrawSliderFloat("Fog End", weather.fogEnd, 1, 5000);
+					DrawSliderFloat("Fog Height Start", weather.fogHeightStart,-100 ,100 );
+					DrawSliderFloat("Fog Height End", weather.fogHeightEnd, -100,100 );
+					DrawSliderFloat("Fog Height Sky", weather.fogHeightSky,0 , 1);
+					DrawSliderFloat("Cloudiness", weather.cloudiness, 0, 1);
+					DrawSliderFloat("Cloud Scale", weather.cloudScale, 0.00005f, 0.001f, "%.5f");
+					DrawSliderFloat("Cloud Speed", weather.cloudSpeed, 0.001f, 0.2f);
+					DrawSliderFloat("Wind Speed", weather.windSpeed,0 , 4);
+					if (DrawSliderFloat("Wind Magnitude", windMagnitude, 0, 0.2f))
+					{
+						XMMATRIX rot = XMMatrixRotationY(windDirection * XM_PI * 2);
+						XMVECTOR dir = XMVectorSet(1, 0, 0, 0);
+						dir = XMVector3TransformNormal(dir, rot);
+						dir *= windMagnitude;
+						XMStoreFloat3(&weather.windDirection, dir);
+					}
+					if (DrawSliderFloat("Wind Direction", windDirection,0 , 1))
+					{
+						XMMATRIX rot = XMMatrixRotationY(windDirection * XM_PI * 2);
+						XMVECTOR dir = XMVectorSet(1, 0, 0, 0);
+						dir = XMVector3TransformNormal(dir, rot);
+						dir *= windMagnitude;
+						XMStoreFloat3(&weather.windDirection, dir);
+					}
+					DrawSliderFloat("Wind Wave Size", weather.windWaveSize, 0, 1);
+					DrawSliderFloat("Wind Randomness", weather.windRandomness,0 , 10);
+					DrawSliderFloat("Sky Exposure", weather.skyExposure, 0,4 );
+
+
 
 					PropertyGridSpacing();
-					transform.SetDirty();
+					ImGui::Separator();
+					PropertyGridSpacing();
+					PropertyGridSpacing();
+
+					const char* skyLabel =  "Load SkyBox";
+
+			
+					if (DrawButton2(skyLabel,true))
+					{
+						if (!weather.skyMap.IsValid())
+						{
+							ap::helper::FileDialogParams params;
+							params.type = ap::helper::FileDialogParams::OPEN;
+							params.description = "Cubemap texture";
+							params.extensions.push_back("dds");
+							ap::helper::FileDialog(params, [=](std::string fileName) {
+								ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+									auto& weather = GetScene().weathers[0];
+									weather.skyMapName = fileName;
+									weather.skyMap = ap::resourcemanager::Load(fileName, ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+									
+									});
+								});
+						}
+						else
+						{
+							weather.skyMap = {};
+							weather.skyMapName.clear();
+			
+						}
+					}
+					
+
+					const char* lutLabel =  "Load Color Grading LUT" ;
+
+					
+					if (DrawButton2(lutLabel,true))
+					{
+						if (!weather.colorGradingMap.IsValid())
+						{
+							ap::helper::FileDialogParams params;
+							params.type = ap::helper::FileDialogParams::OPEN;
+							params.description = "Texture";
+							params.extensions = ap::resourcemanager::GetSupportedImageExtensions();
+							ap::helper::FileDialog(params, [=](std::string fileName) {
+								ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+									auto& weather = GetScene().weathers[0];
+									weather.colorGradingMapName = fileName;
+									weather.colorGradingMap = ap::resourcemanager::Load(fileName, ap::resourcemanager::Flags::IMPORT_COLORGRADINGLUT | ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+									
+									});
+								});
+						}
+						else
+						{
+							weather.colorGradingMap = {};
+							weather.colorGradingMapName.clear();
+						
+						}
+					}
+					
 
 
+					PropertyGridSpacing();
+					ImGui::Separator();
+					PropertyGridSpacing();
+					PropertyGridSpacing();
+
+
+					//v cloud
+					bool IsVolumetricClouds = weather.IsVolumetricClouds();
+					if (DrawCheckbox("Volumetric Cloud", IsVolumetricClouds))
+					{
+						weather.SetVolumetricClouds(IsVolumetricClouds);
+					}
+					DrawColorEdit3("V.Cloud Color", weather.volumetricCloudParameters.Albedo);
+					DrawSliderFloat("Coverage Amount", weather.volumetricCloudParameters.CoverageAmount, 0.0f, 10.0f);
+					DrawSliderFloat("Coverage Minimmum", weather.volumetricCloudParameters.CoverageMinimum, 1.0f, 2.0f);
+
+					PropertyGridSpacing();
+					ImGui::Separator();
+					PropertyGridSpacing();
+
+					//ocean
+					bool IsOceanEnabled = weather.IsOceanEnabled();
+					if (DrawCheckbox("Ocean Simulation Enable", IsOceanEnabled))
+					{
+						weather.SetOceanEnabled(IsOceanEnabled);
+						if (!weather.IsOceanEnabled())
+						{
+							GetScene().ocean = {};
+						}
+					}
+					DrawColorEdit3("Ocean Color", *(XMFLOAT3*)(void*)&weather.oceanParameters.waterColor);
+					
+					DrawSliderFloat("Patch Size", weather.oceanParameters.patch_length, 1 ,1000 );
+					DrawSliderFloat("Wave Amplitude", weather.oceanParameters.wave_amplitude ,0 ,1000 );
+					DrawSliderFloat("Choppiness", weather.oceanParameters.choppy_scale, 0, 10);
+					DrawSliderFloat("Wind Dependency", weather.oceanParameters.wind_dependency, 0,1 );
+					DrawSliderFloat("Time Scale", weather.oceanParameters.time_scale, 0, 4);
+					DrawSliderFloat("Water Level", weather.oceanParameters.waterHeight, -100, 100);
+					DrawSliderInt("Surface Detail", weather.oceanParameters.surfaceDetail,1 , 10);
+					DrawSliderFloat("Displacement Tolerance", weather.oceanParameters.surfaceDisplacementTolerance,1 ,10 );
+
+					if (DrawButton2("Reset Ocean", true))
+					{
+						weather.oceanParameters = ap::Ocean::OceanParameters();
+						GetScene().ocean = {};
+					}
+
+					PropertyGridSpacing();
+					ImGui::Separator();
+					PropertyGridSpacing();
+					PropertyGridSpacing();
+
+
+					EndPropertyGrid();
+					
 				});
+
 		}
+
+		
 		
 		if (light)
 		{
@@ -384,23 +686,14 @@ namespace Panel
 						probe.SetRealTime(isRealTime);
 					}
 
-					if (DrawButton2("Refresh"))
+					if (DrawButton2("Refresh", true))
 					{
 						probe.SetDirty(true);
 					}
 
-					if (DrawButton2("Refresh ALL"))
+					if (DrawButton2("Refresh ALL", true))
 					{
-						Scene& scene = GetScene();
-
-						for (int i = 0; i < scene.probes.GetCount(); i++)
-						{
-							Entity entity = scene.probes.GetEntity(i);
-							EnvironmentProbeComponent* otherProbe = scene.probes.GetComponent(entity);
-							otherProbe->SetDirty();
-						}
-
-						
+						InvalidateProbes();
 					}
 
 					//DrawInputText("CubeMapIndex", std::to_string(probe.textureIndex));
@@ -436,7 +729,7 @@ namespace Panel
 					DrawCombo("Shader Type", items, items.size(), &selectedIdx);
 					particle.shaderType = (ap::EmittedParticleSystem::PARTICLESHADERTYPE)selectedIdx;
 
-					if (DrawButton2("Restart"))
+					if (DrawButton2("Restart", true))
 						particle.Restart();
 
 					//std::string meshName = particle.meshUUID ? scene->GetEntity(particle.meshUUID).GetComponent<NameComponent>().name : "NULL";
@@ -484,7 +777,7 @@ namespace Panel
 					static uint32_t burstCount = 0;
 					DrawSliderInt("Brust Count", burstCount, 0, 1000);
 
-					if (DrawButton2("Burst"))
+					if (DrawButton2("Burst", true))
 						particle.Burst(burstCount);
 
 
@@ -604,7 +897,7 @@ namespace Panel
 					const char* buttonLabel = sound.IsPlaying() ?  "Stop": "Play";
 
 
-					if (DrawButton2(buttonLabel))
+					if (DrawButton2(buttonLabel,true))
 					{
 						if (sound.IsPlaying())
 							sound.Stop();

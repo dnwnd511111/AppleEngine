@@ -108,6 +108,8 @@ public:
 
 	//
 	uint32_t pickType = ~0;
+
+	
 	
 };
 

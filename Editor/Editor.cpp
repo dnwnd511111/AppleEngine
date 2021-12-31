@@ -62,16 +62,38 @@ void Editor::Initialize()
 	graphicsDevice->InitImGui(window);
 	ap::imgui::Initialize();
 
+
+	Scene& scene = ap::scene::GetScene();
+	if (scene.weathers.GetCount() == 0)
+	{
+		scene.weathers.Create(CreateEntity());
+	}
+
+
 	// With this mode, file data for resources will be kept around. This allows serializing embedded resource data inside scenes
 	ap::resourcemanager::SetMode(ap::resourcemanager::Mode::ALLOW_RETAIN_FILEDATA);
 
-	infoDisplay.active = true;
-	infoDisplay.watermark = true;
-	infoDisplay.fpsinfo = true;
-	infoDisplay.resolution = true;
-	//infoDisplay.logical_size = true;
-	infoDisplay.colorspace = true;
-	infoDisplay.heap_allocation_counter = true;
+	if (1)
+	{
+		infoDisplay.active = true;
+		infoDisplay.watermark = false;
+		infoDisplay.resolution = true;
+		infoDisplay.colorspace = true;
+		infoDisplay.fpsinfo = true;
+		infoDisplay.heap_allocation_counter = true;
+	}
+	else
+	{
+		infoDisplay.active = true;
+		infoDisplay.watermark = true;
+		infoDisplay.fpsinfo = true;
+		infoDisplay.resolution = true;
+		//infoDisplay.logical_size = true;
+		infoDisplay.colorspace = true;
+		infoDisplay.heap_allocation_counter = true;
+
+	}
+
 
 	ap::renderer::SetOcclusionCullingEnabled(true);
 
@@ -2168,4 +2190,6 @@ void EditorComponent::DeleteSelectedEntities()
 
 	}
 }
+
+
 

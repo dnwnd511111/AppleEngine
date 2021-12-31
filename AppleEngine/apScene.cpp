@@ -3822,6 +3822,7 @@ namespace ap::scene
 	}
 	void Scene::RunWeatherUpdateSystem(ap::jobsystem::context& ctx)
 	{
+		
 		if (weathers.GetCount() > 0)
 		{
 			weather = weathers[0];

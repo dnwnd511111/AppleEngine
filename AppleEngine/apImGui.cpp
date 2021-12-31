@@ -699,9 +699,19 @@ namespace ap::imgui
 		return result;
 	}
 
-	bool DrawButton2(const char* label, const ImVec2& size)
+	bool DrawButton2(const char* label, bool fill, const ImVec2& size_in)
 	{
 		bool modified = false;
+
+		ImVec2 size = size_in;
+
+		if (fill)
+		{
+			auto region = ImGui::GetContentRegionAvail();
+			size.x = region.x;
+		}
+		
+
 
 		ImGui::Text(label);
 		ImGui::NextColumn();
@@ -723,6 +733,9 @@ namespace ap::imgui
 		return modified;
 
 	}
+
+	
+
 
 
 	void DrawVec3Control(const std::string& label, XMFLOAT3& values, float resetValue  , bool isScale , float columnWidth )

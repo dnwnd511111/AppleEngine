@@ -306,7 +306,7 @@ namespace ap
 		}
 
 		// Draw the information display
-		if (infoDisplay.active && 0) //임시
+		if (infoDisplay.active ) //임시
 		{
 			infodisplay_str.clear();
 			if (infoDisplay.watermark)
@@ -403,7 +403,7 @@ namespace ap
 			}
 
 #ifdef _DEBUG
-			infodisplay_str += "Warning: This is a [DEBUG] build, performance will be slow!\n";
+			//infodisplay_str += "Warning: This is a [DEBUG] build, performance will be slow!\n";
 #endif
 			if (graphicsDevice->IsDebugDevice())
 			{

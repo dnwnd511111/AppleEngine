@@ -58,7 +58,7 @@ namespace ap::imgui
 	bool DrawColorEdit4(const char* label, DirectX::XMFLOAT4& value);
 	bool DrawColorEdit3(const char* label, float* value);
 	bool DrawButton(const char* label, const ImVec2& size = ImVec2(0, 0));
-	bool DrawButton2(const char* label, const ImVec2& size = ImVec2(90.0f, 20.0f));
+	bool DrawButton2(const char* label, bool fill = false ,const ImVec2& size = ImVec2(90.0f, 20.0f));
 	void DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, bool isScale = false, float columnWidth = 100.0f);
 
 	//gonna be deleted
