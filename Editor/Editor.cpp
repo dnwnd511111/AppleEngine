@@ -480,6 +480,10 @@ void Editor::ImGuiRender()
 		contentBrowserPanel.ImGuiRender(dt);
 		ImGui::End();
 
+		ImGui::Begin("PostProcess");
+		ImGuiRender_PostProcess();
+		ImGui::End();
+
 
 	}
 	
@@ -615,6 +619,241 @@ void Editor::ImGuiRender_PlaceActors()
 
 		EndPropertyGrid();
 	}
+
+}
+
+
+void Editor::ImGuiRender_PostProcess()
+{
+	if (renderComponent.renderPath == nullptr)
+		return;
+
+
+	BeginPropertyGrid();
+	PropertyGridSpacing();
+
+	float exposure = renderComponent.renderPath->getExposure();
+	if (DrawSliderFloat("Exposure", exposure, 0, 3))
+		renderComponent.renderPath->setExposure(exposure);
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	{
+		int selectedIdx = renderComponent.renderPath->getAO();
+		std::vector<std::string> items =
+		{
+			"Disabled",
+			"SSAO",
+			"HBAO",
+			"MSAO",
+		};
+		if (ap::graphics::GetDevice()->CheckCapability(GraphicsDeviceCapability::RAYTRACING))
+			items.push_back("RTAO");
+
+		if (DrawCombo("AO", items, items.size(), &selectedIdx))
+		{
+			renderComponent.renderPath->setAO((ap::RenderPath3D::AO)selectedIdx);
+
+			switch (renderComponent.renderPath->getAO())
+			{
+			case ap::RenderPath3D::AO_SSAO:
+				renderComponent.renderPath->setAORange(2.0f);
+				renderComponent.renderPath->setAOSampleCount(9.0f);
+				break;
+			case ap::RenderPath3D::AO_RTAO:
+				renderComponent.renderPath->setAORange(10.0f);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
+	float AOPower = renderComponent.renderPath->getAOPower();
+	if (DrawSliderFloat("AO Power", AOPower, 0.25f, 8))
+		renderComponent.renderPath->setAOPower(AOPower);
+	
+	float AORange = renderComponent.renderPath->getAORange();
+	if (DrawSliderFloat("AO Range", AORange, 1, 100))
+		renderComponent.renderPath->setAORange(AORange);
+
+	int AOSampleCount = renderComponent.renderPath->getAOSampleCount();
+	if (DrawSliderInt("AO Sample Count", AOSampleCount, 1, 16))
+		renderComponent.renderPath->setAOSampleCount(AOSampleCount);
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+
+	bool SSREnabled = renderComponent.renderPath->getSSREnabled();
+	if (DrawCheckbox("SSR", SSREnabled))
+	{
+		renderComponent.renderPath->setSSREnabled(SSREnabled);
+	}
+
+	bool RaytracedReflectionEnabled = renderComponent.renderPath->getRaytracedReflectionEnabled();
+	if (DrawCheckbox("Ray Traced Reflections", RaytracedReflectionEnabled))
+	{
+		renderComponent.renderPath->setRaytracedReflectionsEnabled(RaytracedReflectionEnabled);
+	}
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+
+	bool EyeAdaptionEnabled = renderComponent.renderPath->getEyeAdaptionEnabled();
+	if (DrawCheckbox("EyeAdaption", EyeAdaptionEnabled))
+	{
+		renderComponent.renderPath->setEyeAdaptionEnabled(EyeAdaptionEnabled);
+	}
+
+	float EyeAdaptionKey = renderComponent.renderPath->getEyeAdaptionKey();
+	if (DrawSliderFloat("EyeAdaption Key", EyeAdaptionKey, 0.01f, 0.5f))
+		renderComponent.renderPath->setEyeAdaptionKey(EyeAdaptionKey);
+
+	float EyeAdaptionRate = renderComponent.renderPath->getEyeAdaptionRate();
+	if (DrawSliderFloat("EyeAdaption Rate", EyeAdaptionRate, 0.01f, 4.0f))
+		renderComponent.renderPath->setEyeAdaptionRate(EyeAdaptionRate);
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	bool MotionBlurEnabled = renderComponent.renderPath->getMotionBlurEnabled();
+	if (DrawCheckbox("MotionBlur", MotionBlurEnabled))
+	{
+		renderComponent.renderPath->setMotionBlurEnabled(MotionBlurEnabled);
+	}
+
+	float MotionBlurStrength = renderComponent.renderPath->getMotionBlurStrength();
+	if (DrawSliderFloat("MotionBlur Strength", MotionBlurStrength, 0.1f, 400.0f))
+		renderComponent.renderPath->setMotionBlurStrength(MotionBlurStrength);
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	bool DepthOfFieldEnabled = renderComponent.renderPath->getDepthOfFieldEnabled();
+	if (DrawCheckbox("DepthOfField", DepthOfFieldEnabled))
+	{
+		renderComponent.renderPath->setDepthOfFieldEnabled(DepthOfFieldEnabled);
+	}
+
+	float DepthOfFieldStrength = renderComponent.renderPath->getDepthOfFieldStrength();
+	if (DrawSliderFloat("DepthOfField Strength", DepthOfFieldStrength, 1.0f, 20))
+		renderComponent.renderPath->setDepthOfFieldStrength(DepthOfFieldStrength);
+
+
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	bool BloomEnabled = renderComponent.renderPath->getBloomEnabled();
+	if (DrawCheckbox("Bloom", BloomEnabled))
+	{
+		renderComponent.renderPath->setBloomEnabled(BloomEnabled);
+	}
+
+
+	float BloomThreshold = renderComponent.renderPath->getBloomThreshold();
+	if (DrawSliderFloat("Bloom Threshold", BloomThreshold, 0.0f, 10))
+		renderComponent.renderPath->setBloomThreshold(BloomThreshold);
+
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	bool LensFlareEnabled = renderComponent.renderPath->getLensFlareEnabled();
+	if (DrawCheckbox("LensFlare", LensFlareEnabled))
+		renderComponent.renderPath->setLensFlareEnabled(LensFlareEnabled);
+
+	bool FXAAEnabled = renderComponent.renderPath->getFXAAEnabled();
+	if (DrawCheckbox("FXAA", FXAAEnabled))
+		renderComponent.renderPath->setFXAAEnabled(FXAAEnabled);
+
+	bool ColorGradingEnabled = renderComponent.renderPath->getColorGradingEnabled();
+	if (DrawCheckbox("Color Grading", ColorGradingEnabled))
+		renderComponent.renderPath->setColorGradingEnabled(ColorGradingEnabled);
+
+	bool DitherEnabled = renderComponent.renderPath->getDitherEnabled();
+	if (DrawCheckbox("Dithering", DitherEnabled))
+		renderComponent.renderPath->setDitherEnabled(DitherEnabled);
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+
+	bool SharpenFilterEnabled = renderComponent.renderPath->getSharpenFilterEnabled();
+	if (DrawCheckbox("Sharpen Filter", SharpenFilterEnabled))
+		renderComponent.renderPath->setSharpenFilterEnabled(SharpenFilterEnabled);
+
+	float SharpenFilterAmount = renderComponent.renderPath->getSharpenFilterAmount();
+	if (DrawSliderFloat("Sharpen Amount", SharpenFilterAmount, 0.0f, 4))
+		renderComponent.renderPath->setSharpenFilterAmount(SharpenFilterAmount);
+
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	bool OutlineEnabled = renderComponent.renderPath->getOutlineEnabled();
+	if (DrawCheckbox("Cartoon Outline", OutlineEnabled))
+		renderComponent.renderPath->setOutlineEnabled(OutlineEnabled);
+
+	float OutlineThreshold = renderComponent.renderPath->getOutlineThreshold();
+	if (DrawSliderFloat("Cartoon Threshold", OutlineThreshold, 0.0f, 1))
+		renderComponent.renderPath->setOutlineThreshold(OutlineThreshold);
+
+	float OutlineThickness = renderComponent.renderPath->getOutlineThickness();
+	if (DrawSliderFloat("Cartoon Thickness", OutlineThickness, 0.0f, 4))
+		renderComponent.renderPath->setOutlineThickness(OutlineThickness);
+
+	PropertyGridSpacing();
+	PropertyGridSpacing();
+	ImGui::Separator();
+
+
+	bool ChromaticAberrationEnabled = renderComponent.renderPath->getChromaticAberrationEnabled();
+	if (DrawCheckbox("Chromatic Aberration", ChromaticAberrationEnabled))
+		renderComponent.renderPath->setChromaticAberrationEnabled(ChromaticAberrationEnabled);
+
+	float ChromaticAberrationAmount = renderComponent.renderPath->getChromaticAberrationAmount();
+	if (DrawSliderFloat("Chromatic Amount", ChromaticAberrationAmount, 0.0f, 4))
+		renderComponent.renderPath->setChromaticAberrationAmount(ChromaticAberrationAmount);
+
+
+
+	PropertyGridSpacing();
+	PropertyGridSpacing();
+	ImGui::Separator();
+
+	bool FSREnabled = renderComponent.renderPath->getFSREnabled();
+	if (DrawCheckbox("FSR", FSREnabled))
+		renderComponent.renderPath->setFSREnabled(FSREnabled);
+
+	float FSRSharpness = renderComponent.renderPath->getFSRSharpness();
+	if (DrawSliderFloat("FSR Sharpness", FSRSharpness, 0.0f, 2))
+		renderComponent.renderPath->setFSRSharpness(FSRSharpness);
+
+
+
+	EndPropertyGrid();
 
 }
 
