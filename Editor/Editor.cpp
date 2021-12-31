@@ -484,6 +484,10 @@ void Editor::ImGuiRender()
 		ImGuiRender_PostProcess();
 		ImGui::End();
 
+		//
+		ImGuiRender_ToolBar();
+
+
 
 	}
 	
@@ -857,6 +861,85 @@ void Editor::ImGuiRender_PostProcess()
 
 }
 
+void Editor::ImGuiRender_ToolBar()
+{
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5, 0));
+	ImGui::Begin("ToolBar", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
+
+
+
+	
+	ShiftCursorX(20);
+	ImGui::Text("Profiler Enabled");
+	ImGui::SameLine();
+
+	ShiftCursorY(-3);
+	bool IsEnabled = ap::profiler::IsEnabled();
+	if (ImGui::Checkbox(GenerateID(), &IsEnabled))
+	{
+		ap::profiler::SetEnabled(IsEnabled);
+	}
+
+	if (!IsItemDisabled())
+		DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+	ImGui::SameLine();
+
+
+	ShiftCursorX(20);
+	ImGui::Text("Physics Simulation");
+	ImGui::SameLine();
+
+	
+	bool IsSimulationEnabled = ap::physics::IsSimulationEnabled();
+	if (ImGui::Checkbox(GenerateID(), &IsSimulationEnabled))
+	{
+		ap::physics::SetSimulationEnabled(IsSimulationEnabled);
+	}
+
+	if (!IsItemDisabled())
+		DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+
+	ImGui::SameLine();
+	ShiftCursorX(20);
+	ImGui::Text("Cinema Mode");
+	ImGui::SameLine();
+
+	
+	if (ImGui::Checkbox(GenerateID(), &isCinema))
+	{
+		isCinema = true;
+		if (renderComponent.renderPath != nullptr)
+		{
+			renderComponent.renderPath->GetGUI().SetVisible(false);
+		}
+		renderComponent.GetGUI().SetVisible(false);
+		ap::profiler::SetEnabled(false);
+		infoDisplay.active = false;
+		isEditor = false;
+	}
+
+	if (!IsItemDisabled())
+		DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+		
+	
+
+
+
+
+
+	ImGui::PopStyleVar();
+	ImGui::End();
+	ImGui::PopStyleVar(2);
+
+}
+
+
 
 void EditorComponent::ChangeRenderPath(RENDERPATH path)
 {
@@ -1020,7 +1103,7 @@ void EditorComponent::Update(float dt)
 	ap::profiler::range_id profrange = ap::profiler::BeginRangeCPU("Editor Update");
 
 	
-
+	
 
 	if (mainCamera == ap::ecs::INVALID_ENTITY || !ap::scene::GetScene().cameras.Contains(mainCamera))
 	{
@@ -1049,16 +1132,25 @@ void EditorComponent::Update(float dt)
 
 	selectionOutlineTimer += dt;
 
-	if (main->viewportHovered)
+	if (main->viewportHovered || main->isCinema)
 	{
 
 
 		bool clear_selected = false;
 		if (ap::input::Press(ap::input::KEYBOARD_BUTTON_ESCAPE))
 		{
-			if (0)
+			if (main->isCinema)
 			{
+				// Exit cinema mode:
+				if (renderPath != nullptr)
+				{
+					renderPath->GetGUI().SetVisible(true);
+				}
+				GetGUI().SetVisible(true);
+				main->infoDisplay.active = true;
 
+				main->isCinema = false;
+				main->isEditor = true;
 			}
 			else
 			{
@@ -1092,9 +1184,6 @@ void EditorComponent::Update(float dt)
 
 		
 		XMFLOAT4 currentMouse = editorMouse;
-
-
-		
 
 
 

@@ -38,7 +38,7 @@ namespace ap::imgui
 
 	}
 
-	static const char* GenerateID()
+	const char* GenerateID()
 	{
 		s_IDBuffer[0] = '#';
 		s_IDBuffer[1] = '#';
@@ -97,7 +97,7 @@ namespace ap::imgui
 	}
 
 
-	inline void DrawItemActivityOutline(float rounding = 0.0f, bool drawWhenInactive = false, ImColor colourWhenActive = ImColor(80, 80, 80))
+	void DrawItemActivityOutline(float rounding , bool drawWhenInactive , ImColor colourWhenActive )
 	{
 		auto* drawList = ImGui::GetWindowDrawList();
 		const ImRect rect = RectExpanded(GetItemRect(), 1.0f, 1.0f);
@@ -348,12 +348,8 @@ namespace ap::imgui
 		ImGui::NextColumn();
 
 		ImGui::PushItemWidth(-1);
-
-		s_IDBuffer[0] = '#';
-		s_IDBuffer[1] = '#';
-		memset(s_IDBuffer + 2, 0, 14);
-		sprintf_s(s_IDBuffer + 2, 14, "%o", s_Counter++);
-		if (ImGui::Checkbox(s_IDBuffer, &value))
+		
+		if (ImGui::Checkbox(GenerateID(), &value))
 			modified = true;
 
 		if (!IsItemDisabled())

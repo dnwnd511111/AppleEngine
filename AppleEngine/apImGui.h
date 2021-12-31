@@ -21,7 +21,7 @@ namespace ap::imgui
 {
 	void Initialize();
 
-
+    const char* GenerateID();
 	void ShiftCursorX(float distance);
 	void ShiftCursorY(float distance);
 	void ShiftCursor(float x, float y);
@@ -29,6 +29,7 @@ namespace ap::imgui
     bool IsItemDisabled();
     ImRect GetItemRect();
     ImRect RectExpanded(const ImRect& rect, float x, float y);
+    void DrawItemActivityOutline(float rounding = 0.0f, bool drawWhenInactive = false, ImColor colourWhenActive = ImColor(80, 80, 80));
 
 	bool PropertyGridHeader(const std::string& name, bool openByDefault = true);
 	void BeginCheckboxGroup(const char* label);

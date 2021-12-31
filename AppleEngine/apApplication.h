@@ -63,6 +63,7 @@ namespace ap
 		ap::platform::window_type window;
 
 		bool isEditor = false;
+		bool isCinema = false;
 
 		// Runs the main engine loop
 		void Run();

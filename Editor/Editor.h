@@ -137,4 +137,5 @@ public:
 private:
 	void ImGuiRender_PlaceActors();
 	void ImGuiRender_PostProcess();
+	void ImGuiRender_ToolBar();
 };
