@@ -87,7 +87,7 @@ namespace Panel
 		if (editor->renderComponent.translator.selected.size() == 1)
 		{
 			Entity entity = editor->renderComponent.translator.selected[0].entity;
-			int subsetIdx = editor->renderComponent.translator.selected[0].subsetIndex;
+			int& subsetIdx = editor->renderComponent.translator.selected[0].subsetIndex;
 			DrawComponents(entity, subsetIdx);
 		}
 
@@ -211,7 +211,7 @@ namespace Panel
 
 
 
-	void HierarchyPanel::DrawComponents(ap::ecs::Entity entity, int subsetIdx)
+	void HierarchyPanel::DrawComponents(ap::ecs::Entity entity, int& subsetIdx)
 	{
 
 		Scene& scene = GetScene();
@@ -222,15 +222,11 @@ namespace Panel
 		LayerComponent* layer = scene.layers.GetComponent(entity);
 		TransformComponent* transform = scene.transforms.GetComponent(entity);
 		ImpostorComponent* imposter = scene.impostors.GetComponent(entity);
-		RigidBodyPhysicsComponent* rigidbody = scene.rigidbodies.GetComponent(entity);
-		SoftBodyPhysicsComponent* softbody = scene.softbodies.GetComponent(entity);
-		ArmatureComponent* armature =scene.armatures.GetComponent(entity);
 		LightComponent* light = scene.lights.GetComponent(entity);
 		CameraComponent* camera = scene.cameras.GetComponent(entity);
 		EnvironmentProbeComponent* environmentprobe = scene.probes.GetComponent(entity);
 		ForceFieldComponent* forcefield = scene.forces.GetComponent(entity);
 		DecalComponent* decal = scene.decals.GetComponent(entity);
-		AnimationComponent* animation =scene.animations.GetComponent(entity);
 		ap::EmittedParticleSystem* emitter = scene.emitters.GetComponent(entity);
 		ap::HairParticleSystem* hair = scene.hairs.GetComponent(entity);
 		WeatherComponent* weather = &scene.weathers[0];
@@ -936,21 +932,287 @@ namespace Panel
 		}
 
 
-		
-		
-
 		if (object)
 		{
 			MeshComponent* mesh = scene.meshes.GetComponent(object->meshID);
 			
 
+			
+
+
 			if (mesh)
 			{
-
+				RigidBodyPhysicsComponent* rigidbody = scene.rigidbodies.GetComponent(object->meshID);
+				SoftBodyPhysicsComponent* softbody = scene.softbodies.GetComponent(object->meshID);
 
 				assert(mesh->subsets.size() > 0);
 				if (subsetIdx == -1)
 					subsetIdx = 0;
+
+
+				if (mesh->armatureID != ap::ecs::INVALID_ENTITY)
+				{
+					DrawComponent("Animation", mesh, [&scene](MeshComponent& mesh)
+						{
+							BeginPropertyGrid();
+							PropertyGridSpacing();
+
+							
+							static int selectedIdx = 0;
+
+							if (scene.animations.GetCount() < selectedIdx)
+								selectedIdx = 0;
+							
+
+							std::vector<std::string> items = {"NONE"};
+							items.reserve(scene.animations.GetCount());
+
+							for (int i = 0; i < scene.animations.GetCount(); i++)
+							{
+								Entity ent = scene.animations.GetEntity(i);
+								
+								NameComponent* name = scene.names.GetComponent(ent);
+								items.push_back(name->name);
+							}
+							DrawCombo("Anim", items, items.size(), &selectedIdx);
+							
+							if (selectedIdx != 0)
+							{
+
+								AnimationComponent& anim = scene.animations[selectedIdx-1];
+
+								bool IsLooped = anim.IsLooped();
+								if (DrawCheckbox("Looped", IsLooped))
+									anim.SetLooped(IsLooped);
+
+								
+								const char* buttonLabel = anim.IsPlaying() ? "Stop" : "Play";
+
+								if (DrawButton2(buttonLabel, true))
+								{
+									if (anim.IsPlaying())
+										anim.Pause();
+									else
+										anim.Play();
+								}
+									
+								if (DrawButton2("Stop", true))
+								{
+									anim.Stop();
+								}
+
+								DrawSliderFloat("Timer", anim.timer, 0.0f, 30.0f);
+								DrawSliderFloat("Amount", anim.amount, 0.0f, 1.0f);
+								DrawSliderFloat("Speed", anim.speed, 0.0f, 4.0f);
+
+
+							}
+
+							
+
+
+							PropertyGridSpacing();
+							ImGui::Separator();
+							PropertyGridSpacing();
+
+
+
+							EndPropertyGrid();
+
+						});
+
+				}
+
+
+
+				static float mass = 10;
+				static float friction = 1;
+				static float restitution = 1;
+
+
+				DrawComponent("Mesh", mesh, [&subsetIdx,entity, object,name, &softbody, &scene](MeshComponent& mesh)
+					{
+						BeginPropertyGrid();
+						PropertyGridSpacing();
+
+
+						ImGui::Text("Mesh Data");
+						ImGui::NextColumn();
+						ImGui::PushItemWidth(-1);
+
+						std::string MeshDatastr = "";
+
+						MeshDatastr += "Mesh Name: " + name->name + "\n";
+						MeshDatastr += "Vertex count: " + std::to_string(mesh.vertex_positions.size()) + "\n";
+						MeshDatastr += "Index count: " + std::to_string(mesh.indices.size()) + "\n";
+						MeshDatastr += "Subset count: " + std::to_string(mesh.subsets.size()) + "\n";
+						if (mesh.vertexBuffer_POS.IsValid()) MeshDatastr += "position; ";
+						if (mesh.vertexBuffer_UV0.IsValid()) MeshDatastr += "uvset_0; ";
+						if (mesh.vertexBuffer_UV1.IsValid()) MeshDatastr += "uvset_1; ";
+						if (mesh.vertexBuffer_ATL.IsValid()) MeshDatastr += "atlas; ";
+						if (mesh.vertexBuffer_COL.IsValid()) MeshDatastr += "color; ";
+						if (mesh.vertexBuffer_PRE.IsValid()) MeshDatastr += "previous_position; ";
+						if (mesh.vertexBuffer_BON.IsValid()) MeshDatastr += "bone; ";
+						if (mesh.vertexBuffer_TAN.IsValid()) MeshDatastr += "tangent; ";
+						if (mesh.streamoutBuffer_POS.IsValid()) MeshDatastr += "streamout_position; ";
+						if (mesh.streamoutBuffer_TAN.IsValid()) MeshDatastr += "streamout_tangents; ";
+						if (mesh.subsetBuffer.IsValid()) MeshDatastr += "subset; ";
+
+						ImGui::InputTextMultiline(GenerateID(), (char*)MeshDatastr.c_str(), MeshDatastr.size(),ImVec2(0,0) ,ImGuiInputTextFlags_ReadOnly);
+						
+						ImGui::PopItemWidth();
+						ImGui::NextColumn();
+
+
+						if (softbody != nullptr)
+						{
+							friction = softbody->friction;
+							mass = softbody->mass;
+							restitution = softbody->restitution;
+
+						}
+
+
+						PropertyGridSpacing();
+
+						{
+							std::vector<std::string> items;
+							for (int i = 0; i < mesh.subsets.size(); i++)
+							{
+								items.push_back(std::to_string(i));
+							}
+							DrawCombo("Subset", items, items.size(), &subsetIdx);
+						}
+
+						{
+							int selected = scene.materials.GetIndex(mesh.subsets[subsetIdx].materialID) + 1;
+
+							std::vector<std::string> items = {"No Material"};
+							items.reserve(scene.materials.GetCount()+1);
+
+							for (int i = 0; i < scene.materials.GetCount(); i++)
+							{
+								Entity ent = scene.materials.GetEntity(i);
+								NameComponent* name = scene.names.GetComponent(ent);
+								items.push_back(name->name);
+
+							}
+
+							if (DrawCombo("Subset Material", items, items.size(), &selected))
+							{
+								if (selected == 0)
+								{
+									mesh.subsets[subsetIdx].materialID = INVALID_ENTITY;
+								}
+								else
+								{
+									mesh.subsets[subsetIdx].materialID = scene.materials.GetEntity(selected-1);
+								}
+							}
+
+
+						}
+
+
+						bool IsDoubleSided = mesh.IsDoubleSided();
+						if (DrawCheckbox("Double Sided", IsDoubleSided))
+							mesh.SetDoubleSided(IsDoubleSided);
+
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						bool isSoftBody = (softbody != nullptr);
+						if (DrawCheckbox("Soft body", isSoftBody))
+						{
+
+							Scene& scene = ap::scene::GetScene();
+							
+							if (isSoftBody)
+							{
+								if (softbody == nullptr)
+								{
+									softbody = &scene.softbodies.Create(object->meshID);
+									softbody->friction = friction;
+									softbody->restitution = restitution;
+									softbody->mass = mass;
+								}
+							}
+							else
+							{
+								if (softbody != nullptr)
+								{
+									scene.softbodies.Remove(object->meshID);
+									softbody = nullptr;
+								}
+							}
+						}
+
+						DrawSliderFloat("Mass", mass, 0.0f, 10.0f);
+						DrawSliderFloat("Friction", friction, 0.0f, 1.0f);
+						DrawSliderFloat("Restitution", restitution, 0.0f, 1.0f);
+
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+
+						// Morph Target
+
+						static float morphWeight = 0.0f;
+						static int selectedMorphIdx = 0;
+
+						if (selectedMorphIdx > mesh.targets.size())
+							selectedMorphIdx = 0;
+
+						{
+							std::vector<std::string> items = {"NONE"};
+							for (int i = 0; i < mesh.targets.size(); i++)
+							{
+								items.push_back(std::to_string(i));
+							}
+							DrawCombo("Morph Target", items, items.size(), &selectedMorphIdx);
+							
+
+						}
+
+						if(selectedMorphIdx != 0 )
+						{
+							morphWeight = mesh.targets[selectedMorphIdx-1].weight;
+						}
+						else
+						{
+							morphWeight = 0.0f;
+						}
+
+						
+						if (DrawSliderFloat("Morph Target Weight", morphWeight, 0.0f, 1.0f))
+						{
+							if (selectedMorphIdx != 0)
+							{
+								mesh.targets[selectedMorphIdx - 1].weight = morphWeight;
+								mesh.dirty_morph = true;
+							}
+						}
+
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+
+
+						EndPropertyGrid();
+
+					});
+
+				
+
+			
+
+
 				MaterialComponent*  material = scene.materials.GetComponent(mesh->subsets[subsetIdx].materialID);
 				
 
@@ -1098,9 +1360,9 @@ namespace Panel
 							ImGui::Separator();
 
 							PropertyGridSpacing();
-							DrawColorEdit4("BaseColor", material.baseColor);
-							DrawColorEdit4("SpecularColor", material.specularColor);
-							DrawColorEdit3("EmissiveColor", (float*)&material.emissiveColor);
+							DrawColorEdit4("Base Color", material.baseColor);
+							DrawColorEdit4("Specular Color", material.specularColor);
+							DrawColorEdit3("Emissive Color", (float*)&material.emissiveColor);
 							DrawSliderFloat("EmissiveAlpha", material.emissiveColor.w, 0.0f, 10.0f);
 							PropertyGridSpacing();
 							ImGui::Separator();
@@ -1115,8 +1377,31 @@ namespace Panel
 							ImGui::Separator();
 							PropertyGridSpacing();
 							DrawSliderFloat("Transmission", material.transmission, 0.0f, 1.0f);
-							DrawSliderFloat("NormalMapStrength", material.normalMapStrength, 0.0f, 8.0f);
+							DrawSliderFloat("Normal", material.normalMapStrength, 0.0f, 8.0f);
+							DrawSliderFloat("Parallax Occlusion", material.parallaxOcclusionMapping, 0.0f,0.1f, "%.5f");
+							DrawSliderFloat("Displacement", material.displacementMapping, 0.0f, 0.1f, "%.5f");
 							DrawSliderFloat("AlphaRef", material.alphaRef, 0.0f, 1.0f - 1.0f / 256.0f);
+
+							ImGui::Separator();
+							PropertyGridSpacing();
+							
+
+							DrawColorEdit3("Subsurface Scattering Color", (float*)&material.subsurfaceScattering);
+							DrawSliderFloat("Subsurface Scattering", material.subsurfaceScattering.w, 0.0f, 2);
+
+							ImGui::Separator();
+							PropertyGridSpacing();
+
+							DrawColorEdit4("Sheen Color", material.sheenColor);
+							DrawSliderFloat("Sheen Roughness", material.sheenRoughness, 0.0f, 1.0f );
+
+							ImGui::Separator();
+							PropertyGridSpacing();
+							
+							DrawSliderFloat("ClearCoat", material.clearcoat, 0.0f, 1.0f);
+							DrawSliderFloat("ClearCoat Roughness", material.clearcoatRoughness, 0.0f, 1.f);
+
+
 							PropertyGridSpacing();
 
 							ImGui::Separator();

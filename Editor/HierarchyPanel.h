@@ -17,7 +17,7 @@ namespace Panel
 
 	private:
 		void DrawEntityNode(ap::ecs::Entity entity) const;
-		void DrawComponents(ap::ecs::Entity entity, int subsetIdx);
+		void DrawComponents(ap::ecs::Entity entity, int& subsetIdx);
 		
 
 	};

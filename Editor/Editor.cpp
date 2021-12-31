@@ -89,6 +89,7 @@ void Editor::Initialize()
 	}
 
 
+
 	ap::renderer::SetOcclusionCullingEnabled(true);
 
 	loader.Load();
@@ -1246,7 +1247,9 @@ void Editor::ImGuiRender_Renderer()
 	}
 
 	{
-		static int selectedIdx = 3;
+
+
+		int selectedIdx = (renderComponent.renderPath && renderComponent.renderPath->getMSAASampleCount()) ? std::log2(renderComponent.renderPath->getMSAASampleCount()) : 0;
 
 		const std::vector<std::string> items =
 		{
@@ -1276,6 +1279,7 @@ void Editor::ImGuiRender_Renderer()
 			default:
 				break;
 			}
+			renderComponent.ResizeBuffers();
 		}
 
 	}
@@ -1655,7 +1659,15 @@ void EditorComponent::Update(float dt)
 
 	if (scene.weathers.GetCount() == 0)
 	{
-		scene.weathers.Create(CreateEntity());
+		WeatherComponent& weather = scene.weathers.Create(CreateEntity());
+
+		weather.ambient = XMFLOAT3(33.0f / 255.0f, 47.0f / 255.0f, 127.0f / 255.0f);
+		weather.horizon = XMFLOAT3(101.0f / 255.0f, 101.0f / 255.0f, 227.0f / 255.0f);
+		weather.zenith = XMFLOAT3(99.0f / 255.0f, 133.0f / 255.0f, 255.0f / 255.0f);
+		weather.cloudiness = 0.4f;
+		weather.fogStart = 100;
+		weather.fogEnd = 1000;
+		weather.fogHeightSky = 0;
 	}
 
 
