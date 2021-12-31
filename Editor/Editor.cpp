@@ -63,12 +63,6 @@ void Editor::Initialize()
 	ap::imgui::Initialize();
 
 
-	Scene& scene = ap::scene::GetScene();
-	if (scene.weathers.GetCount() == 0)
-	{
-		scene.weathers.Create(CreateEntity());
-	}
-
 
 	// With this mode, file data for resources will be kept around. This allows serializing embedded resource data inside scenes
 	ap::resourcemanager::SetMode(ap::resourcemanager::Mode::ALLOW_RETAIN_FILEDATA);
@@ -486,8 +480,7 @@ void Editor::ImGuiRender()
 
 		//
 		ImGuiRender_ToolBar();
-
-
+		ImGuiRender_Renderer();
 
 	}
 	
@@ -528,7 +521,7 @@ void Editor::ImGuiRender_PlaceActors()
 
 	}
 
-	if (DrawButton("Directinoal", ImVec2(70, 20)))
+	if (DrawButton("Directional", ImVec2(70, 20)))
 	{
 		scene.Entity_CreateLight("Directional", frontCamPos, lightColor, 2.0f, 60.0f, ap::scene::LightComponent::LightType::DIRECTIONAL);
 	}
@@ -939,6 +932,535 @@ void Editor::ImGuiRender_ToolBar()
 
 }
 
+void Editor::ImGuiRender_Renderer()
+{
+	ImGui::Begin("Renderer");
+
+	BeginPropertyGrid();
+	PropertyGridSpacing();
+
+	
+
+
+	static int selectedSwapChainIdx =0;
+
+	float gameSpeed = ap::renderer::GetGameSpeed();
+	if(DrawSliderFloat("Speed", gameSpeed, 0.00f, 4.0f))
+		ap::renderer::SetGameSpeed(gameSpeed);
+
+	bool vsync = swapChain.desc.vsync;
+	if (DrawCheckbox("VSync", vsync))
+		ap::eventhandler::SetVSync(vsync);
+
+	{
+
+		std::vector<std::string> items =
+		{ 
+			"SDR 8bit",
+			"SDR 10bit",
+		};
+
+		if (ap::graphics::GetDevice()->IsSwapChainSupportsHDR(&swapChain))
+		{
+			items.push_back("HDR 10bit");
+			items.push_back("HDR 16bit");
+
+			switch (swapChain.desc.format)
+			{
+			default:
+			case ap::graphics::Format::R8G8B8A8_UNORM:
+				selectedSwapChainIdx = 0;
+				break;
+			case ap::graphics::Format::R10G10B10A2_UNORM:
+				if (swapChain.desc.allow_hdr)
+				{
+					selectedSwapChainIdx = 2;
+				}
+				else
+				{
+					selectedSwapChainIdx = 1;
+				}
+				break;
+			case ap::graphics::Format::R16G16B16A16_FLOAT:
+				selectedSwapChainIdx = 4;
+				break;
+			}
+		}
+		else
+		{
+			switch (swapChain.desc.format)
+			{
+			default:
+			case ap::graphics::Format::R8G8B8A8_UNORM:
+				selectedSwapChainIdx = 0;
+				break;
+			case ap::graphics::Format::R10G10B10A2_UNORM:
+				selectedSwapChainIdx = 1;
+				break;
+			case ap::graphics::Format::R16G16B16A16_FLOAT:
+				selectedSwapChainIdx = 1;
+				break;
+			}
+		}
+
+		if (DrawCombo("Swapchain Format", items, items.size(), &selectedSwapChainIdx))
+		{
+
+
+			switch (selectedSwapChainIdx)
+			{
+			default:
+			case 0:
+				swapChain.desc.format = ap::graphics::Format::R8G8B8A8_UNORM;
+				swapChain.desc.allow_hdr = false;
+				break;
+			case 1:
+				swapChain.desc.format = ap::graphics::Format::R10G10B10A2_UNORM;
+				swapChain.desc.allow_hdr = false;
+				break;
+			case 2:
+				swapChain.desc.format = ap::graphics::Format::R10G10B10A2_UNORM;
+				swapChain.desc.allow_hdr = true;
+				break;
+			case 3:
+				swapChain.desc.format = ap::graphics::Format::R16G16B16A16_FLOAT;
+				swapChain.desc.allow_hdr = true;
+				break;
+			}
+
+			bool success = ap::graphics::GetDevice()->CreateSwapChain(&swapChain.desc, nullptr, &swapChain);
+			assert(success);
+
+		}
+
+
+
+
+			
+	}
+
+
+	bool OcclusionCullingEnabled = ap::renderer::GetOcclusionCullingEnabled();
+	if (DrawCheckbox("Occlusion Culling", OcclusionCullingEnabled))
+		ap::renderer::SetOcclusionCullingEnabled(OcclusionCullingEnabled);
+
+	
+	float resolutionScale = renderComponent.resolutionScale;
+	if (DrawSliderFloat("Resolution Scale", resolutionScale, 0.25f, 2.0f,"%.2f"))
+	{
+		renderComponent.renderPath->resolutionScale = resolutionScale;
+		renderComponent.resolutionScale = resolutionScale;
+		renderComponent.ResizeBuffers();
+	}
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+
+	bool VoxelRadianceEnabled = ap::renderer::GetVoxelRadianceEnabled();
+	if (DrawCheckbox("Voxel GI", VoxelRadianceEnabled))
+		ap::renderer::SetVoxelRadianceEnabled(VoxelRadianceEnabled);
+
+	bool VoxelHelper = ap::renderer::GetToDrawVoxelHelper();
+	if (DrawCheckbox("Voxel DEBUG", VoxelHelper))
+		ap::renderer::SetToDrawVoxelHelper(VoxelHelper);
+
+	bool VoxelRadianceSecondaryBounceEnabled = ap::renderer::GetVoxelRadianceSecondaryBounceEnabled();
+	if (DrawCheckbox("Voxel Secondary Bounce", VoxelRadianceSecondaryBounceEnabled))
+		ap::renderer::SetVoxelRadianceSecondaryBounceEnabled(VoxelRadianceSecondaryBounceEnabled);
+
+	bool VoxelRadianceReflectionsEnabled = ap::renderer::GetVoxelRadianceReflectionsEnabled();
+	if (DrawCheckbox("Voxel Reflections", VoxelRadianceReflectionsEnabled))
+		ap::renderer::SetVoxelRadianceReflectionsEnabled(VoxelRadianceReflectionsEnabled);
+
+
+	float VoxelRadianceVoxelSize = ap::renderer::GetVoxelRadianceVoxelSize();
+	if (DrawSliderFloat("Voxel GI Voxel Size", VoxelRadianceVoxelSize, 0.25f, 2.0f))
+		ap::renderer::SetVoxelRadianceVoxelSize(VoxelRadianceVoxelSize);
+
+	int VoxelRadianceNumCones = ap::renderer::GetVoxelRadianceNumCones();
+	if (DrawSliderInt("Voxel GI NumCones", VoxelRadianceNumCones,1, 16))
+		ap::renderer::SetVoxelRadianceNumCones(VoxelRadianceNumCones);
+
+	float VoxelRadianceRayStepSize = ap::renderer::GetVoxelRadianceRayStepSize();
+	if (DrawSliderFloat("Voxel GI Ray Step Size", VoxelRadianceRayStepSize, 0.5f, 2.0f))
+		ap::renderer::SetVoxelRadianceRayStepSize(VoxelRadianceRayStepSize);
+
+	float VoxelRadianceMaxDistance = ap::renderer::GetVoxelRadianceMaxDistance();
+	if (DrawSliderFloat("Voxel GI Max Distance", VoxelRadianceMaxDistance, 0.0f, 100.0f))
+		ap::renderer::SetVoxelRadianceMaxDistance(VoxelRadianceMaxDistance);
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	bool WireRender = ap::renderer::IsWireRender();
+	if (DrawCheckbox("Render Wireframe", WireRender))
+		ap::renderer::SetWireRender(WireRender);
+
+	bool VariableRateShadingClassification = ap::renderer::GetVariableRateShadingClassification();
+	if (DrawCheckbox("VRS Classification", VariableRateShadingClassification))
+		ap::renderer::SetVariableRateShadingClassification(VariableRateShadingClassification);
+
+	bool VariableRateShadingClassificationDebug = ap::renderer::GetVariableRateShadingClassificationDebug();
+	if (DrawCheckbox("VRS DEBUG", VariableRateShadingClassificationDebug))
+		ap::renderer::SetVariableRateShadingClassificationDebug(VariableRateShadingClassificationDebug);
+
+	bool AdvancedLightCulling = ap::renderer::GetAdvancedLightCulling();
+	if (DrawCheckbox("2.5D Light Culling", AdvancedLightCulling))
+		ap::renderer::SetAdvancedLightCulling(AdvancedLightCulling);
+
+	bool DebugLightCulling = ap::renderer::GetDebugLightCulling();
+	if (DrawCheckbox("2.5D Light Culling DEBUG", DebugLightCulling))
+		ap::renderer::SetDebugLightCulling(DebugLightCulling);
+
+	bool TessellationEnabled = ap::renderer::GetTessellationEnabled();
+	if (DrawCheckbox("Tessellation Enabled", TessellationEnabled))
+		ap::renderer::SetTessellationEnabled(TessellationEnabled);
+
+	bool TransparentShadowsEnabled = ap::renderer::GetTransparentShadowsEnabled();
+	if (DrawCheckbox("Transparent Shadows", TransparentShadowsEnabled))
+		ap::renderer::SetTransparentShadowsEnabled(TransparentShadowsEnabled);
+
+	{
+
+		int selectedIdx = ap::renderer::GetRaytracedShadowsEnabled() ?  1:0;
+
+		std::vector<std::string> items =
+		{
+			"Shadowmaps",
+		};
+		if(ap::graphics::GetDevice()->CheckCapability(ap::graphics::GraphicsDeviceCapability::RAYTRACING))
+			items.push_back("Ray Traced");
+
+		if (DrawCombo("Shadow type", items, items.size(), &selectedIdx))
+		{
+			switch (selectedIdx)
+			{
+			case 0:
+				ap::renderer::SetRaytracedShadowsEnabled(false);
+				break;
+			case 1:
+				ap::renderer::SetRaytracedShadowsEnabled(true);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
+
+	{
+		static int selectedIdx = 4;
+
+		const std::vector<std::string> items =
+		{
+			"Off",
+			"128",
+			"256",
+			"512",
+			"1024",
+			"2048",
+			"4096",
+		};
+
+		if (DrawCombo("2D Shadowmap resolution", items, items.size(), &selectedIdx))
+		{
+			switch (selectedIdx)
+			{
+			case 0:
+				ap::renderer::SetShadowProps2D(0, -1);
+				break;
+			case 1:
+				ap::renderer::SetShadowProps2D(128, -1);
+				break;
+			case 2:
+				ap::renderer::SetShadowProps2D(256, -1);
+				break;
+			case 3:
+				ap::renderer::SetShadowProps2D(512, -1);
+				break;
+			case 4:
+				ap::renderer::SetShadowProps2D(1024, -1);
+				break;
+			case 5:
+				ap::renderer::SetShadowProps2D(2048, -1);
+				break;
+			case 6:
+				ap::renderer::SetShadowProps2D(4096, -1);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
+	{
+		static int selectedIdx = 3;
+
+		const std::vector<std::string> items =
+		{
+			"Off",
+			"128",
+			"256",
+			"512",
+			"1024",
+			"2048",
+			"4096",
+		};
+
+		if (DrawCombo("Cube Shadowmap resolution", items, items.size(), &selectedIdx))
+		{
+			switch (selectedIdx)
+			{
+			case 0:
+				ap::renderer::SetShadowPropsCube(0, -1);
+				break;
+			case 1:
+				ap::renderer::SetShadowPropsCube(128, -1);
+				break;
+			case 2:
+				ap::renderer::SetShadowPropsCube(256, -1);
+				break;
+			case 3:
+				ap::renderer::SetShadowPropsCube(512, -1);
+				break;
+			case 4:
+				ap::renderer::SetShadowPropsCube(1024, -1);
+				break;
+			case 5:
+				ap::renderer::SetShadowPropsCube(2048, -1);
+				break;
+			case 6:
+				ap::renderer::SetShadowPropsCube(4096, -1);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
+	{
+		static int selectedIdx = 3;
+
+		const std::vector<std::string> items =
+		{
+			"Off",
+			"2",
+			"4",
+			"8",
+			
+		};
+
+		if (DrawCombo("MSAA", items, items.size(), &selectedIdx))
+		{
+			switch (selectedIdx)
+			{
+			case 0:
+				renderComponent.renderPath->setMSAASampleCount(1);
+				break;
+			case 1:
+				renderComponent.renderPath->setMSAASampleCount(2);
+				break;
+			case 2:
+				renderComponent.renderPath->setMSAASampleCount(4);
+				break;
+			case 3:
+				renderComponent.renderPath->setMSAASampleCount(8);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
+
+
+	bool TemporalAAEnabled = ap::renderer::GetTemporalAAEnabled();
+	if (DrawCheckbox("Temporal AA", TemporalAAEnabled))
+		ap::renderer::SetTemporalAAEnabled(TemporalAAEnabled);
+
+	bool TemporalAADebugEnabled = ap::renderer::GetTemporalAADebugEnabled();
+	if (DrawCheckbox("Temporal AA DEBUG", TemporalAADebugEnabled))
+		ap::renderer::SetTemporalAADebugEnabled(TemporalAADebugEnabled);
+
+	{
+		static int selectedIdx = 3;
+
+		const std::vector<std::string> items =
+		{
+			"Nearest",
+			"Bilinear",
+			"Trilinear",
+			"Anisotropic",
+
+		};
+
+		if (DrawCombo("Texture Quality", items, items.size(), &selectedIdx))
+		{
+
+			ap::graphics::SamplerDesc desc = ap::renderer::GetSampler(ap::enums::SAMPLER_OBJECTSHADER)->GetDesc();
+
+			switch (selectedIdx)
+			{
+			case 0:
+				desc.filter = ap::graphics::Filter::MIN_MAG_MIP_POINT;
+				break;
+			case 1:
+				desc.filter = ap::graphics::Filter::MIN_MAG_LINEAR_MIP_POINT;
+				break;
+			case 2:
+				desc.filter = ap::graphics::Filter::MIN_MAG_MIP_LINEAR;
+				break;
+			case 3:
+				desc.filter = ap::graphics::Filter::ANISOTROPIC;
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
+	static float MipBias = 0;
+	if (DrawSliderFloat("MipLOD Bias", MipBias, -2, 2.0f))
+	{
+		ap::graphics::SamplerDesc desc = ap::renderer::GetSampler(ap::enums::SAMPLER_OBJECTSHADER)->GetDesc();
+		desc.mip_lod_bias = ap::math::Clamp(MipBias, -15.9f, 15.9f);
+		ap::renderer::ModifyObjectSampler(desc);
+	}
+
+	int RaytraceBounceCount = ap::renderer::GetRaytraceBounceCount();
+	if (DrawSliderInt("Raytrace Bounces", RaytraceBounceCount, 1, 10))
+		ap::renderer::SetRaytraceBounceCount(RaytraceBounceCount);
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	{
+		bool DebugDrawEnabled = ap::physics::IsDebugDrawEnabled();
+		if (DrawCheckbox("Physics visualizer", DebugDrawEnabled))
+			ap::physics::SetDebugDrawEnabled(DebugDrawEnabled);
+
+		bool DrawDebugPartitionTree = ap::renderer::GetToDrawDebugPartitionTree();
+		if (DrawCheckbox("SPTree visualizer", DrawDebugPartitionTree))
+			ap::renderer::SetToDrawDebugPartitionTree(DrawDebugPartitionTree);
+
+		bool DrawDebugBoneLines = ap::renderer::GetToDrawDebugBoneLines();
+		if (DrawCheckbox("Bone line visualizer", DrawDebugBoneLines))
+			ap::renderer::SetToDrawDebugBoneLines(DrawDebugBoneLines);
+
+		bool DrawDebugEmitters = ap::renderer::GetToDrawDebugEmitters();
+		if (DrawCheckbox("Emitter visualizer", DrawDebugEmitters))
+			ap::renderer::SetToDrawDebugEmitters(DrawDebugEmitters);
+
+		bool DrawDebugForceFields = ap::renderer::GetToDrawDebugForceFields();
+		if (DrawCheckbox("Force Field visualizer", DrawDebugForceFields))
+			ap::renderer::SetToDrawDebugForceFields(DrawDebugForceFields);
+
+		bool RaytraceDebugBVHVisualizerEnabled = ap::renderer::GetRaytraceDebugBVHVisualizerEnabled();
+		if (DrawCheckbox("Raytrace BVH  visualizer", RaytraceDebugBVHVisualizerEnabled))
+			ap::renderer::SetRaytraceDebugBVHVisualizerEnabled(RaytraceDebugBVHVisualizerEnabled);
+
+		bool DrawDebugEnvProbes = ap::renderer::GetToDrawDebugEnvProbes();
+		if (DrawCheckbox("Env probe visualizer", DrawDebugEnvProbes))
+			ap::renderer::SetToDrawDebugEnvProbes(DrawDebugEnvProbes);
+
+		bool DrawDebugCameras = ap::renderer::GetToDrawDebugCameras();
+		if (DrawCheckbox("Camera Proxy visualizer", DrawDebugCameras))
+			ap::renderer::SetToDrawDebugCameras(DrawDebugCameras);
+
+		bool DrawGridHelper = ap::renderer::GetToDrawGridHelper();
+		if (DrawCheckbox("Grid helper", DrawGridHelper))
+			ap::renderer::SetToDrawGridHelper(DrawGridHelper);
+
+	}
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+	
+	{
+
+		int pickType = renderComponent.pickType;
+
+
+
+		const std::vector<std::string> items =
+		{
+			"Pick Objects",
+			"Pick EnvProbes",
+			"Pick Lights",
+			"Pick Decals",
+			"Pick Force Fields",
+			"Pick Emitters",
+			"Pick Hairs",
+			"Pick Cameras",
+			"Pick Armatures",
+			"Pick Sounds",
+		};
+
+		const std::vector<PICKTYPE> items2 =
+		{
+			PICK_OBJECT       ,
+			PICK_LIGHT		  ,
+			PICK_DECAL		  ,
+			PICK_ENVPROBE	  ,
+			PICK_FORCEFIELD	  ,
+			PICK_EMITTER	  ,
+			PICK_HAIR		  ,
+			PICK_CAMERA 	  ,
+			PICK_ARMATURE	  ,
+			PICK_SOUND		  ,
+
+		};
+		assert((items.size() == items2.size()));
+
+
+		for (int i = 0; i < items.size(); i++)
+		{
+			bool picked = pickType & items2[i];
+			if (DrawCheckbox(items[i].c_str(), picked))
+				pickType = picked ? pickType | items2[i] : pickType & ~items2[i];
+
+		}
+
+
+		renderComponent.pickType = pickType;
+
+	}
+
+
+	PropertyGridSpacing();
+	ImGui::Separator();
+	PropertyGridSpacing();
+
+
+	bool FreezeCullingCameraEnabled = ap::renderer::GetFreezeCullingCameraEnabled();
+	if (DrawCheckbox("Freeze culling camera", FreezeCullingCameraEnabled))
+		ap::renderer::SetFreezeCullingCameraEnabled(FreezeCullingCameraEnabled);
+
+	bool DisableAlbedoMaps = ap::renderer::IsDisableAlbedoMaps();
+	if (DrawCheckbox("Disable albedo maps", DisableAlbedoMaps))
+		ap::renderer::SetDisableAlbedoMaps(DisableAlbedoMaps);
+
+	bool ForceDiffuseLighting = ap::renderer::IsForceDiffuseLighting();
+	if (DrawCheckbox("Force diffuse lighting", ForceDiffuseLighting))
+		ap::renderer::SetForceDiffuseLighting(ForceDiffuseLighting);
+	
+	EndPropertyGrid();
+
+	ImGui::End();
+}
+
 
 
 void EditorComponent::ChangeRenderPath(RENDERPATH path)
@@ -1105,6 +1627,8 @@ void EditorComponent::Update(float dt)
 	
 	
 
+	
+
 	if (mainCamera == ap::ecs::INVALID_ENTITY || !ap::scene::GetScene().cameras.Contains(mainCamera))
 	{
 		if (ap::scene::GetScene().cameras.GetCount() > 0)
@@ -1128,6 +1652,11 @@ void EditorComponent::Update(float dt)
 	TransformComponent* cameraTransform = scene.transforms.GetComponent(mainCamera);
 	assert(cameraTransform != nullptr);
 
+
+	if (scene.weathers.GetCount() == 0)
+	{
+		scene.weathers.Create(CreateEntity());
+	}
 
 
 	selectionOutlineTimer += dt;
@@ -1979,10 +2508,10 @@ void EditorComponent::Compose(CommandList cmd) const
 {
 	renderPath->Compose(cmd);
 
-	//if (cinemaModeCheckBox.GetCheck())
-	//{
-	//	return;
-	//}
+	if (main->isCinema)
+	{
+		return;
+	}
 
 	// Draw selection outline to the screen:
 	const float selectionColorIntensity = std::sin(selectionOutlineTimer * XM_2PI * 0.8f) * 0.5f + 0.5f;
