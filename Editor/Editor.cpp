@@ -187,7 +187,7 @@ void Editor::ImGuiRender()
 
 							if (!extension.compare("APSCENE")) // engine-serialized
 							{
-								ap::scene::LoadModel(fileName);
+								ap::scene::LoadModel(fileName); //XMMatrixIdentity(), true);
 							}
 							else if (!extension.compare("OBJ")) // wavefront-obj
 							{

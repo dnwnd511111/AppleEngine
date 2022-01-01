@@ -285,11 +285,7 @@ namespace ap::imgui
 		ImGui::NextColumn();
 		ImGui::PushItemWidth(-1);
 
-		s_IDBuffer[0] = '#';
-		s_IDBuffer[1] = '#';
-		memset(s_IDBuffer + 2, 0, 14);
-		sprintf_s(s_IDBuffer + 2, 14, "%o", s_Counter++);
-		ImGui::InputText(s_IDBuffer, (char*)value, 256, ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText(GenerateID() , (char*)value, 256, ImGuiInputTextFlags_ReadOnly);
 
 		if (!IsItemDisabled())
 			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
@@ -706,17 +702,11 @@ namespace ap::imgui
 			auto region = ImGui::GetContentRegionAvail();
 			size.x = region.x;
 		}
-		
-
 
 		ImGui::Text(label);
 		ImGui::NextColumn();
 		ImGui::PushItemWidth(-1);
 
-		s_IDBuffer[0] = '#';
-		s_IDBuffer[1] = '#';
-		memset(s_IDBuffer + 2, 0, 14);
-		sprintf_s(s_IDBuffer + 2, 14, "%o", s_Counter++);
 		if (ImGui::Button(label, size))
 			modified = true;
 

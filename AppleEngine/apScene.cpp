@@ -2238,7 +2238,7 @@ namespace ap::scene
 	}
 	void Scene::Component_Detach(Entity entity)
 	{
-		const HierarchyComponent* parent = hierarchy.GetComponent(entity);
+		HierarchyComponent* parent = hierarchy.GetComponent(entity);
 
 		if (parent != nullptr)
 		{
@@ -2254,18 +2254,20 @@ namespace ap::scene
 				layer->propagationMask = ~0;
 			}
 
+			parent->parentID = ap::ecs::INVALID_ENTITY;
+
 			HierarchyComponent* parentHierarchy = hierarchy.GetComponent(parent->parentID);
 			if (parentHierarchy != nullptr)
 			{
 				parentHierarchy->childrenID.erase(std::remove(parentHierarchy->childrenID.begin(), parentHierarchy->childrenID.end(), entity), parentHierarchy->childrenID.end());
-				if (parentHierarchy->parentID == ap::ecs::INVALID_ENTITY && parentHierarchy->childrenID.size() == 0 )
-				{
-					hierarchy.Remove(parent->parentID);
-				}
+				//if (parentHierarchy->parentID == ap::ecs::INVALID_ENTITY && parentHierarchy->childrenID.size() == 0 )
+				//{
+					//hierarchy.Remove(parent->parentID);
+				//}
 			}
 			
-			if(parent->childrenID.size() == 0)
-				hierarchy.Remove(entity);
+			//if(parent->childrenID.size() == 0)
+				//hierarchy.Remove(entity);
 			
 		}
 	}
@@ -3966,7 +3968,8 @@ namespace ap::scene
 				for (size_t i = 0; i < scene.transforms.GetCount() - 1; ++i) // GetCount() - 1 because the last added was the "root"
 				{
 					Entity entity = scene.transforms.GetEntity(i);
-					if (!scene.hierarchy.Contains(entity))
+					HierarchyComponent* hier = scene.hierarchy.GetComponent(entity);
+					if (!hier || hier->parentID == ap::ecs::INVALID_ENTITY)
 					{
 						scene.Component_Attach(entity, root);
 					}

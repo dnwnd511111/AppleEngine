@@ -48,9 +48,16 @@ namespace ap::ecs
 
 			if (seri.allow_remap)
 			{
+				if (mem == 0)
+				{
+					entity = 0;
+					return;
+				}
+
 				auto it = seri.remap.find(mem);
 				if (it == seri.remap.end())
 				{
+
 					entity = CreateEntity();
 					seri.remap[mem] = entity;
 				}

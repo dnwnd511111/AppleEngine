@@ -101,7 +101,7 @@ namespace Panel
 		const char* name = "Unnamed Entity";
 
 		NameComponent* nameComponent = scene.names.GetComponent(entity);
-		if (name != nullptr)
+		if (nameComponent != nullptr)
 			name = nameComponent->name.c_str();
 
 	
@@ -163,7 +163,7 @@ namespace Panel
 		{
 			ImGui::Separator();
 		}
-		bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, name.c_str());
+		bool open = ImGui::TreeNodeEx(GenerateID(), treeNodeFlags, name.c_str());
 		ImGui::PopStyleVar();
 
 		if (isSubComponent)
@@ -216,7 +216,7 @@ namespace Panel
 
 		Scene& scene = GetScene();
 
-		
+		HierarchyComponent* hier = scene.hierarchy.GetComponent(entity);
 		ObjectComponent* object = scene.objects.GetComponent(entity);
 		NameComponent* name = scene.names.GetComponent(entity);
 		LayerComponent* layer = scene.layers.GetComponent(entity);
@@ -234,42 +234,80 @@ namespace Panel
 		InverseKinematicsComponent* kinematic = scene.inverse_kinematics.GetComponent(entity);
 		SpringComponent* spring = scene.springs.GetComponent(entity);
 		
+		BeginPropertyGrid();
+		PropertyGridSpacing();
 
+		ImGui::Text("EntityID");
+		ImGui::NextColumn();
+		ImGui::PushItemWidth(50);
+
+		ImGui::InputText(GenerateID(), (char*)std::to_string(entity).c_str(), 256, ImGuiInputTextFlags_ReadOnly);
+
+		if (!IsItemDisabled())
+			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+		ImGui::PopItemWidth();
+
+		ImGui::SameLine();
+
+		auto region = ImGui::GetContentRegionAvail();
+			
+		ImGui::PushItemWidth(-1);
+
+		if (ImGui::Button("Add Component",ImVec2(region.x,20)))
+			ImGui::OpenPopup("AddComponent");
+
+		if (!IsItemDisabled())
+			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+		ImGui::PopItemWidth();
+		ImGui::NextColumn();
+
+
+		if (ImGui::BeginPopup("AddComponent"))
+		{
+			//if (ImGui::MenuItem("Camera"))
+			
+			ImGui::EndPopup();
+		}
+
+	
 		if (name)
 		{
-			char buffer[256];
-			memset(buffer, 0, sizeof(buffer));
-			std::strncpy(buffer, name->name.c_str(), sizeof(buffer));
-			if (ImGui::InputText("##name", buffer, sizeof(buffer)))
-			{
-				name->name = std::string(buffer);
-			}
-
-			ImGui::SameLine();
-			ImGui::PushItemWidth(-1);
-
-			if (ImGui::Button("Add Component"))
-				ImGui::OpenPopup("AddComponent");
-
-			if (ImGui::BeginPopup("AddComponent"))
-			{
-				//if (ImGui::MenuItem("Camera"))
-				//{
-
-				//}
-
-
-				ImGui::EndPopup();
-			}
-			ImGui::PopItemWidth();
-
-
-
-
+			std::string inputName = name->name;
+			if (DrawInputText("Name", inputName))
+				name->name = inputName;
+			
 		}
+
+		EndPropertyGrid();
+
+
+
 
 		if (transform)
 		{
+			if (hier)
+			{
+				DrawComponent("Hierarchy", hier, [](HierarchyComponent& hier)
+					{
+						BeginPropertyGrid();
+						PropertyGridSpacing();
+
+
+						DrawInputText("ParentID", hier.parentID ? std::to_string(hier.parentID).c_str() : "INVALID");
+						DrawInputText("Children Count", std::to_string(hier.childrenID.size()).c_str());
+						
+						EndPropertyGrid();
+
+					});
+
+
+			}
+
+
+
+
 			DrawComponent("Transform", transform, [](TransformComponent& transform)
 				{
 
@@ -287,6 +325,7 @@ namespace Panel
 
 					PropertyGridSpacing();
 					transform.SetDirty();
+
 
 
 				});
@@ -981,12 +1020,13 @@ namespace Panel
 
 								AnimationComponent& anim = scene.animations[selectedIdx-1];
 
+								
 								bool IsLooped = anim.IsLooped();
 								if (DrawCheckbox("Looped", IsLooped))
 									anim.SetLooped(IsLooped);
 
 								
-								const char* buttonLabel = anim.IsPlaying() ? "Stop" : "Play";
+								const char* buttonLabel = anim.IsPlaying() ? "Pause" : "Play";
 
 								if (DrawButton2(buttonLabel, true))
 								{
@@ -995,7 +1035,9 @@ namespace Panel
 									else
 										anim.Play();
 								}
-									
+
+								
+
 								if (DrawButton2("Stop", true))
 								{
 									anim.Stop();
