@@ -2027,6 +2027,10 @@ namespace ap::scene
 		light.color = color;
 		light.SetType(type);
 
+		light.lensFlareNames.resize(7);        // 7 = maxLensFlare
+		light.lensFlareRimTextures.resize(7);
+
+
 		return entity;
 	}
 	Entity Scene::Entity_CreateForce(
