@@ -166,6 +166,7 @@ void Editor::ImGuiRender()
 			{
 				renderComponent.translator.selected.clear();
 				ap::renderer::ClearWorld(ap::scene::GetScene());
+				paintToolPanel.SetEntity(INVALID_ENTITY);
 			}
 
 			if (ImGui::MenuItem("Open...", "Ctrl+O"))
@@ -467,16 +468,23 @@ void Editor::ImGuiRender()
 			hierarchyPanel.ImGuiRenderProperties(dt);
 		ImGui::End();
 
-		ImGui::Begin("Place Actors");
-		ImGuiRender_PlaceActors();
-		ImGui::End();
 
 		ImGui::Begin("Content Browser", NULL, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 		contentBrowserPanel.ImGuiRender(dt);
 		ImGui::End();
 
+		ImGui::Begin("Paint Tool");
+		paintToolPanel.ImGuiRender(dt);
+		ImGui::End();
+
+
 		ImGui::Begin("PostProcess");
 		ImGuiRender_PostProcess();
+		ImGui::End();
+
+
+		ImGui::Begin("Place Actors");
+		ImGuiRender_PlaceActors();
 		ImGui::End();
 
 		//
@@ -1671,6 +1679,9 @@ void EditorComponent::Update(float dt)
 	}
 
 
+
+	main->paintToolPanel.Update(dt);
+
 	selectionOutlineTimer += dt;
 
 	if (main->viewportHovered || main->isCinema)
@@ -2050,8 +2061,8 @@ void EditorComponent::Update(float dt)
 					// Object picking only when mouse button down, because it can be slow with high polycount
 					if (
 						ap::input::Down(ap::input::MOUSE_BUTTON_LEFT) ||
-						ap::input::Down(ap::input::MOUSE_BUTTON_RIGHT) //||
-						//paintToolWnd.GetMode() != PaintToolWindow::MODE_DISABLED
+						ap::input::Down(ap::input::MOUSE_BUTTON_RIGHT) ||
+						main->paintToolPanel.GetMode()  !=   0
 						)
 					{
 						hovered = ap::scene::Pick(pickRay, pickMask);
@@ -2059,41 +2070,41 @@ void EditorComponent::Update(float dt)
 				}
 			}
 
-			//// Interactions only when paint tool is disabled:
-			//if (paintToolWnd.GetMode() == PaintToolWindow::MODE_DISABLED)
-			//{
-			//	// Interact:
-			//	if (hovered.entity != INVALID_ENTITY)
-			//	{
-			//		const ObjectComponent* object = scene.objects.GetComponent(hovered.entity);
-			//		if (object != nullptr)
-			//		{
-			//			if (translator.selected.empty() && object->GetRenderTypes() & ap::enums::RENDERTYPE_WATER)
-			//			{
-			//				if (ap::input::Down(ap::input::MOUSE_BUTTON_LEFT))
-			//				{
-			//					// if water, then put a water ripple onto it:
-			//					scene.PutWaterRipple("images/ripple.png", hovered.position);
-			//				}
-			//			}
-			//			else if (decalWnd.placementCheckBox.GetCheck() && ap::input::Press(ap::input::MOUSE_BUTTON_LEFT))
-			//			{
-			//				// if not water or softbody, put a decal on it:
-			//				static int decalselector = 0;
-			//				decalselector = (decalselector + 1) % 2;
-			//				Entity entity = scene.Entity_CreateDecal("editorDecal", (decalselector == 0 ? "images/leaf.dds" : "images/blood1.png"));
-			//				TransformComponent& transform = *scene.transforms.GetComponent(entity);
-			//				transform.MatrixTransform(hovered.orientation);
-			//				transform.RotateRollPitchYaw(XMFLOAT3(XM_PIDIV2, 0, 0));
-			//				transform.Scale(XMFLOAT3(2, 2, 2));
-			//				scene.Component_Attach(entity, hovered.entity);
+			// Interactions only when paint tool is disabled:
+			if (main->paintToolPanel.GetMode() == 0)
+			{
+				// Interact:
+				if (hovered.entity != INVALID_ENTITY)
+				{
+					//const ObjectComponent* object = scene.objects.GetComponent(hovered.entity);
+					//if (object != nullptr)
+					//{
+					//	if (translator.selected.empty() && object->GetRenderTypes() & ap::enums::RENDERTYPE_WATER)
+					//	{
+					//		if (ap::input::Down(ap::input::MOUSE_BUTTON_LEFT))
+					//		{
+					//			// if water, then put a water ripple onto it:
+					//			scene.PutWaterRipple("images/ripple.png", hovered.position);
+					//		}
+					//	}
+					//	else if (decalWnd.placementCheckBox.GetCheck() && ap::input::Press(ap::input::MOUSE_BUTTON_LEFT))
+					//	{
+					//		// if not water or softbody, put a decal on it:
+					//		static int decalselector = 0;
+					//		decalselector = (decalselector + 1) % 2;
+					//		Entity entity = scene.Entity_CreateDecal("editorDecal", (decalselector == 0 ? "images/leaf.dds" : "images/blood1.png"));
+					//		TransformComponent& transform = *scene.transforms.GetComponent(entity);
+					//		transform.MatrixTransform(hovered.orientation);
+					//		transform.RotateRollPitchYaw(XMFLOAT3(XM_PIDIV2, 0, 0));
+					//		transform.Scale(XMFLOAT3(2, 2, 2));
+					//		scene.Component_Attach(entity, hovered.entity);
 
-			//				RefreshSceneGraphView();
-			//			}
-			//		}
+					//		RefreshSceneGraphView();
+					//	}
+					//}
 
-			//	}
-			//}
+				}
+			}
 
 			// Select...
 			static bool selectAll = false;
@@ -2181,7 +2192,9 @@ void EditorComponent::Update(float dt)
 
 			}
 
-			if(main->viewportFocused)
+
+
+			if(main->viewportHovered)
 			{
 
 				// Control operations...
@@ -2275,12 +2288,28 @@ void EditorComponent::Update(float dt)
 
 				// Delete
 				DeleteSelectedEntities();
+
+				
+				if (translator.selected.empty())
+				{
+					main->paintToolPanel.SetEntity(INVALID_ENTITY);
+				}
+				else
+				{
+					const ap::scene::PickResult& picked = translator.selected.back();
+
+					main->paintToolPanel.SetEntity(picked.entity);
+				}
+
+
 			}
 
 		}
 
 
 		
+
+
 
 	}
 
@@ -2462,7 +2491,8 @@ void EditorComponent::Render() const
 		ap::renderer::DrawBox(selectionBox, XMFLOAT4(1, 1, 1, 1));
 	}
 
-	
+	main->paintToolPanel.DrawBrush();
+
 
 	renderPath->Render();
 

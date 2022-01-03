@@ -6,6 +6,7 @@
 
 #include "HierarchyPanel.h"
 #include "ContentBrowserPanel.h"
+#include "PaintToolPanel.h"
 
 enum PICKTYPE
 {
@@ -130,6 +131,7 @@ public:
 	//panel
 	Panel::HierarchyPanel hierarchyPanel{this};
 	Panel::ContentBrowserPanel contentBrowserPanel{ this };
+	Panel::PaintToolPanel paintToolPanel{ this };
 
 	void Initialize() override;
 	void ImGuiRender() override;

@@ -20,6 +20,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)json.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ModelImporter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)BasePanel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)PaintToolPanel.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)tiny_gltf.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)tiny_obj_loader.h" />
@@ -33,6 +34,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)HierarchyPanel.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ModelImporter_GLTF.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ModelImporter_OBJ.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)PaintToolPanel.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>

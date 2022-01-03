@@ -364,7 +364,7 @@ namespace Panel
 					DrawSliderFloat("Aperture Shape X", camera.aperture_shape.x, 0.0f, 2.0f);
 					DrawSliderFloat("Aperture Shape Y", camera.aperture_shape.y, 0.0f, 2.0f);
 
-
+					
 					EndPropertyGrid();
 				; 
 				});
@@ -715,7 +715,7 @@ namespace Panel
 
 					if (DrawButton2("Reset LensFlares", true))
 					{
-						for (int i = 1; i < maxLensFlare; i++)
+						for (int i = 0; i < maxLensFlare; i++)
 						{
 
 							light.lensFlareNames[i] = "";
