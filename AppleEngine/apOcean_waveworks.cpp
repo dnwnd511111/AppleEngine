@@ -4,6 +4,8 @@
 #include "apGraphicsDevice_DX12.h"
 #include "apResourceManager.h"
 #include "apScene.h"
+#include "apEventHandler.h"
+#include "apRenderer.h"
 
 //#pragma comment(lib,"NVWaveWorks_static.d3d12.lib")
 //#pragma comment(lib,"d3d12.lib")
@@ -114,12 +116,51 @@ namespace ap
 	namespace ocean2_internal
 	{
 
+		Shader		ocean2VS;
+		Shader		ocean2HS;
+		Shader		ocean2DS;
+		Shader		ocean2PS;
+		Shader		wireframePS;
+
+
+
 		PipelineState PSO, PSO_wire;
 
+		InputLayout			inputLayout;
 		RasterizerState		rasterizerState;
 		RasterizerState		wireRS;
 		DepthStencilState	depthStencilState;
 		BlendState			blendState;
+
+
+		void LoadShaders()
+		{
+			ap::renderer::LoadShader(ShaderStage::VS, ocean2VS, "ocean2VS.cso");
+			ap::renderer::LoadShader(ShaderStage::HS, ocean2HS, "ocean2HS.cso");
+			ap::renderer::LoadShader(ShaderStage::DS, ocean2DS, "ocean2DS.cso");
+			ap::renderer::LoadShader(ShaderStage::PS, ocean2PS, "ocean2PS.cso");
+
+			ap::renderer::LoadShader(ShaderStage::PS, wireframePS, "oceanSurfaceSimplePS.cso");
+
+
+			GraphicsDevice* device = ap::graphics::GetDevice();
+			{
+				PipelineStateDesc desc;
+				desc.vs = &ocean2VS;
+				desc.hs = &ocean2HS;
+				desc.ds = &ocean2DS;
+				desc.ps = &ocean2PS;
+				desc.bs = &blendState;
+				desc.rs = &rasterizerState;
+				desc.dss = &depthStencilState;
+				device->CreatePipelineState(&desc, &PSO);
+
+				desc.ps = &wireframePS;
+				desc.rs = &wireRS;
+				device->CreatePipelineState(&desc, &PSO_wire);
+			}
+
+		}
 
 	}
 	
@@ -252,6 +293,12 @@ namespace ap
 
 		CreateResource();
 
+
+		inputLayout.elements =
+		{
+			{ "POSITION",	0, Format::R32G32_FLOAT , 0, InputLayout::APPEND_ALIGNED_ELEMENT, InputClassification::PER_VERTEX_DATA },
+		};
+
 		RasterizerState ras_desc;
 		ras_desc.fill_mode = FillMode::SOLID;
 		ras_desc.cull_mode = CullMode::NONE;
@@ -287,6 +334,9 @@ namespace ap
 		blend_desc.render_target[0].render_target_write_mask = ColorWrite::ENABLE_ALL;
 		blendState = blend_desc;
 
+		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
+
+		LoadShaders();
 
 	}
 	void Ocean2::ResourceUpdate()

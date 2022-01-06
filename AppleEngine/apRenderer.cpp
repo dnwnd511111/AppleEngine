@@ -646,7 +646,7 @@ enum DEBUGRENDERING
 PipelineState PSO_debug[DEBUGRENDERING_COUNT];
 
 
-#if __has_include("wiShaderDump.h")
+#if __has_include("apShaderDump.h")
 // In this case, wiShaderDump.h contains precompiled shader binary data
 #include "apShaderDump.h"
 #define SHADERDUMP_ENABLED

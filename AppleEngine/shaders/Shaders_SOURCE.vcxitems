@@ -33,6 +33,7 @@
     <None Include="$(MSBuildThisFileDirectory)lightingHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)objectHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)objectHF_tessellation.hlsli" />
+    <None Include="$(MSBuildThisFileDirectory)ocean2HF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)oceanSurfaceHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)PixelPacking_R11G11B10.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)quad.hlsli" />
@@ -118,6 +119,10 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)depthoffield_tileMaxCOC_horizontalCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)depthoffield_tileMaxCOC_verticalCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)depthoffield_upsampleCS.hlsl" />
+    <FxCompile Include="$(MSBuildThisFileDirectory)ocean2DS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Domain</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)downsample4xCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)downsampleDepthBuffer4xPS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)emittedparticleMS.hlsl" />
@@ -180,6 +185,10 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)hairparticle_finishUpdateCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)hairparticle_simulateCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)hbaoCS.hlsl" />
+    <FxCompile Include="$(MSBuildThisFileDirectory)ocean2HS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Hull</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)imagePS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)imageVS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)impostorPS.hlsl" />
@@ -261,6 +270,12 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)objectVS_simple_tessellation.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)objectVS_voxelizer.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)occludeeVS.hlsl" />
+    <FxCompile Include="$(MSBuildThisFileDirectory)ocean2PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Ocean2VS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)oceanSimulatorCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)oceanSurfacePS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)oceanSurfaceSimplePS.hlsl" />
