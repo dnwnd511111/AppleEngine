@@ -3235,6 +3235,11 @@ using namespace dx12_internal;
 
 		return SUCCEEDED(hr);
 	}
+
+
+
+
+
 	bool GraphicsDevice_DX12::CreateShader(ShaderStage stage, const void* pShaderBytecode, size_t BytecodeLength, Shader* pShader) const
 	{
 		auto internal_state = std::make_shared<PipelineState_DX12>();
@@ -4060,6 +4065,169 @@ using namespace dx12_internal;
 		assert(SUCCEEDED(hr));
 
 		return SUCCEEDED(hr);
+	}
+
+	bool GraphicsDevice_DX12::RecreateTextureFromNativeTexture(const TextureDesc* pDesc, Texture* pTexture, void* nativeTexture) const
+	{
+
+		auto internal_state = std::make_shared<Texture_DX12>();
+		internal_state->allocationhandler = allocationhandler;
+		pTexture->internal_state = internal_state;
+		pTexture->type = GPUResource::Type::TEXTURE;
+		pTexture->mapped_data = nullptr;
+		pTexture->mapped_rowpitch = 0;
+
+		pTexture->desc = *pDesc;
+
+
+		HRESULT hr = E_FAIL;
+
+		
+		D3D12_RESOURCE_DESC desc;
+		desc.Format = _ConvertFormat(pDesc->format);
+		desc.Width = pDesc->width;
+		desc.Height = pDesc->height;
+		desc.MipLevels = pDesc->mip_levels;
+		desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		desc.DepthOrArraySize = (UINT16)pDesc->array_size;
+		desc.SampleDesc.Count = pDesc->sample_count;
+		desc.SampleDesc.Quality = 0;
+		desc.Alignment = 0;
+		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		if (has_flag(pDesc->bind_flags, BindFlag::DEPTH_STENCIL))
+		{
+			desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+			//allocationDesc.Flags |= D3D12MA::ALLOCATION_FLAG_COMMITTED;
+			if (!has_flag(pDesc->bind_flags, BindFlag::SHADER_RESOURCE))
+			{
+				desc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+			}
+		}
+		if (has_flag(pDesc->bind_flags, BindFlag::RENDER_TARGET))
+		{
+			desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			//allocationDesc.Flags |= D3D12MA::ALLOCATION_FLAG_COMMITTED;
+		}
+		if (has_flag(pDesc->bind_flags, BindFlag::UNORDERED_ACCESS))
+		{
+			desc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
+
+		switch (pTexture->desc.type)
+		{
+		case TextureDesc::Type::TEXTURE_1D:
+			desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+			break;
+		case TextureDesc::Type::TEXTURE_2D:
+			desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+			break;
+		case TextureDesc::Type::TEXTURE_3D:
+			desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+			desc.DepthOrArraySize = (UINT16)pDesc->depth;
+			break;
+		default:
+			assert(0);
+			break;
+		}
+
+		D3D12_CLEAR_VALUE optimizedClearValue = {};
+		optimizedClearValue.Color[0] = pTexture->desc.clear.color[0];
+		optimizedClearValue.Color[1] = pTexture->desc.clear.color[1];
+		optimizedClearValue.Color[2] = pTexture->desc.clear.color[2];
+		optimizedClearValue.Color[3] = pTexture->desc.clear.color[3];
+		optimizedClearValue.DepthStencil.Depth = pTexture->desc.clear.depth_stencil.depth;
+		optimizedClearValue.DepthStencil.Stencil = pTexture->desc.clear.depth_stencil.stencil;
+		optimizedClearValue.Format = desc.Format;
+		if (optimizedClearValue.Format == DXGI_FORMAT_R16_TYPELESS)
+		{
+			optimizedClearValue.Format = DXGI_FORMAT_D16_UNORM;
+		}
+		else if (optimizedClearValue.Format == DXGI_FORMAT_R32_TYPELESS)
+		{
+			optimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+		}
+		else if (optimizedClearValue.Format == DXGI_FORMAT_R32G8X24_TYPELESS)
+		{
+			optimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		}
+		bool useClearValue = has_flag(pDesc->bind_flags, BindFlag::RENDER_TARGET) || has_flag(pDesc->bind_flags, BindFlag::DEPTH_STENCIL);
+
+		D3D12_RESOURCE_STATES resourceState = _ParseResourceState(pTexture->desc.layout);
+
+		/*if (pInitialData != nullptr)
+		{
+			resourceState = D3D12_RESOURCE_STATE_COMMON;
+		}*/
+
+		if (pTexture->desc.usage == Usage::READBACK || pTexture->desc.usage == Usage::UPLOAD)
+		{
+			UINT64 RequiredSize = 0;
+			device->GetCopyableFootprints(&desc, 0, 1, 0, &internal_state->footprint, nullptr, nullptr, &RequiredSize);
+			desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+			desc.Width = RequiredSize;
+			desc.Height = 1;
+			desc.DepthOrArraySize = 1;
+			desc.Format = DXGI_FORMAT_UNKNOWN;
+			desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+			desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+			if (pTexture->desc.usage == Usage::READBACK)
+			{
+				
+				resourceState = D3D12_RESOURCE_STATE_COPY_DEST;
+			}
+			else if (pTexture->desc.usage == Usage::UPLOAD)
+			{
+				
+				resourceState = D3D12_RESOURCE_STATE_GENERIC_READ;
+			}
+		}
+
+		auto comptr =internal_state->resource.ReleaseAndGetAddressOf();
+		*comptr = static_cast<ID3D12Resource*>(nativeTexture);
+
+		
+		assert(internal_state->resource);
+
+		if (pTexture->desc.usage == Usage::READBACK)
+		{
+			hr = internal_state->resource->Map(0, nullptr, &pTexture->mapped_data);
+			assert(SUCCEEDED(hr));
+			pTexture->mapped_rowpitch = internal_state->footprint.Footprint.RowPitch;
+		}
+		else if (pTexture->desc.usage == Usage::UPLOAD)
+		{
+			D3D12_RANGE read_range = {};
+			hr = internal_state->resource->Map(0, &read_range, &pTexture->mapped_data);
+			assert(SUCCEEDED(hr));
+			pTexture->mapped_rowpitch = internal_state->footprint.Footprint.RowPitch;
+		}
+
+		if (pTexture->desc.mip_levels == 0)
+		{
+			pTexture->desc.mip_levels = (uint32_t)log2(std::max(pTexture->desc.width, pTexture->desc.height)) + 1;
+		}
+
+
+		if (has_flag(pTexture->desc.bind_flags, BindFlag::RENDER_TARGET))
+		{
+			CreateSubresource(pTexture, SubresourceType::RTV, 0, -1, 0, -1);
+		}
+		if (has_flag(pTexture->desc.bind_flags, BindFlag::DEPTH_STENCIL))
+		{
+			CreateSubresource(pTexture, SubresourceType::DSV, 0, -1, 0, -1);
+		}
+		if (has_flag(pTexture->desc.bind_flags, BindFlag::SHADER_RESOURCE))
+		{
+			CreateSubresource(pTexture, SubresourceType::SRV, 0, -1, 0, -1);
+		}
+		if (has_flag(pTexture->desc.bind_flags, BindFlag::UNORDERED_ACCESS))
+		{
+			CreateSubresource(pTexture, SubresourceType::UAV, 0, -1, 0, -1);
+		}
+
+		return SUCCEEDED(hr);
+
 	}
 
 	int GraphicsDevice_DX12::CreateSubresource(Texture* texture, SubresourceType type, uint32_t firstSlice, uint32_t sliceCount, uint32_t firstMip, uint32_t mipCount) const

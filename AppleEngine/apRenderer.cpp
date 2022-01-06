@@ -20,6 +20,7 @@
 #include "apShaderCompiler.h"
 #include "apTimer.h"
 #include "apUnorderedMap.h" // leave it here for shader dump!
+#include "apOcean_waveworks.h"
 
 #include "shaders/ShaderInterop_Postprocess.h"
 #include "shaders/ShaderInterop_Raytracing.h"
@@ -3851,7 +3852,12 @@ void UpdateRenderDataAsync(
 		auto range = ap::profiler::BeginRangeGPU("Ocean - Simulate", cmd);
 		vis.scene->ocean.UpdateDisplacementMap(vis.scene->weather.oceanParameters, cmd);
 		ap::profiler::EndRange(range);
+
 	}
+
+	vis.scene->ocean2->ResourceUpdate();
+	//vis.scene->ocean2->Render(cmd);
+
 
 	device->EventEnd(cmd);
 }

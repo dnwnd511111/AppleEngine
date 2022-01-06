@@ -22,10 +22,12 @@
 #include <atomic>
 #include <mutex>
 
+
 namespace ap::graphics
 {
 	class GraphicsDevice_DX12 final : public GraphicsDevice
 	{
+	friend class Ocean2;
 	protected:
 		Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
 		Microsoft::WRL::ComPtr<IDXGIAdapter1> dxgiAdapter;
@@ -161,6 +163,8 @@ namespace ap::graphics
 		bool CreateRaytracingAccelerationStructure(const RaytracingAccelerationStructureDesc* pDesc, RaytracingAccelerationStructure* bvh) const override;
 		bool CreateRaytracingPipelineState(const RaytracingPipelineStateDesc* pDesc, RaytracingPipelineState* rtpso) const override;
 		
+		bool RecreateTextureFromNativeTexture(const TextureDesc* pDesc, Texture* pTexture, void* nativeTexture) const;
+
 		int CreateSubresource(Texture* texture, SubresourceType type, uint32_t firstSlice, uint32_t sliceCount, uint32_t firstMip, uint32_t mipCount) const override;
 		int CreateSubresource(GPUBuffer* buffer, SubresourceType type, uint64_t offset, uint64_t size = ~0) const override;
 

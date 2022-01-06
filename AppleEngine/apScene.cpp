@@ -11,6 +11,7 @@
 #include "apBacklog.h"
 #include "apTimer.h"
 #include "apUnorderedMap.h"
+#include "apOcean_waveworks.h"
 
 #include "shaders/ShaderInterop_SurfelGI.h"
 
@@ -3829,6 +3830,14 @@ namespace ap::scene
 	void Scene::RunWeatherUpdateSystem(ap::jobsystem::context& ctx)
 	{
 		
+		//바꿔야함 테스트용 
+		if (!ocean2)
+			ocean2 = new ap::Ocean2();
+
+		if (!ocean2->isInitialized)
+			ocean2->Init();
+
+
 		if (weathers.GetCount() > 0)
 		{
 			weather = weathers[0];

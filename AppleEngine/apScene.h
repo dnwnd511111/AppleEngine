@@ -16,12 +16,14 @@
 #include "apECS.h"
 #include "apVector.h"
 
+
 #include <string>
 #include <memory>
 #include <limits>
 
 namespace ap
 {
+	class Ocean2;
 	class Archive;
 }
 
@@ -1357,6 +1359,12 @@ namespace ap::scene
 		// Ocean GPU state:
 		ap::Ocean ocean;
 		void OceanRegenerate() { ocean.Create(weather.oceanParameters); }
+
+
+		// Ocean_waveworks
+		ap::Ocean2* ocean2;
+
+
 
 		// Simple water ripple sprites:
 		mutable ap::vector<ap::Sprite> waterRipples;
