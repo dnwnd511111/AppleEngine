@@ -3850,12 +3850,13 @@ void UpdateRenderDataAsync(
 	if (vis.scene->weather.IsOceanEnabled())
 	{
 		auto range = ap::profiler::BeginRangeGPU("Ocean - Simulate", cmd);
-		vis.scene->ocean.UpdateDisplacementMap(vis.scene->weather.oceanParameters, cmd);
+		vis.scene->ocean2->ResourceUpdate();
+		//vis.scene->ocean.UpdateDisplacementMap(vis.scene->weather.oceanParameters, cmd);
 		ap::profiler::EndRange(range);
 
 	}
 
-	vis.scene->ocean2->ResourceUpdate();
+	
 	
 
 
@@ -4886,14 +4887,10 @@ void DrawScene(
 
 	if (transparent && vis.scene->weather.IsOceanEnabled())
 	{
-		vis.scene->ocean.Render(*vis.camera, vis.scene->weather.oceanParameters, cmd);
-	}
-	else if (transparent)
-	{
 		vis.scene->ocean2->Render(cmd);
-
-		
+		//vis.scene->ocean.Render(*vis.camera, vis.scene->weather.oceanParameters, cmd);
 	}
+	
 
 	
 

@@ -3829,13 +3829,7 @@ namespace ap::scene
 	}
 	void Scene::RunWeatherUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		
-		//바꿔야함 테스트용 
-		if (!ocean2)
-			ocean2 = new ap::Ocean2();
 
-		if (!ocean2->isInitialized)
-			ocean2->Init();
 
 
 		if (weathers.GetCount() > 0)
@@ -3843,9 +3837,15 @@ namespace ap::scene
 			weather = weathers[0];
 			weather.most_important_light_index = ~0;
 
-			if (weather.IsOceanEnabled() && !ocean.IsValid())
+			if (weather.IsOceanEnabled())
 			{
-				OceanRegenerate();
+				if (!ocean2)
+				{
+					ocean2 = std::make_unique<Ocean2>();
+					ocean2->Create();
+				}
+				
+				//OceanRegenerate();
 			}
 		}
 	}

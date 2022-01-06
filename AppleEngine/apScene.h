@@ -15,7 +15,7 @@
 #include "apMath.h"
 #include "apECS.h"
 #include "apVector.h"
-
+#include "apOcean_waveworks.h"
 
 #include <string>
 #include <memory>
@@ -1362,7 +1362,7 @@ namespace ap::scene
 
 
 		// Ocean_waveworks
-		ap::Ocean2* ocean2;
+		std::unique_ptr<ap::Ocean2> ocean2;
 
 
 

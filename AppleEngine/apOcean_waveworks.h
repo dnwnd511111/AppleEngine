@@ -9,6 +9,9 @@ namespace ap
 
 	class Ocean2
 	{
+	public:
+		Ocean2();
+
 		enum SynchronizationMode
 		{
 			SynchronizationMode_None = 0,
@@ -20,7 +23,6 @@ namespace ap
 		enum { NumMarkersXY = 1000, NumMarkers = NumMarkersXY * NumMarkersXY };
 
 	public:
-		bool isInitialized = false;
 
 		float viewportWidth;
 		float viewportHeight;
@@ -114,9 +116,7 @@ namespace ap
 		ap::graphics::GPUBuffer oceanSurfaceVB;
 		ap::graphics::GPUBuffer oceanSurfaceIB;
 
-		ap::graphics::Texture foamIntensityTexture;
-		ap::graphics::Texture foamBubblesTexture;
-		ap::graphics::Texture windGustsTexture;
+		
 
 		ap::graphics::Texture windWavesDisplacementsTextureArray;
 		ap::graphics::Texture windWavesGradientsTextureArray;
@@ -126,10 +126,11 @@ namespace ap
 		ap::graphics::Texture localWavesGradientsTexture;
 
 	public:
-		void Init();
+		static void Initialize();
+		void Create();
 		void ResourceUpdate();
 		void Render( ap::graphics::CommandList cmd);
-		void CreateResource();
+		void ReCreateResource();
 
 	};
 }

@@ -533,12 +533,13 @@ void RenderPath3D::Update(float dt)
 			scene->SetAccelerationStructureUpdateRequested(true);
 		}
 
+		
 		if (scene->ocean2)
 		{
 			scene->ocean2->viewportHeight = GetPhysicalHeight();
 			scene->ocean2->viewportWidth = GetPhysicalWidth();
-
 		}
+
 
 		scene->Update(dt * ap::renderer::GetGameSpeed());
 	}
