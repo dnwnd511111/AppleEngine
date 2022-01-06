@@ -3,6 +3,7 @@
 #include "Editor.h"
 #include "apECS.h"
 #include "apScene.h"
+#include "apOcean_waveworks.h"
 
 using namespace ap::ecs;
 using namespace ap::scene;
@@ -629,22 +630,18 @@ namespace Panel
 							GetScene().ocean = {};
 						}
 					}
-					DrawColorEdit3("Ocean Color", *(XMFLOAT3*)(void*)&weather.oceanParameters.waterColor);
-					
-					DrawSliderFloat("Patch Size", weather.oceanParameters.patch_length, 1 ,1000 );
-					DrawSliderFloat("Wave Amplitude", weather.oceanParameters.wave_amplitude ,0 ,1000 );
-					DrawSliderFloat("Choppiness", weather.oceanParameters.choppy_scale, 0, 10);
-					DrawSliderFloat("Wind Dependency", weather.oceanParameters.wind_dependency, 0,1 );
-					DrawSliderFloat("Time Scale", weather.oceanParameters.time_scale, 0, 4);
-					DrawSliderFloat("Water Level", weather.oceanParameters.waterHeight, -100, 100);
-					DrawSliderInt("Surface Detail", weather.oceanParameters.surfaceDetail,1 , 10);
-					DrawSliderFloat("Displacement Tolerance", weather.oceanParameters.surfaceDisplacementTolerance,1 ,10 );
 
-					if (DrawButton2("Reset Ocean", true))
-					{
-						weather.oceanParameters = ap::Ocean::OceanParameters();
-						GetScene().ocean = {};
-					}
+	
+
+					DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f");
+					DrawSliderFloat("UV Frequency", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_frequency, 1.0f, 3.0f);
+
+					
+
+
+
+
+
 
 					PropertyGridSpacing();
 					ImGui::Separator();

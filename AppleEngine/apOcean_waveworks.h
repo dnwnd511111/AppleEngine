@@ -22,27 +22,69 @@ namespace ap
 
 		enum { NumMarkersXY = 1000, NumMarkers = NumMarkersXY * NumMarkersXY };
 
+		
+
+		struct Ocean2Parameters
+		{
+			// Simulation state
+			
+			GFSDK_WaveWorks_Wind_Waves_Simulation_Parameters	OceanWindSimulationParameters;
+			GFSDK_WaveWorks_Wind_Waves_Simulation_Settings		OceanWindSimulationSettings;
+			
+			GFSDK_WaveWorks_Local_Waves_Simulation_Parameters	OceanLocalSimulationParameters;
+			GFSDK_WaveWorks_Local_Waves_Simulation_Settings		OceanLocalSimulationSettings;
+	
+			GFSDK_WaveWorks_Quadtree_Params                     OceanQuadtreeParameters;
+			
+
+			enum { ReadbackArchiveSize = 30 };
+			enum { ReadbackArchiveInterval = 10 };
+			float fReadbackCoord = 0.f;
+
+
+			// Animation & rendering state
+			bool bNeedToUpdateWindWavesSimulationProperties = false;
+			bool bNeedToUpdateLocalWavesSimulationProperties = false;
+			bool bNeedToResetLocalWavesSimulation = false;
+			bool bRain = false;
+			bool bBoat = true;
+			float fRainDropSize = 0.05f;
+			float fBaseWindDirection = 45.0f;
+			float fSwellWindDirection = -18.0f;
+			float fTessellationAmount = 1.0f;
+			float fTessellationOffset = 0.0f;
+
+		
+			// Rendering variables
+			bool bRenderMarkers = false;
+			bool bSimulateWater = true;
+			float fBeckmannRoughness = 0.00001f;
+			
+			int iRefinementSteps = 1;
+			int iReadbackUsage = 0;
+
+			bool bShowCascades = false;
+			bool bNeedToUpdateQuadtreeProperties = false;
+
+		};
+
 	public:
 
 		float viewportWidth;
 		float viewportHeight;
 
-		// Simulation state
 		GFSDK_WaveWorks_Wind_Waves_SimulationHandle			hOceanWindSimulation = nullptr;
-		GFSDK_WaveWorks_Wind_Waves_Simulation_Parameters	OceanWindSimulationParameters;
-		GFSDK_WaveWorks_Wind_Waves_Simulation_Settings		OceanWindSimulationSettings;
 		GFSDK_WaveWorks_Wind_Waves_Simulation_Stats			OceanWindSimulationStats;
 		GFSDK_WaveWorks_Wind_Waves_Simulation_Stats			OceanWindSimulationStatsFiltered;
 
 		GFSDK_WaveWorks_Local_Waves_SimulationHandle		hOceanLocalSimulation = nullptr;
-		GFSDK_WaveWorks_Local_Waves_Simulation_Parameters	OceanLocalSimulationParameters;
-		GFSDK_WaveWorks_Local_Waves_Simulation_Settings		OceanLocalSimulationSettings;
 		GFSDK_WaveWorks_Local_Waves_Simulation_Stats		OceanLocalSimulationStats;
 		GFSDK_WaveWorks_Local_Waves_Simulation_Stats		OceanLocalSimulationStatsFiltered;
 
 		GFSDK_WaveWorks_QuadtreeHandle                      hOceanQuadtree = nullptr;
-		GFSDK_WaveWorks_Quadtree_Params                     OceanQuadtreeParameters;
 		GFSDK_WaveWorks_Quadtree_Stats                      OceanQuadtreeStats;
+
+		Ocean2Parameters parameters;
 
 		uint64_t iLastWindSimulationKickID = 0;
 		uint64_t iLastWindSimulationArchivedKickID = GFSDK_WaveWorks_InvalidKickID;
@@ -56,11 +98,10 @@ namespace ap
 		uint32_t iLocalSimulationRenderLatency = 0;
 		int32_t iLocalSimulationReadbackLatency = 0;
 
-		enum { ReadbackArchiveSize = 30 };
-		enum { ReadbackArchiveInterval = 10 };
-		float fReadbackCoord = 0.f;
-
 		SynchronizationMode SyncMode = SynchronizationMode_None;
+
+
+		double dSimulationTime = 0.0;
 
 		bool bForceKick = false;
 		float fMinDisplacement = 0;
@@ -70,46 +111,9 @@ namespace ap
 		float fMaxTotalDisplacement = 0;
 		float fSWH = 0;
 
-		// Animation & rendering state
-		float fCameraClipNear = 0.1f;
-		float fCameraClipFar = 100000.0f;
-		double dSimulationTime = 0.0;
-		bool bNeedToUpdateWindWavesSimulationProperties = false;
-		bool bNeedToUpdateLocalWavesSimulationProperties = false;
-		bool bNeedToResetLocalWavesSimulation = false;
-		bool bRain = false;
-		bool bBoat = true;
-		float fRainDropSize = 0.05f;
-		bool bNeedToUpdateSky = true;
-		float fBaseWindDirection = 45.0f;
-		float fSwellWindDirection = -18.0f;
-		float fTessellationAmount = 1.0f;
-		float fTessellationOffset = 0.0f;
-
 		float fBoatX = 0;
 		float fBoatY = 0;
 
-
-		// Rendering variables
-		bool bRenderWireframe = false;
-		bool bRenderWater = true;
-		bool bRenderMarkers = false;
-		//bool bRenderSky = true;
-		//bool bUseDynamicSky = true;
-		bool bSimulateWater = true;
-		bool bShowWindWavesSimulationStatistics = false;
-		bool bShowLocalWavesSimulationStatistics = false;
-		float fSunAngle = 20.0f;
-		float fBeckmannRoughness = 0.00001f;
-		float fSunIntensity = 1.0f;
-		bool bUseMicrofacetFresnel = true;
-		bool bUseMicrofacetSpecular = true;
-		bool bUseMicrofacetReflection = true;
-		int iRefinementSteps = 1;
-		int iReadbackUsage = 0;
-
-		bool bShowCascades = false;
-		bool bNeedToUpdateQuadtreeProperties = false;
 
 	private:
 

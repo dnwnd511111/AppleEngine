@@ -182,20 +182,20 @@ namespace ap
 			device->device.Get(),
 			device->queues[QUEUE_GRAPHICS].queue.Get(),
 			true,
-			OceanWindSimulationSettings,
-			OceanWindSimulationParameters,
+			parameters.OceanWindSimulationSettings,
+			parameters.OceanWindSimulationParameters,
 			&(hOceanWindSimulation));
 
 		// Creating local waves simulation
 		GFSDK_WaveWorks_Local_Waves_Simulation_CreateDirectX12(
 			device->device.Get(),
 			device->queues[QUEUE_GRAPHICS].queue.Get(),
-			true, OceanLocalSimulationSettings,
-			OceanLocalSimulationParameters,
+			true, parameters.OceanLocalSimulationSettings,
+			parameters.OceanLocalSimulationParameters,
 			&(hOceanLocalSimulation));
 
 		// Creating quadtree
-		GFSDK_WaveWorks_Quadtree_Create(OceanQuadtreeParameters, &hOceanQuadtree);
+		GFSDK_WaveWorks_Quadtree_Create(parameters.OceanQuadtreeParameters, &hOceanQuadtree);
 
 		ReCreateResource();
 
@@ -203,68 +203,68 @@ namespace ap
 	Ocean2::Ocean2()
 	{
 		// Initializing the wind simulation parameters & settings
-		OceanWindSimulationParameters.time_scale = 1.0f;
-		OceanWindSimulationParameters.lateral_multiplier = 1.f;
-		OceanWindSimulationParameters.uv_warping_amplitude = 0.03f;
-		OceanWindSimulationParameters.uv_warping_frequency = 2.f;
+		parameters.OceanWindSimulationParameters.time_scale = 1.0f;
+		parameters.OceanWindSimulationParameters.lateral_multiplier = 1.f;
+		parameters.OceanWindSimulationParameters.uv_warping_amplitude = 0.03f;
+		parameters.OceanWindSimulationParameters.uv_warping_frequency = 2.f;
+		
+		parameters.OceanWindSimulationParameters.base_wind_direction = { 1.0f, 0.0f };
+		parameters.OceanWindSimulationParameters.base_wind_speed = 4.7f;
+		parameters.OceanWindSimulationParameters.base_wind_distance = 0.1f;
+		parameters.OceanWindSimulationParameters.base_wind_dependency = 1.0f;
+		parameters.OceanWindSimulationParameters.base_spectrum_peaking = 3.3f;
+		parameters.OceanWindSimulationParameters.base_small_waves_cutoff_length = 0.0f;
+		parameters.OceanWindSimulationParameters.base_small_waves_cutoff_power = 0.0f;
+		parameters.OceanWindSimulationParameters.base_amplitude_multiplier = 1.0f;
+		
+		parameters.OceanWindSimulationParameters.swell_wind_direction = { 0.0f, 1.0f };
+		parameters.OceanWindSimulationParameters.swell_wind_speed = 1.5f;
+		parameters.OceanWindSimulationParameters.swell_wind_distance = 520.0f;
+		parameters.OceanWindSimulationParameters.swell_wind_dependency = 1.0f;
+		parameters.OceanWindSimulationParameters.swell_spectrum_peaking = 10.0f;
+		parameters.OceanWindSimulationParameters.swell_small_waves_cutoff_length = 60.0f;
+		parameters.OceanWindSimulationParameters.swell_small_waves_cutoff_power = 1.0f;
+		parameters.OceanWindSimulationParameters.swell_amplitude_multiplier = 1.0f;
+		
+		parameters.OceanWindSimulationParameters.foam_whitecaps_threshold = 0.5f;
+		parameters.OceanWindSimulationParameters.foam_dissipation_speed = 0.6f;
+		parameters.OceanWindSimulationParameters.foam_falloff_speed = 0.985f;
+		parameters.OceanWindSimulationParameters.foam_generation_amount = 0.12f;
+		parameters.OceanWindSimulationParameters.foam_generation_threshold = 0.37f;
 
-		OceanWindSimulationParameters.base_wind_direction = { 1.0f, 0.0f };
-		OceanWindSimulationParameters.base_wind_speed = 4.7f;
-		OceanWindSimulationParameters.base_wind_distance = 0.1f;
-		OceanWindSimulationParameters.base_wind_dependency = 1.0f;
-		OceanWindSimulationParameters.base_spectrum_peaking = 3.3f;
-		OceanWindSimulationParameters.base_small_waves_cutoff_length = 0.0f;
-		OceanWindSimulationParameters.base_small_waves_cutoff_power = 0.0f;
-		OceanWindSimulationParameters.base_amplitude_multiplier = 1.0f;
-
-		OceanWindSimulationParameters.swell_wind_direction = { 0.0f, 1.0f };
-		OceanWindSimulationParameters.swell_wind_speed = 1.5f;
-		OceanWindSimulationParameters.swell_wind_distance = 520.0f;
-		OceanWindSimulationParameters.swell_wind_dependency = 1.0f;
-		OceanWindSimulationParameters.swell_spectrum_peaking = 10.0f;
-		OceanWindSimulationParameters.swell_small_waves_cutoff_length = 60.0f;
-		OceanWindSimulationParameters.swell_small_waves_cutoff_power = 1.0f;
-		OceanWindSimulationParameters.swell_amplitude_multiplier = 1.0f;
-
-		OceanWindSimulationParameters.foam_whitecaps_threshold = 0.5f;
-		OceanWindSimulationParameters.foam_dissipation_speed = 0.6f;
-		OceanWindSimulationParameters.foam_falloff_speed = 0.985f;
-		OceanWindSimulationParameters.foam_generation_amount = 0.12f;
-		OceanWindSimulationParameters.foam_generation_threshold = 0.37f;
-
-		OceanWindSimulationSettings.simulation_period = 1000.0f;
-		OceanWindSimulationSettings.simulation_api = GFSDK_WaveWorks_Simulation_API_Compute;
-		OceanWindSimulationSettings.detail_level = GFSDK_WaveWorks_Simulation_DetailLevel_Extreme;
-		OceanWindSimulationSettings.enable_CPU_driven_displacement_calculation = true;
-		OceanWindSimulationSettings.enable_GPU_driven_displacement_calculation = true;
-		OceanWindSimulationSettings.num_readback_FIFO_entries = ReadbackArchiveSize;
-		OceanWindSimulationSettings.CPU_simulation_threading_model = GFSDK_WaveWorks_Simulation_CPU_Threading_Model_Automatic;
-		OceanWindSimulationSettings.use_Beaufort_scale = true;
-		OceanWindSimulationSettings.num_GPUs = 1;
-		OceanWindSimulationSettings.enable_GPU_timers = true;
-		OceanWindSimulationSettings.enable_CPU_timers = true;
+		parameters.OceanWindSimulationSettings.simulation_period = 1000.0f;
+		parameters.OceanWindSimulationSettings.simulation_api = GFSDK_WaveWorks_Simulation_API_Compute;
+		parameters.OceanWindSimulationSettings.detail_level = GFSDK_WaveWorks_Simulation_DetailLevel_Extreme;
+		parameters.OceanWindSimulationSettings.enable_CPU_driven_displacement_calculation = true;
+		parameters.OceanWindSimulationSettings.enable_GPU_driven_displacement_calculation = true;
+		parameters.OceanWindSimulationSettings.num_readback_FIFO_entries = parameters.ReadbackArchiveSize;
+		parameters.OceanWindSimulationSettings.CPU_simulation_threading_model = GFSDK_WaveWorks_Simulation_CPU_Threading_Model_Automatic;
+		parameters.OceanWindSimulationSettings.use_Beaufort_scale = true;
+		parameters.OceanWindSimulationSettings.num_GPUs = 1;
+		parameters.OceanWindSimulationSettings.enable_GPU_timers = true;
+		parameters.OceanWindSimulationSettings.enable_CPU_timers = true;
 
 		// Initializing the local simulation parameters & settings
-		OceanLocalSimulationParameters.amplitude_multiplier = 1.0f;
-		OceanLocalSimulationParameters.lateral_multiplier = 1.0f;
+		parameters.OceanLocalSimulationParameters.amplitude_multiplier = 1.0f;
+		parameters.OceanLocalSimulationParameters.lateral_multiplier = 1.0f;
 
-		OceanLocalSimulationParameters.foam_whitecaps_threshold = 0.3f;
-		OceanLocalSimulationParameters.foam_dissipation_speed = 0.3f;
-		OceanLocalSimulationParameters.foam_falloff_speed = 0.6f;
-		OceanLocalSimulationParameters.foam_generation_amount = 0.2f;
-		OceanLocalSimulationParameters.foam_generation_threshold = 0.6f;
+		parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold = 0.3f;
+		parameters.OceanLocalSimulationParameters.foam_dissipation_speed = 0.3f;
+		parameters.OceanLocalSimulationParameters.foam_falloff_speed = 0.6f;
+		parameters.OceanLocalSimulationParameters.foam_generation_amount = 0.2f;
+		parameters.OceanLocalSimulationParameters.foam_generation_threshold = 0.6f;
 
-		OceanLocalSimulationSettings.simulation_domain_center.x = 0;
-		OceanLocalSimulationSettings.simulation_domain_center.y = 0;
-		OceanLocalSimulationSettings.simulation_api = GFSDK_WaveWorks_Simulation_API_Compute;
-		OceanLocalSimulationSettings.simulation_domain_worldspace_size = 200.0f;
-		OceanLocalSimulationSettings.simulation_domain_grid_size = 512;
-		OceanLocalSimulationSettings.enable_CPU_driven_displacement_calculation = true;
-		OceanLocalSimulationSettings.enable_GPU_driven_displacement_calculation = true;
-		OceanLocalSimulationSettings.CPU_simulation_threading_model = GFSDK_WaveWorks_Simulation_CPU_Threading_Model_Automatic;
-		OceanLocalSimulationSettings.num_GPUs = 1;
-		OceanLocalSimulationSettings.enable_GPU_timers = true;
-		OceanLocalSimulationSettings.enable_CPU_timers = true;
+		parameters.OceanLocalSimulationSettings.simulation_domain_center.x = 0;
+		parameters.OceanLocalSimulationSettings.simulation_domain_center.y = 0;
+		parameters.OceanLocalSimulationSettings.simulation_api = GFSDK_WaveWorks_Simulation_API_Compute;
+		parameters.OceanLocalSimulationSettings.simulation_domain_worldspace_size = 200.0f;
+		parameters.OceanLocalSimulationSettings.simulation_domain_grid_size = 512;
+		parameters.OceanLocalSimulationSettings.enable_CPU_driven_displacement_calculation = true;
+		parameters.OceanLocalSimulationSettings.enable_GPU_driven_displacement_calculation = true;
+		parameters.OceanLocalSimulationSettings.CPU_simulation_threading_model = GFSDK_WaveWorks_Simulation_CPU_Threading_Model_Automatic;
+		parameters.OceanLocalSimulationSettings.num_GPUs = 1;
+		parameters.OceanLocalSimulationSettings.enable_GPU_timers = true;
+		parameters.OceanLocalSimulationSettings.enable_CPU_timers = true;
 
 		// Resetting the stats
 		memset(&OceanWindSimulationStats, 0, sizeof(OceanWindSimulationStats));
@@ -276,13 +276,13 @@ namespace ap
 		bForceKick = true;
 
 		// Initializing quadtree parameters
-		OceanQuadtreeParameters.min_patch_length = 5.0f;
-		OceanQuadtreeParameters.max_edge_length = 10.0f;
-		OceanQuadtreeParameters.cell_count = 64;
-		OceanQuadtreeParameters.mean_sea_level = 0.0f;
-		OceanQuadtreeParameters.max_LOD_number = 15;
-		OceanQuadtreeParameters.geomorphing_degree = 1.0f;
-		OceanQuadtreeParameters.generate_diamond_pattern = false;
+		parameters.OceanQuadtreeParameters.min_patch_length = 5.0f;
+		parameters.OceanQuadtreeParameters.max_edge_length = 10.0f;
+		parameters.OceanQuadtreeParameters.cell_count = 64;
+		parameters.OceanQuadtreeParameters.mean_sea_level = 0.0f;
+		parameters.OceanQuadtreeParameters.max_LOD_number = 15;
+		parameters.OceanQuadtreeParameters.geomorphing_degree = 1.0f;
+		parameters.OceanQuadtreeParameters.generate_diamond_pattern = false;
 	}
 	void Ocean2::ResourceUpdate()
 	{
@@ -293,50 +293,50 @@ namespace ap
 
 	
 		// recreate resources if needed
-		if (bNeedToUpdateQuadtreeProperties)
+		if (parameters.bNeedToUpdateQuadtreeProperties)
 		{
-			GFSDK_WaveWorks_Quadtree_UpdateParams(hOceanQuadtree, OceanQuadtreeParameters);
+			GFSDK_WaveWorks_Quadtree_UpdateParams(hOceanQuadtree, parameters.OceanQuadtreeParameters);
 			ReCreateResource();
-			bNeedToUpdateQuadtreeProperties = false;
+			parameters.bNeedToUpdateQuadtreeProperties = false;
 		}
 
-		if (bNeedToUpdateLocalWavesSimulationProperties)
+		if (parameters.bNeedToUpdateLocalWavesSimulationProperties)
 		{
-			GFSDK_WaveWorks_Local_Waves_Simulation_UpdateProperties(hOceanLocalSimulation, OceanLocalSimulationSettings, OceanLocalSimulationParameters);
+			GFSDK_WaveWorks_Local_Waves_Simulation_UpdateProperties(hOceanLocalSimulation, parameters.OceanLocalSimulationSettings, parameters.OceanLocalSimulationParameters);
 			ReCreateResource();
-			bNeedToUpdateLocalWavesSimulationProperties = false;
+			parameters.bNeedToUpdateLocalWavesSimulationProperties = false;
 		}
 
-		if (bNeedToUpdateWindWavesSimulationProperties)
+		if (parameters.bNeedToUpdateWindWavesSimulationProperties)
 		{
-			GFSDK_WaveWorks_Wind_Waves_Simulation_UpdateProperties(hOceanWindSimulation, OceanWindSimulationSettings, OceanWindSimulationParameters);
+			GFSDK_WaveWorks_Wind_Waves_Simulation_UpdateProperties(hOceanWindSimulation, parameters.OceanWindSimulationSettings, parameters.OceanWindSimulationParameters);
 			ReCreateResource();
-			bNeedToUpdateWindWavesSimulationProperties = false;
+			parameters.bNeedToUpdateWindWavesSimulationProperties = false;
 		}
 
 
 
 		// Adding rain
-		if ((bRain) && (!bNeedToUpdateLocalWavesSimulationProperties))
+		if ((parameters.bRain) && (!parameters.bNeedToUpdateLocalWavesSimulationProperties))
 		{
 			gfsdk_float4 dd[200];
 			for (int i = 0; i < 200; i++)
 			{
-				uint32_t x = rand() % OceanLocalSimulationSettings.simulation_domain_grid_size;
-				uint32_t y = rand() % OceanLocalSimulationSettings.simulation_domain_grid_size;
+				uint32_t x = rand() % parameters.OceanLocalSimulationSettings.simulation_domain_grid_size;
+				uint32_t y = rand() % parameters.OceanLocalSimulationSettings.simulation_domain_grid_size;
 				dd[i].x = (float)x;
 				dd[i].y = (float)y;
-				dd[i].z = fRainDropSize * (rand() % 100) * 0.01f;
+				dd[i].z = parameters.fRainDropSize * (rand() % 100) * 0.01f;
 				dd[i].w = 0.0f;
 			}
 			GFSDK_WaveWorks_Local_Waves_Simulation_AddDisturbances(hOceanLocalSimulation, dd, 200);
 		}
 
 		// Adding "boat"
-		if ((bBoat) && (!bNeedToUpdateLocalWavesSimulationProperties))
+		if ((parameters.bBoat) && (!parameters.bNeedToUpdateLocalWavesSimulationProperties))
 		{
 			float time = (float)dSimulationTime;
-			uint32_t N = OceanLocalSimulationSettings.simulation_domain_grid_size;
+			uint32_t N = parameters.OceanLocalSimulationSettings.simulation_domain_grid_size;
 			fBoatX = (float)(100.0f * sinf(time * 0.1f));
 			fBoatY = (float)(100.0f * cosf(time * 0.13f));
 			float dX = 0.1f * 100.0f * cosf((float)time * 0.1f);
@@ -367,14 +367,14 @@ namespace ap
 
 
 		// Simulating local waves
-		if (bNeedToResetLocalWavesSimulation)
+		if (parameters.bNeedToResetLocalWavesSimulation)
 		{
 			GFSDK_WaveWorks_Local_Waves_Simulation_Reset(hOceanLocalSimulation);
-			bNeedToResetLocalWavesSimulation = false;
+			parameters.bNeedToResetLocalWavesSimulation = false;
 		}
 
 
-		if (bSimulateWater || bForceKick || (gfsdk_wwresult_NONE == GFSDK_WaveWorks_Local_Waves_Simulation_GetStagingCursor(hOceanLocalSimulation, NULL)))
+		if (parameters.bSimulateWater || bForceKick || (gfsdk_wwresult_NONE == GFSDK_WaveWorks_Local_Waves_Simulation_GetStagingCursor(hOceanLocalSimulation, NULL)))
 		{
 			GFSDK_WaveWorks_Local_Waves_Simulation_SetDeltaTime(hOceanLocalSimulation, delta);
 			GFSDK_WaveWorks_Local_Waves_Simulation_Kick(hOceanLocalSimulation, &iLastLocalSimulationKickID);
@@ -394,7 +394,7 @@ namespace ap
 				GFSDK_WaveWorks_Local_Waves_Simulation_GetStagingCursor(hOceanLocalSimulation, &stagingCursorKickID);
 			}
 
-			if ((SyncMode >= SynchronizationMode_Readback) && (iReadbackUsage > 0))
+			if ((SyncMode >= SynchronizationMode_Readback) && (parameters.iReadbackUsage > 0))
 			{
 				uint64_t readbackCursorKickID = iLastLocalSimulationKickID - 1;	// Just ensure that the initial value is different from last kick,
 																							// so that we continue waiting if the staging cursor is empty
@@ -439,7 +439,7 @@ namespace ap
 
 
 		// likewise with the readback latency
-		if (iReadbackUsage > 0)
+		if (parameters.iReadbackUsage > 0)
 		{
 			uint64_t readback_cursor_kickID = 0;
 			if (GFSDK_WaveWorks_Local_Waves_Simulation_GetReadbackCursor(hOceanLocalSimulation, &readback_cursor_kickID) == gfsdk_wwresult_OK)
@@ -457,7 +457,7 @@ namespace ap
 		}
 
 		// Simulating wind waves
-		if (bSimulateWater || bForceKick || (gfsdk_wwresult_NONE == GFSDK_WaveWorks_Wind_Waves_Simulation_GetStagingCursor(hOceanWindSimulation, NULL)))
+		if (parameters.bSimulateWater || bForceKick || (gfsdk_wwresult_NONE == GFSDK_WaveWorks_Wind_Waves_Simulation_GetStagingCursor(hOceanWindSimulation, NULL)))
 		{
 			dSimulationTime += delta;
 			GFSDK_WaveWorks_Wind_Waves_Simulation_SetTime(hOceanWindSimulation, dSimulationTime);
@@ -478,7 +478,7 @@ namespace ap
 				GFSDK_WaveWorks_Wind_Waves_Simulation_GetStagingCursor(hOceanWindSimulation, &stagingCursorKickID);
 			}
 
-			if ((SyncMode >= SynchronizationMode_Readback) && (iReadbackUsage > 0))
+			if ((SyncMode >= SynchronizationMode_Readback) && (parameters.iReadbackUsage > 0))
 			{
 				uint64_t readbackCursorKickID = iLastWindSimulationKickID - 1;	// Just ensure that the initial value is different from last kick,
 																	// so that we continue waiting if the staging cursor is empty
@@ -508,7 +508,7 @@ namespace ap
 		// Exercise the readback archiving API
 		if (GFSDK_WaveWorks_Wind_Waves_Simulation_GetReadbackCursor(hOceanWindSimulation, &iLastWindSimulationReadbackKickID) == gfsdk_wwresult_OK)
 		{
-			if ((iLastWindSimulationReadbackKickID - iLastWindSimulationArchivedKickID) > ReadbackArchiveInterval)
+			if ((iLastWindSimulationReadbackKickID - iLastWindSimulationArchivedKickID) > parameters.ReadbackArchiveInterval)
 			{
 				GFSDK_WaveWorks_Wind_Waves_Simulation_ArchiveDisplacements(hOceanWindSimulation);
 				iLastWindSimulationArchivedKickID = iLastWindSimulationReadbackKickID;
@@ -523,7 +523,7 @@ namespace ap
 		}
 
 		// likewise with the readback latency
-		if (iReadbackUsage > 0)
+		if (parameters.iReadbackUsage > 0)
 		{
 			uint64_t readback_cursor_kickID = 0;
 			if (GFSDK_WaveWorks_Wind_Waves_Simulation_GetReadbackCursor(hOceanWindSimulation, &readback_cursor_kickID) == gfsdk_wwresult_OK)
@@ -551,7 +551,7 @@ namespace ap
 		OceanWindSimulationStatsFiltered.GPU_total_time = OceanWindSimulationStatsFiltered.GPU_total_time * 0.999f + 0.001f * OceanWindSimulationStats.GPU_total_time;
 
 		// reading back marker coords
-		if (iReadbackUsage > 0)
+		if (parameters.iReadbackUsage > 0)
 		{
 			//UpdateMarkers();
 		}
@@ -702,9 +702,9 @@ namespace ap
 		OCEAN_VS_HS_DS_CBUFFER VSHSDSCB;
 		VSHSDSCB.g_matViewProj = projMatrix2 * vm;
 		VSHSDSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
-		VSHSDSCB.g_meanOceanLevel = OceanQuadtreeParameters.mean_sea_level;
-		VSHSDSCB.g_dynamicTesselationAmount = fTessellationAmount;
-		VSHSDSCB.g_staticTesselationOffset = fTessellationOffset;
+		VSHSDSCB.g_meanOceanLevel = parameters.OceanQuadtreeParameters.mean_sea_level;
+		VSHSDSCB.g_dynamicTesselationAmount = parameters.fTessellationAmount;
+		VSHSDSCB.g_staticTesselationOffset = parameters.fTessellationOffset;
 		VSHSDSCB.g_cascade0UVOffset = windWavesRenderingData.cascade0_UV_offset;
 		VSHSDSCB.g_cascade0UVScale = windWavesRenderingData.cascade0_UV_scale;
 		VSHSDSCB.g_cascade1UVOffset = windWavesRenderingData.cascade1_UV_offset;
@@ -715,7 +715,7 @@ namespace ap
 		VSHSDSCB.g_cascade3UVScale = windWavesRenderingData.cascade3_UV_scale;
 		VSHSDSCB.g_localWavesSimulationDomainWorldspaceCenter = localWavesRenderingData.simulation_domain_worldspace_center;
 		VSHSDSCB.g_localWavesSimulationDomainWorldspaceSize = localWavesRenderingData.simulation_domain_worldspace_size;
-		VSHSDSCB.g_useDiamondPattern = OceanQuadtreeParameters.generate_diamond_pattern ? 1.0f : 0.0f;
+		VSHSDSCB.g_useDiamondPattern = parameters.OceanQuadtreeParameters.generate_diamond_pattern ? 1.0f : 0.0f;
 		VSHSDSCB.g_UVWarpingAmplitude = windWavesRenderingData.uv_warping_amplitude;
 		VSHSDSCB.g_UVWarpingFrequency = windWavesRenderingData.uv_warping_frequency;
 
@@ -730,14 +730,14 @@ namespace ap
 		PSCB.g_SimulationDomainCenter = localWavesRenderingData.simulation_domain_worldspace_center;
 		PSCB.g_SimulationDomainSize = localWavesRenderingData.simulation_domain_worldspace_size;
 		PSCB.g_localWavesTextureSizeInTexels = (float)localWavesRenderingData.size_of_texture;
-		PSCB.g_localWavesFoamWhitecapsThreshold = OceanLocalSimulationParameters.foam_whitecaps_threshold;
-		PSCB.g_beckmannRoughness = fBeckmannRoughness;
-		PSCB.g_sunIntensity = fSunIntensity;
-		PSCB.g_sunDirection = { cosf(fSunAngle * 0.0174533f), 0, sinf(fSunAngle * 0.0174533f) };
-		PSCB.g_useMicrofacetFresnel = bUseMicrofacetFresnel ? 1.0f : 0.0f;
-		PSCB.g_useMicrofacetSpecular = bUseMicrofacetSpecular ? 1.0f : 0.0f;
-		PSCB.g_useMicrofacetReflection = bUseMicrofacetReflection ? 1.0f : 0.0f;
-		PSCB.g_showCascades = bShowCascades ? 1.0f : 0.0f;
+		PSCB.g_localWavesFoamWhitecapsThreshold = parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold;
+		PSCB.g_beckmannRoughness = 0.00001f;
+		PSCB.g_sunIntensity = 1.0f;
+		PSCB.g_sunDirection = { cosf(45.0 * 0.0174533f), 0, sinf(45.0 * 0.0174533f) };
+		PSCB.g_useMicrofacetFresnel = 1.0f ;
+		PSCB.g_useMicrofacetSpecular = 1.0f;
+		PSCB.g_useMicrofacetReflection =  1.0f ;
+		PSCB.g_showCascades = parameters.bShowCascades ? 1.0f : 0.0f;
 		PSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
 
 		device->BindDynamicConstantBuffer(PSCB, 3, cmd);
@@ -751,7 +751,7 @@ namespace ap
 		nodes.assign(pNodes, pNodes + numNodes);
 
 		// Getting the quadtree stats
-		GFSDK_WaveWorks_Quadtree_GetStats(hOceanQuadtree, OceanQuadtreeStats);
+		GFSDK_WaveWorks_Quadtree_GetStats(hOceanQuadtree,OceanQuadtreeStats);
 
 
 		std::vector<uint32_t> startIndices(16);

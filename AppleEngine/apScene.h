@@ -1145,6 +1145,7 @@ namespace ap::scene
 		float windSpeed = 1;
 
 		ap::Ocean::OceanParameters oceanParameters;
+		ap::Ocean2::Ocean2Parameters ocean2Parameters;
 		AtmosphereParameters atmosphereParameters;
 		VolumetricCloudParameters volumetricCloudParameters;
 
