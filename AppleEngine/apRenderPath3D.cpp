@@ -4,6 +4,7 @@
 #include "apHelper.h"
 #include "apTextureHelper.h"
 #include "apProfiler.h"
+#include "apOcean_waveworks.h"
 
 using namespace ap::graphics;
 using namespace ap::enums;
@@ -16,6 +17,8 @@ void RenderPath3D::ResizeBuffers()
 	GraphicsDevice* device = ap::graphics::GetDevice();
 
 	XMUINT2 internalResolution = GetInternalResolution();
+
+	
 
 	camera->CreatePerspective((float)internalResolution.x, (float)internalResolution.y, camera->zNearP, camera->zFarP);
 	
@@ -528,6 +531,13 @@ void RenderPath3D::Update(float dt)
 			getRaytracedReflectionEnabled())
 		{
 			scene->SetAccelerationStructureUpdateRequested(true);
+		}
+
+		if (scene->ocean2)
+		{
+			scene->ocean2->viewportHeight = GetPhysicalHeight();
+			scene->ocean2->viewportWidth = GetPhysicalWidth();
+
 		}
 
 		scene->Update(dt * ap::renderer::GetGameSpeed());

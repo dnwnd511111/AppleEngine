@@ -1,12 +1,8 @@
-//#include "globals.hlsli"
+#include "globals.hlsli"
+#include "ocean2HF.hlsli"
 
 
-float4 main() : SV_TARGET
-{
-    return float4(1.0, 1.0,1.0, 1.0);
-}
-
-#if 0
+#if 1
     float4 CalculateMiplevels(float2 largestCascadeUV)
     {
         float2 uvdx = ddx(largestCascadeUV * g_windWavesTextureSizeInTexels);
@@ -402,7 +398,7 @@ float4 main() : SV_TARGET
                 LOD += (4.0 / ((1.0 + R.z) * (1.0 + R.z)));
 
                 float2 uv = R.xy / (1.0 + R.z);
-                float3 I_ = g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, ClampUV(uv * (0.5 / 1.5) + 0.5), LOD).xyz;
+            float3 I_ = 1; //g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, ClampUV(uv * (0.5 / 1.5) + 0.5), LOD).xyz;
 
                 S += wi * wj * S_;
                 I += wi * wj * S_ * I_;
@@ -495,10 +491,10 @@ float4 main() : SV_TARGET
 
         float2 skyUV = (-V.xy / (1.0 - V.z)) * (0.5 / 1.5) + 0.5;
         skyUV = ClampUV(skyUV);
-        float3 airColor = g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+    float3 airColor = 1; //g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
 
         skyUV = (g_sunDirection.xy / (1.0 + g_sunDirection.z)) * (0.5 / 1.5) + 0.5;
-        float3 sunColor = g_textureDynamicSkyDome.Sample(g_samplerBilinear, skyUV, 0).xyz; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+    float3 sunColor = 1; //g_textureDynamicSkyDome.Sample(g_samplerBilinear, skyUV, 0).xyz; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
 
 	    // Calculating environment reflection color
         float3 reflectionColor;
@@ -510,8 +506,8 @@ float4 main() : SV_TARGET
         {
             skyUV = (R.xy / (1.0 + R.z)) * (0.5 / 1.5) + 0.5; // Mapping sphere to quad 
             skyUV = ClampUV(skyUV);
-            reflectionColor = g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
-        }
+        reflectionColor = 1; // g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+    }
 
 	    // Fresnel factor 
 	    // TODO: really need to use Lowest LOD?
@@ -602,5 +598,12 @@ float4 main() : SV_TARGET
 
         return float4(waterColor, 1.0);
     }
+
+#else
+float4 main() : SV_TARGET
+{
+    return float4(1.0, 1.0, 1.0, 1.0);
+}
+
 
 #endif

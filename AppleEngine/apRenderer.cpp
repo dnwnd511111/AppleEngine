@@ -3856,7 +3856,7 @@ void UpdateRenderDataAsync(
 	}
 
 	vis.scene->ocean2->ResourceUpdate();
-	//vis.scene->ocean2->Render(cmd);
+	
 
 
 	device->EventEnd(cmd);
@@ -4888,6 +4888,15 @@ void DrawScene(
 	{
 		vis.scene->ocean.Render(*vis.camera, vis.scene->weather.oceanParameters, cmd);
 	}
+	else if (transparent)
+	{
+		vis.scene->ocean2->Render(cmd);
+
+		
+	}
+
+	
+
 
 	if (hairparticle)
 	{

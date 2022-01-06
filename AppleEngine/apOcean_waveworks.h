@@ -2,6 +2,7 @@
 
 #include <GFSDK_WaveWorks.h>
 #include "apGraphicsDevice.h"
+#include "DirectXMath.h"
 
 namespace ap
 { 
@@ -20,6 +21,9 @@ namespace ap
 
 	public:
 		bool isInitialized = false;
+
+		float viewportWidth;
+		float viewportHeight;
 
 		// Simulation state
 		GFSDK_WaveWorks_Wind_Waves_SimulationHandle			hOceanWindSimulation = nullptr;
@@ -124,7 +128,7 @@ namespace ap
 	public:
 		void Init();
 		void ResourceUpdate();
-		void Render(ap::graphics::CommandList cmd);
+		void Render( ap::graphics::CommandList cmd);
 		void CreateResource();
 
 	};

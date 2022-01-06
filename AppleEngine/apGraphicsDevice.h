@@ -295,6 +295,15 @@ namespace ap::graphics
 			std::memcpy(allocation.data, &data, sizeof(T));
 			BindConstantBuffer(&allocation.buffer, slot, cmd, allocation.offset);
 		}
+
+		void BindDynamicConstantBuffer_Array(void* data, uint32_t dataSize, uint32_t slot, CommandList cmd)
+		{
+			GPUAllocation allocation = AllocateGPU(dataSize, cmd);
+			std::memcpy(allocation.data, data, dataSize);
+			BindConstantBuffer(&allocation.buffer, slot, cmd, allocation.offset);
+		}
+
+
 	};
 
 

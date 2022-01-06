@@ -153,6 +153,8 @@ namespace ap
 				desc.bs = &blendState;
 				desc.rs = &rasterizerState;
 				desc.dss = &depthStencilState;
+				desc.pt = PrimitiveTopology::PATCHLIST;
+				desc.il = &inputLayout;
 				device->CreatePipelineState(&desc, &PSO);
 
 				desc.ps = &wireframePS;
@@ -613,15 +615,77 @@ namespace ap
 
 	}
 
+
+	struct Ocean2Constants
+	{
+		uint32_t displacementTextureArrayWindWaves;
+		uint32_t displacementTextureLocalWaves;
+		uint32_t gradientsTextureArrayWindWaves;
+		uint32_t momentsTextureArrayWindWaves;
+		
+		uint32_t gradientsTextureLocalWaves;
+		uint32_t textureFoam;
+		uint32_t textureBubbles;
+		uint32_t textureWindGusts;
+
+	};
+
 	void Ocean2::Render(ap::graphics::CommandList cmd)
 	{
 
+		gfsdk_float2 viewportSize;
+		viewportSize.x = viewportWidth;
+		viewportSize.y = viewportHeight;
+
 		GraphicsDevice* device = ap::graphics::GetDevice();
+		CameraComponent& camera = GetCamera();
+		Scene& scene = GetScene();
 
-		device->EventBegin("Ocean Rendering", cmd);
+		device->EventBegin("Ocean2 Rendering", cmd);
 
-		
-		
+		Ocean2Constants push;
+		push.displacementTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesDisplacementsTextureArray, SubresourceType::SRV);
+		push.displacementTextureLocalWaves = device->GetDescriptorIndex(&localWavesDisplacementsTexture, SubresourceType::SRV);
+		push.gradientsTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesGradientsTextureArray, SubresourceType::SRV);
+		push.momentsTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesMomentsTextureArray, SubresourceType::SRV);
+		push.gradientsTextureLocalWaves = device->GetDescriptorIndex(&localWavesGradientsTexture, SubresourceType::SRV);
+
+		push.textureFoam = device->GetDescriptorIndex(&foamIntensityTexture, SubresourceType::SRV);
+		push.textureBubbles = device->GetDescriptorIndex(&foamBubblesTexture, SubresourceType::SRV);
+		push.textureWindGusts = device->GetDescriptorIndex(&windGustsTexture, SubresourceType::SRV);
+
+
+		bool wire = ap::renderer::IsWireRender();
+		if (wire)
+		{
+			device->BindPipelineState(&PSO_wire, cmd);
+		}
+		else
+		{
+			device->BindPipelineState(&PSO, cmd);
+		}
+		device->PushConstants(&push, sizeof(push), cmd);
+
+
+		XMMATRIX V = camera.GetView();
+		XMMATRIX P = XMMatrixPerspectiveFovLH(camera.fov, camera.width / camera.height, camera.zNearP, camera.zFarP);
+		XMVECTOR E = camera.GetEye();
+
+		XMMATRIX P2 = camera.GetProjection();
+
+		// Getting view and projection matrices
+		gfsdk_float4x4 viewMatrix = *((gfsdk_float4x4*)(&V));
+		gfsdk_float4x4 projMatrix = *((gfsdk_float4x4*)(&P));
+		gfsdk_float4x4 projMatrix2 = *((gfsdk_float4x4*)(&P2));
+		gfsdk_float3 eyePoint = *((gfsdk_float3*)(&E));
+
+
+
+		//Internal quadtree math is left handed, z up, so flippings rows 2 and 3 here
+		gfsdk_float4x4  vm = { viewMatrix._11, viewMatrix._12, viewMatrix._13,viewMatrix._14,
+					   viewMatrix._31, viewMatrix._32, viewMatrix._33,viewMatrix._34,
+					   viewMatrix._21, viewMatrix._22, viewMatrix._23,viewMatrix._24,
+					   viewMatrix._41, viewMatrix._42, viewMatrix._43,viewMatrix._44 };
 
 
 		// Getting data for rendering from WaveWorks 
@@ -631,9 +695,130 @@ namespace ap
 		GFSDK_WaveWorks_Local_Waves_Rendering_Data localWavesRenderingData;
 		GFSDK_WaveWorks_Local_Waves_GetDataForRendering(hOceanLocalSimulation, localWavesRenderingData);
 
+		OCEAN_VS_HS_DS_CBUFFER VSHSDSCB;
+		VSHSDSCB.g_matViewProj = projMatrix2 * vm;
+		VSHSDSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
+		VSHSDSCB.g_meanOceanLevel = OceanQuadtreeParameters.mean_sea_level;
+		VSHSDSCB.g_dynamicTesselationAmount = fTessellationAmount;
+		VSHSDSCB.g_staticTesselationOffset = fTessellationOffset;
+		VSHSDSCB.g_cascade0UVOffset = windWavesRenderingData.cascade0_UV_offset;
+		VSHSDSCB.g_cascade0UVScale = windWavesRenderingData.cascade0_UV_scale;
+		VSHSDSCB.g_cascade1UVOffset = windWavesRenderingData.cascade1_UV_offset;
+		VSHSDSCB.g_cascade1UVScale = windWavesRenderingData.cascade1_UV_scale;
+		VSHSDSCB.g_cascade2UVOffset = windWavesRenderingData.cascade2_UV_offset;
+		VSHSDSCB.g_cascade2UVScale = windWavesRenderingData.cascade2_UV_scale;
+		VSHSDSCB.g_cascade3UVOffset = windWavesRenderingData.cascade3_UV_offset;
+		VSHSDSCB.g_cascade3UVScale = windWavesRenderingData.cascade3_UV_scale;
+		VSHSDSCB.g_localWavesSimulationDomainWorldspaceCenter = localWavesRenderingData.simulation_domain_worldspace_center;
+		VSHSDSCB.g_localWavesSimulationDomainWorldspaceSize = localWavesRenderingData.simulation_domain_worldspace_size;
+		VSHSDSCB.g_useDiamondPattern = OceanQuadtreeParameters.generate_diamond_pattern ? 1.0f : 0.0f;
+		VSHSDSCB.g_UVWarpingAmplitude = windWavesRenderingData.uv_warping_amplitude;
+		VSHSDSCB.g_UVWarpingFrequency = windWavesRenderingData.uv_warping_frequency;
+
+		device->BindDynamicConstantBuffer(VSHSDSCB, 2, cmd);
+
+		OCEAN_PS_CBUFFER PSCB;
+		PSCB.g_cascadeToCascadeScale = windWavesRenderingData.cascade_to_cascade_scale;
+		PSCB.g_windWavesTextureSizeInTexels = (float)windWavesRenderingData.size_of_texture_arrays;
+		PSCB.g_UVWarpingAmplitude = windWavesRenderingData.uv_warping_amplitude;
+		PSCB.g_UVWarpingFrequency = windWavesRenderingData.uv_warping_frequency;
+		PSCB.g_windWavesFoamWhitecapsThreshold = windWavesRenderingData.foam_whitecaps_threshold;
+		PSCB.g_SimulationDomainCenter = localWavesRenderingData.simulation_domain_worldspace_center;
+		PSCB.g_SimulationDomainSize = localWavesRenderingData.simulation_domain_worldspace_size;
+		PSCB.g_localWavesTextureSizeInTexels = (float)localWavesRenderingData.size_of_texture;
+		PSCB.g_localWavesFoamWhitecapsThreshold = OceanLocalSimulationParameters.foam_whitecaps_threshold;
+		PSCB.g_beckmannRoughness = fBeckmannRoughness;
+		PSCB.g_sunIntensity = fSunIntensity;
+		PSCB.g_sunDirection = { cosf(fSunAngle * 0.0174533f), 0, sinf(fSunAngle * 0.0174533f) };
+		PSCB.g_useMicrofacetFresnel = bUseMicrofacetFresnel ? 1.0f : 0.0f;
+		PSCB.g_useMicrofacetSpecular = bUseMicrofacetSpecular ? 1.0f : 0.0f;
+		PSCB.g_useMicrofacetReflection = bUseMicrofacetReflection ? 1.0f : 0.0f;
+		PSCB.g_showCascades = bShowCascades ? 1.0f : 0.0f;
+		PSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
+
+		device->BindDynamicConstantBuffer(PSCB, 3, cmd);
+		
+		uint32_t numNodes;
+		GFSDK_WaveWorks_Quadtree_NodeRenderingProperties* pNodes;
+		std::vector<GFSDK_WaveWorks_Quadtree_NodeRenderingProperties> nodes;
+		float cullMargin = GFSDK_WaveWorks_Wind_Waves_Simulation_GetConservativeMaxDisplacementEstimate(hOceanWindSimulation);
+
+		GFSDK_WaveWorks_Quadtree_GetNodesForRendering(hOceanQuadtree, vm, projMatrix, viewportSize, cullMargin, &numNodes, &pNodes);
+		nodes.assign(pNodes, pNodes + numNodes);
+
+		// Getting the quadtree stats
+		GFSDK_WaveWorks_Quadtree_GetStats(hOceanQuadtree, OceanQuadtreeStats);
+
+
+		std::vector<uint32_t> startIndices(16);
+		std::vector<uint32_t> indexCounts(16);
+
+		// Per-instance data for patch types
+		std::vector <std::vector< OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY > > perInstanceBuffers(16);
+
+		// Reserving space for the entire constant buffer size (64kb or 4096 entries) in perInstanceBuffers
+		// as current NVRHI implementation updates the entire contents of the constant buffers.
+		for (uint32_t i = 0; i < 16; i++)
+		{
+			perInstanceBuffers[i].reserve(4096);
+		}
+
+		// Assembling the arrays
+		for (uint32_t i = 0; i < nodes.size(); i++)
+		{
+			uint32_t patchType = nodes[i].patch_type;
+
+			startIndices[patchType] = nodes[i].start_index;
+			indexCounts[patchType] = nodes[i].num_indices;
+
+			OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY cbEntry;
+			cbEntry.g_patchWorldspaceOrigin = nodes[i].patch_worldspace_origin;
+			cbEntry.g_patchWorldspaceScale = nodes[i].patch_worldspace_scale;
+			cbEntry.g_patchMorphConstantAndSign = nodes[i].geomorphing_distance_constant * nodes[i].geomorphing_sign;
+			perInstanceBuffers[patchType].push_back(cbEntry);
+		}
+
+
+		
+		const GPUBuffer* vbs[] = {
+			&oceanSurfaceVB,
+		};
+		const uint32_t strides[] = {
+			sizeof(XMFLOAT2),
+		};
+		device->BindVertexBuffers(vbs, 0, arraysize(vbs), strides, nullptr, cmd);
+		device->BindIndexBuffer(&oceanSurfaceIB, IndexBufferFormat::UINT32, 0, cmd);
+
+
+		// Rendering the quadtree patches using instancing
+		for (uint32_t i = 0; i < 16; i++)
+		{
+
+			if (perInstanceBuffers[i].size() > 0)
+			{
+				// Writing the entire constant buffer
+				device->BindDynamicConstantBuffer_Array((void*)perInstanceBuffers[i].data(), 4096 * sizeof(OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY), 1, cmd);
+				
+				// Setting up draw arguments to render up to 4096 instances.
+				// Ocean quadtree usually generates <100 instances of patches of each type, 
+				// but if there is a need to render more than 4096 instances, then structured / vertex buffer can be used instead of constant buffer,
+				// or multiple draw calls with the constant buffer updates between them.
+				uint32_t intstanceCount = std::min(4096, (int32_t)(perInstanceBuffers[i].size()));
+				device->DrawIndexedInstanced(indexCounts[i], intstanceCount, startIndices[i], 0, 0, cmd);
+				
+			}
+		}
+
+		/*if (bRenderMarkers)
+		{
+			RenderMarkers(FB);
+		}*/
+
 
 		device->EventEnd(cmd);
 	}
+
+
 	void Ocean2::CreateResource()
 	{
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());

@@ -88,14 +88,12 @@ struct PerInstanceElement
     float patchMorphConstantAndSign;
 };
 
-
-
-cbuffer OCEAN_VS_CBUFFER_PERINSTANCE : register(b0)
+cbuffer OCEAN_VS_CBUFFER_PERINSTANCE : register(b1)
 {
     PerInstanceElement g_perInstanceData[4096];
 };
 
-cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b1)
+cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b2)
 {
 	// Data used in vertex shader
     float4x4 g_matViewProj;
@@ -129,7 +127,7 @@ cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b1)
     float2 g_localWavesSimulationDomainWorldspaceCenter;
 };
 
-cbuffer OCEAN_PS_CBUFFER : register(b2)
+cbuffer OCEAN_PS_CBUFFER : register(b3)
 {
 	// Defined by wind waves simulation
     float g_cascadeToCascadeScale;

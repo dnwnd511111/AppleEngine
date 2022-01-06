@@ -2067,6 +2067,7 @@ using namespace dx12_internal;
 
 				ComPtr<ID3D12PipelineState> newpso;
 				HRESULT hr = device->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&newpso));
+				
 				assert(SUCCEEDED(hr));
 
 				pipelines_worker[cmd].push_back(std::make_pair(pipeline_hash, newpso));
