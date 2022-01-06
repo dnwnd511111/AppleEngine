@@ -287,37 +287,14 @@ namespace ap
 	void Ocean2::ResourceUpdate()
 	{
 
+
 		Scene& scene = GetScene();
 		CameraComponent& camera = GetCamera();
 		float delta = scene.dt;
 
-	
-		// recreate resources if needed
-		if (parameters.bNeedToUpdateQuadtreeProperties)
-		{
-			GFSDK_WaveWorks_Quadtree_UpdateParams(hOceanQuadtree, parameters.OceanQuadtreeParameters);
-			ReCreateResource();
-			parameters.bNeedToUpdateQuadtreeProperties = false;
-		}
-
-		if (parameters.bNeedToUpdateLocalWavesSimulationProperties)
-		{
-			GFSDK_WaveWorks_Local_Waves_Simulation_UpdateProperties(hOceanLocalSimulation, parameters.OceanLocalSimulationSettings, parameters.OceanLocalSimulationParameters);
-			ReCreateResource();
-			parameters.bNeedToUpdateLocalWavesSimulationProperties = false;
-		}
-
-		if (parameters.bNeedToUpdateWindWavesSimulationProperties)
-		{
-			GFSDK_WaveWorks_Wind_Waves_Simulation_UpdateProperties(hOceanWindSimulation, parameters.OceanWindSimulationSettings, parameters.OceanWindSimulationParameters);
-			ReCreateResource();
-			parameters.bNeedToUpdateWindWavesSimulationProperties = false;
-		}
-
-
 
 		// Adding rain
-		if ((parameters.bRain) && (!parameters.bNeedToUpdateLocalWavesSimulationProperties))
+		if ((parameters.bRain) && (!bNeedToUpdateLocalWavesSimulationProperties))
 		{
 			gfsdk_float4 dd[200];
 			for (int i = 0; i < 200; i++)
@@ -333,7 +310,7 @@ namespace ap
 		}
 
 		// Adding "boat"
-		if ((parameters.bBoat) && (!parameters.bNeedToUpdateLocalWavesSimulationProperties))
+		if ((parameters.bBoat) && (!bNeedToUpdateLocalWavesSimulationProperties))
 		{
 			float time = (float)dSimulationTime;
 			uint32_t N = parameters.OceanLocalSimulationSettings.simulation_domain_grid_size;
@@ -367,10 +344,10 @@ namespace ap
 
 
 		// Simulating local waves
-		if (parameters.bNeedToResetLocalWavesSimulation)
+		if (bNeedToResetLocalWavesSimulation)
 		{
 			GFSDK_WaveWorks_Local_Waves_Simulation_Reset(hOceanLocalSimulation);
-			parameters.bNeedToResetLocalWavesSimulation = false;
+			bNeedToResetLocalWavesSimulation = false;
 		}
 
 
@@ -550,6 +527,30 @@ namespace ap
 		OceanWindSimulationStatsFiltered.GPU_update_time = OceanWindSimulationStatsFiltered.GPU_update_time * 0.999f + 0.001f * OceanWindSimulationStats.GPU_update_time;
 		OceanWindSimulationStatsFiltered.GPU_total_time = OceanWindSimulationStatsFiltered.GPU_total_time * 0.999f + 0.001f * OceanWindSimulationStats.GPU_total_time;
 
+
+		// recreate resources if needed
+		if (bNeedToUpdateQuadtreeProperties)
+		{
+			GFSDK_WaveWorks_Quadtree_UpdateParams(hOceanQuadtree, parameters.OceanQuadtreeParameters);
+			ReCreateResource();
+			bNeedToUpdateQuadtreeProperties = false;
+		}
+
+		if (bNeedToUpdateLocalWavesSimulationProperties)
+		{
+			GFSDK_WaveWorks_Local_Waves_Simulation_UpdateProperties(hOceanLocalSimulation, parameters.OceanLocalSimulationSettings, parameters.OceanLocalSimulationParameters);
+			ReCreateResource();
+			bNeedToUpdateLocalWavesSimulationProperties = false;
+		}
+
+		if (bNeedToUpdateWindWavesSimulationProperties)
+		{
+			GFSDK_WaveWorks_Wind_Waves_Simulation_UpdateProperties(hOceanWindSimulation, parameters.OceanWindSimulationSettings, parameters.OceanWindSimulationParameters);
+			ReCreateResource();
+			bNeedToUpdateWindWavesSimulationProperties = false;
+		}
+
+
 		// reading back marker coords
 		if (parameters.iReadbackUsage > 0)
 		{
@@ -690,6 +691,7 @@ namespace ap
 					   viewMatrix._31, viewMatrix._32, viewMatrix._33,viewMatrix._34,
 					   viewMatrix._21, viewMatrix._22, viewMatrix._23,viewMatrix._24,
 					   viewMatrix._41, viewMatrix._42, viewMatrix._43,viewMatrix._44 };
+
 
 
 		// Getting data for rendering from WaveWorks 
@@ -852,8 +854,11 @@ namespace ap
 
 	void Ocean2::ReCreateResource()
 	{
+
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 
+		
+	
 		// Creating ocean surface vertex and index buffers
 		uint32_t numVertices = 0;
 		uint32_t numIndices = 0;
@@ -888,6 +893,7 @@ namespace ap
 			device->CreateBuffer(&buf_desc, oceanIndices.data(), &oceanSurfaceIB);
 		}
 
+		//ap::graphics::GPUBuffer* a = static_cast<ap::graphics::GPUBuffer*>(oceanSurfaceIB.internal_state.get());
 
 		// Creating NVRHI textures from native objects exposed from WaveWorks
 		GFSDK_WaveWorks_Wind_Waves_Rendering_Data windWavesRenderingData;
@@ -930,7 +936,7 @@ namespace ap
 			device->SetName(&localWavesGradientsTexture, "localWavesGradientsTexture");
 
 		}
-
-
+		
+	
 	}
 }

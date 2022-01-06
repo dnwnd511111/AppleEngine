@@ -42,10 +42,6 @@ namespace ap
 			float fReadbackCoord = 0.f;
 
 
-			// Animation & rendering state
-			bool bNeedToUpdateWindWavesSimulationProperties = false;
-			bool bNeedToUpdateLocalWavesSimulationProperties = false;
-			bool bNeedToResetLocalWavesSimulation = false;
 			bool bRain = false;
 			bool bBoat = true;
 			float fRainDropSize = 0.05f;
@@ -64,7 +60,7 @@ namespace ap
 			int iReadbackUsage = 0;
 
 			bool bShowCascades = false;
-			bool bNeedToUpdateQuadtreeProperties = false;
+			
 
 		};
 
@@ -99,6 +95,12 @@ namespace ap
 		int32_t iLocalSimulationReadbackLatency = 0;
 
 		SynchronizationMode SyncMode = SynchronizationMode_None;
+
+		// Animation & rendering state
+		bool bNeedToUpdateWindWavesSimulationProperties = false;
+		bool bNeedToUpdateLocalWavesSimulationProperties = false;
+		bool bNeedToResetLocalWavesSimulation = false;
+		bool bNeedToUpdateQuadtreeProperties = false;
 
 
 		double dSimulationTime = 0.0;

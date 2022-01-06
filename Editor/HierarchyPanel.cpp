@@ -620,6 +620,9 @@ namespace Panel
 					ImGui::Separator();
 					PropertyGridSpacing();
 
+
+					ap::Ocean2& ocean2 = *GetScene().ocean2.get();
+
 					//ocean
 					bool IsOceanEnabled = weather.IsOceanEnabled();
 					if (DrawCheckbox("Ocean Simulation Enable", IsOceanEnabled))
@@ -633,9 +636,10 @@ namespace Panel
 
 	
 
-					DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f");
-					DrawSliderFloat("UV Frequency", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_frequency, 1.0f, 3.0f);
-
+					if (DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f"))
+						ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
+					if (DrawSliderFloat("UV Frequency", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_frequency, 1.0f, 3.0f))
+						ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
 					
 
 

@@ -710,6 +710,8 @@ void RenderPath3D::Render() const
 
 		});
 
+
+
 	static const uint32_t drawscene_flags =
 		ap::renderer::DRAWSCENE_OPAQUE |
 		ap::renderer::DRAWSCENE_HAIRPARTICLE |

@@ -3846,7 +3846,8 @@ void UpdateRenderDataAsync(
 		ap::profiler::EndRange(range);
 	}
 
-	// Compute water simulation:
+
+	// water simulation:
 	if (vis.scene->weather.IsOceanEnabled())
 	{
 		auto range = ap::profiler::BeginRangeGPU("Ocean - Simulate", cmd);
@@ -3855,9 +3856,6 @@ void UpdateRenderDataAsync(
 		ap::profiler::EndRange(range);
 
 	}
-
-	
-	
 
 
 	device->EventEnd(cmd);
