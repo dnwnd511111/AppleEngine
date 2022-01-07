@@ -771,7 +771,7 @@ namespace ap
 		PSCB.g_localWavesTextureSizeInTexels = (float)localWavesRenderingData.size_of_texture;
 		PSCB.g_localWavesFoamWhitecapsThreshold = parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold;
 		PSCB.g_beckmannRoughness = 0.00001f;
-		PSCB.g_sunIntensity = 1.0f;
+		PSCB.g_sunIntensity = 1.1f;
 		PSCB.g_sunDirection = { cosf(45.0 * 0.0174533f), 0, sinf(45.0 * 0.0174533f) };
 		PSCB.g_useMicrofacetFresnel = 1.0f ;
 		PSCB.g_useMicrofacetSpecular = 1.0f;

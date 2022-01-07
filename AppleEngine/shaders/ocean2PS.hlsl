@@ -1076,7 +1076,7 @@ float4 main(DS_OUTPUT In) : SV_Target
     float3 airColor = g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
 
     skyUV = (g_sunDirection.xy / (1.0 + g_sunDirection.z)) * (0.5 / 1.5) + 0.5;
-    float3 sunColor =g_textureDynamicSkyDome.Sample(g_samplerBilinear, skyUV, 0).xyz; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+    float3 sunColor =g_textureDynamicSkyDome.Sample(g_samplerBilinear, skyUV, 0).xyz *1.5; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
 
 	// Calculating environment reflection color
     float3 reflectionColor;
@@ -1148,7 +1148,7 @@ float4 main(DS_OUTPUT In) : SV_Target
 
 	// Applying tonemapping
     float ExposureBias = 1.0;
-    float3 curr =2.0f //ToneMapping(ExposureBias * waterColor);
+    float3 curr =ToneMapping(ExposureBias * waterColor);
 
     float3 whiteScale = 1.0 / ToneMapping(3.0);
     waterColor = curr * whiteScale;
