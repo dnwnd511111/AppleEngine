@@ -14,6 +14,12 @@ struct Ocean2Constants
     uint textureFoam;
     uint textureBubbles;
     uint textureWindGusts;
+    
+    uint reflection;
+    uint padding12;
+    uint padding23;
+    uint padding34;
+    
   
 };
 

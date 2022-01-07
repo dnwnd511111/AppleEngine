@@ -2972,7 +2972,7 @@ void UpdateVisibility(Visibility& vis)
 	{
 		// Ocean will override any current reflectors
 		vis.planar_reflection_visible = true;
-		XMVECTOR _refPlane = XMPlaneFromPointNormal(XMVectorSet(0, vis.scene->weather.oceanParameters.waterHeight, 0, 0), XMVectorSet(0, 1, 0, 0));
+		XMVECTOR _refPlane = XMPlaneFromPointNormal(XMVectorSet(0, vis.scene->weather.ocean2Parameters.OceanQuadtreeParameters.mean_sea_level, 0, 0), XMVectorSet(0, 1, 0, 0));
 		XMStoreFloat4(&vis.reflectionPlane, _refPlane);
 	}
 

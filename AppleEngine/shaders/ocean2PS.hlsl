@@ -1,4 +1,4 @@
-#include "globals.hlsli"
+
 #include "ocean2HF.hlsli"
 
 
@@ -398,7 +398,7 @@
                 LOD += (4.0 / ((1.0 + R.z) * (1.0 + R.z)));
 
                 float2 uv = R.xy / (1.0 + R.z);
-            float3 I_ = 1; //g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, ClampUV(uv * (0.5 / 1.5) + 0.5), LOD).xyz;
+            float3 I_ = float3(0, 0.0, 0.5); //g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, ClampUV(uv * (0.5 / 1.5) + 0.5), LOD).xyz;
 
                 S += wi * wj * S_;
                 I += wi * wj * S_ * I_;
@@ -491,10 +491,10 @@
 
         float2 skyUV = (-V.xy / (1.0 - V.z)) * (0.5 / 1.5) + 0.5;
         skyUV = ClampUV(skyUV);
-    float3 airColor = 1; //g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+    float3 airColor = float3(0, 0.0, 0.5); //g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
 
         skyUV = (g_sunDirection.xy / (1.0 + g_sunDirection.z)) * (0.5 / 1.5) + 0.5;
-    float3 sunColor = 1; //g_textureDynamicSkyDome.Sample(g_samplerBilinear, skyUV, 0).xyz; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+    float3 sunColor = float3(0, 0.0, 0.5); //g_textureDynamicSkyDome.Sample(g_samplerBilinear, skyUV, 0).xyz; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
 
 	    // Calculating environment reflection color
         float3 reflectionColor;
@@ -506,7 +506,7 @@
         {
             skyUV = (R.xy / (1.0 + R.z)) * (0.5 / 1.5) + 0.5; // Mapping sphere to quad 
             skyUV = ClampUV(skyUV);
-        reflectionColor = 1; // g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
+        reflectionColor = float3(0, 0.0, 0.5); // g_textureDynamicSkyDome.SampleLevel(g_samplerBilinear, skyUV, 0).xyz * g_sunIntensity; // need SampleLevel to avoid discontinuity on water edge where ddx/ddy break
     }
 
 	    // Fresnel factor 
@@ -572,6 +572,80 @@
         waterColor = curr * whiteScale;
         waterColor = pow(waterColor, 1.0 / 2.2);
 
+    
+     #if 0
+        float4 color = xOceanWaterColor;
+        float3 V = GetCamera().position - input.pos3D;
+        float dist = length(V);
+        V /= dist;
+        float emissive = 0;
+
+        float gradient_fade = saturate(dist * 0.001);
+        float2 gradientNear = texture_gradientmap.Sample(sampler_aniso_wrap, input.uv).xy;
+        float2 gradientFar = texture_gradientmap.Sample(sampler_aniso_wrap, input.uv * 0.125).xy;
+        float2 gradient = lerp(gradientNear, gradientFar, gradient_fade);
+
+   
+        Surface surface;
+        surface.init();
+        surface.albedo = color.rgb;
+        surface.f0 = 0.02;
+        surface.roughness = 0.1;
+        surface.P = input.pos3D;
+        surface.N = normalize(float3(gradient.x, xOceanTexelLength * 2, gradient.y));
+        surface.V = V;
+        surface.update();
+
+        Lighting lighting;
+        lighting.create(0, 0, GetAmbient(surface.N), 0);
+
+        surface.pixel = input.pos.xy;
+        float depth = input.pos.z;
+
+        TiledLighting(surface, lighting);
+
+        float2 refUV = float2(1, -1) * input.ReflectionMapSamplingPos.xy / input.ReflectionMapSamplingPos.w * 0.5f + 0.5f;
+        float2 ScreenCoord = surface.pixel * GetCamera().internal_resolution_rcp;
+
+	    [branch]
+        if (GetCamera().texture_reflection_index >= 0)
+        {
+		    //REFLECTION
+            float2 RefTex = float2(1, -1) * input.ReflectionMapSamplingPos.xy / input.ReflectionMapSamplingPos.w / 2.0f + 0.5f;
+            float4 reflectiveColor = bindless_textures[GetCamera().texture_reflection_index].SampleLevel(sampler_linear_mirror, RefTex + surface.N.xz * 0.04f, 0);
+            lighting.indirect.specular = reflectiveColor.rgb * surface.F;
+        }
+
+	    [branch]
+        if (GetCamera().texture_refraction_index >= 0)
+        {
+		    // WATER REFRACTION 
+            Texture2D texture_refraction = bindless_textures[GetCamera().texture_refraction_index];
+            float lineardepth = input.pos.w;
+            float sampled_lineardepth = texture_lineardepth.SampleLevel(sampler_point_clamp, ScreenCoord.xy + surface.N.xz * 0.04f, 0) * GetCamera().z_far;
+            float depth_difference = sampled_lineardepth - lineardepth;
+            surface.refraction.rgb = texture_refraction.SampleLevel(sampler_linear_mirror, ScreenCoord.xy + surface.N.xz * 0.04f * saturate(0.5 * depth_difference), 0).rgb;
+            if (depth_difference < 0)
+            {
+			    // Fix cutoff by taking unperturbed depth diff to fill the holes with fog:
+                sampled_lineardepth = texture_lineardepth.SampleLevel(sampler_point_clamp, ScreenCoord.xy, 0) * GetCamera().z_far;
+                depth_difference = sampled_lineardepth - lineardepth;
+            }
+		    // WATER FOG:
+            surface.refraction.a = 1 - saturate(color.a * 0.1f * depth_difference);
+        }
+
+	    // Blend out at distance:
+        color.a = pow(saturate(1 - saturate(dist / GetCamera().z_far)), 2);
+
+        ApplyLighting(surface, lighting, color);
+
+        ApplyFog(dist, GetCamera().position, V, color);
+
+        return color;
+    
+    #endif
+    
 	    // Showing cascade edges if needed
         if (g_showCascades > 0)
         {
@@ -602,7 +676,8 @@
 #else
 float4 main() : SV_TARGET
 {
-    return float4(1.0, 1.0, 1.0, 1.0);
+   
+    return float4(frac(GetFrame().time / 10), 0.0, 0.0, 1.0);
 }
 
 

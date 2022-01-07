@@ -627,7 +627,7 @@ namespace ap
 	void Ocean2::Render(ap::graphics::CommandList cmd)
 	{
 
-
+	
 
 		gfsdk_float2 viewportSize;
 		viewportSize.x = viewportWidth;

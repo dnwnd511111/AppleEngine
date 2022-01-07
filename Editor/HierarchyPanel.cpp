@@ -760,12 +760,11 @@ namespace Panel
 
 							if (!weather.ocean2Parameters.OceanWindSimulationSettings.use_Beaufort_scale)
 							{
-								ImGui::Text("Foam generation parameters:");
-								if (DrawSliderFloat("Whitecaps threshold", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_whitecaps_threshold), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
-								if (DrawSliderFloat("Generation threshold", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_generation_threshold), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
-								if (DrawSliderFloat("Generation amount", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_generation_amount), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
-								if (DrawSliderFloat("Dissipation speed", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_dissipation_speed), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
-								if (DrawSliderFloat("Falloff speed", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_falloff_speed), 0.95f, 0.99f, "%.3f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Foam Whitecaps threshold", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_whitecaps_threshold), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Foam Generation threshold", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_generation_threshold), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Foam Generation amount", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_generation_amount), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Foam Dissipation speed", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_dissipation_speed), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Foam Falloff speed", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_falloff_speed), 0.95f, 0.99f, "%.3f", 1.0f))  needSimulationSettings = true;
 							}
 
 						}
@@ -801,8 +800,8 @@ namespace Panel
 								weather.ocean2Parameters.OceanLocalSimulationSettings.simulation_domain_grid_size = std::pow( 2,DetailLevelIndex ) *128 ;
 								bNeedToUpdateLocalWavesSimulationProperties = true;
 							}
-							if (DrawButton2("Reset simulation")) ocean2.bNeedToResetLocalWavesSimulation = true;
-							if (DrawButton2("Add disturbances"))
+							if (DrawButton2("Reset simulation",true)) ocean2.bNeedToResetLocalWavesSimulation = true;
+							if (DrawButton2("Add disturbances",true))
 							{
 								gfsdk_float4 d;
 								for (int i = -15; i < 10; i++)
@@ -830,11 +829,11 @@ namespace Panel
 							if (DrawSliderFloat("Amplitude", (weather.ocean2Parameters.OceanLocalSimulationParameters.amplitude_multiplier), 0, 2.0f, "%.1f", 1.0f)) bNeedToUpdateLocalWavesSimulationProperties = true;
 							if (DrawSliderFloat("Choppiness", (weather.ocean2Parameters.OceanLocalSimulationParameters.lateral_multiplier), 0, 2.0f, "%.1f", 1.0f)) bNeedToUpdateLocalWavesSimulationProperties = true;
 
-							if (DrawSliderFloat("Whitecaps threshold", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold), 0.f, 1.0f, "%.2f", 1.0f))	bNeedToUpdateLocalWavesSimulationProperties = true;
-							if (DrawSliderFloat("Generation threshold", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_generation_threshold), 0.f, 1.0f, "%.2f", 1.0f))	bNeedToUpdateLocalWavesSimulationProperties = true;
-							if (DrawSliderFloat("Generation amount", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_generation_amount), 0.f, 1.0f, "%.2f", 1.0f))		bNeedToUpdateLocalWavesSimulationProperties = true;
-							if (DrawSliderFloat("Dissipation speed", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_dissipation_speed), 0.f, 1.0f, "%.2f", 1.0f))		bNeedToUpdateLocalWavesSimulationProperties = true;
-							if (DrawSliderFloat("Falloff speed", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_falloff_speed), 0.5f, 0.99f, "%.3f", 1.0f))				bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Foam Whitecaps threshold", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold), 0.f, 1.0f, "%.2f", 1.0f))	bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("FoamGeneration threshold", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_generation_threshold), 0.f, 1.0f, "%.2f", 1.0f))	bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Foam Generation amount", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_generation_amount), 0.f, 1.0f, "%.2f", 1.0f))		bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Foam Dissipation speed", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_dissipation_speed), 0.f, 1.0f, "%.2f", 1.0f))		bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Foam Falloff speed", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_falloff_speed), 0.5f, 0.99f, "%.3f", 1.0f))				bNeedToUpdateLocalWavesSimulationProperties = true;
 
 
 						}
