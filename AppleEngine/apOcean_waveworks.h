@@ -69,8 +69,7 @@ namespace ap
 			float fSWH = 0;
 
 
-			DirectX::XMFLOAT3 waterDeepColor = { 0.0, 0.2, 0.4 };
-			DirectX::XMFLOAT3 waterScatterColor = { 0.0, 0.7, 0.6 };
+			DirectX::XMFLOAT4 waterDeepColor = { 0.0, 0.2, 0.4,1.0 };
 			DirectX::XMFLOAT4 waterColorIntensity = { 0.02, 0.02, 0.01, 0.2 };
 			DirectX::XMFLOAT3 foamColor = { 0.9, 0.9, 0.9 };
 			DirectX::XMFLOAT3 foamUnderwaterColor = { 0.6, 0.6, 0.6 };
@@ -129,6 +128,8 @@ namespace ap
 		float fBoatY = 0;
 
 
+		int cmdCount =9;
+
 	private:
 
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence;
@@ -144,6 +145,8 @@ namespace ap
 
 		ap::graphics::Texture localWavesDisplacementsTexture;
 		ap::graphics::Texture localWavesGradientsTexture;
+		
+		
 
 	public:
 		static void Initialize();

@@ -3,8 +3,41 @@
 
 #include "globals.hlsli"
 
-struct Ocean2Constants
+
+cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b2)
 {
+	// Data used in vertex shader
+    float4x4 g_matViewProj;
+    float3 g_eyePos;
+    float g_meanOceanLevel;
+	// x16 bytes boundary
+    float g_useDiamondPattern;
+	
+	// Data used in hull shader
+    float g_dynamicTesselationAmount;
+    float g_staticTesselationOffset;
+
+	// Data used in domain shader
+	// Wind waves related data
+    float g_cascade0UVScale;
+	// x16 bytes boundary
+    float g_cascade1UVScale;
+    float g_cascade2UVScale;
+    float g_cascade3UVScale;
+    float g_cascade0UVOffset;
+	// x16 bytes boundary
+    float g_cascade1UVOffset;
+    float g_cascade2UVOffset;
+    float g_cascade3UVOffset;
+    float g_UVWarpingAmplitude;
+	// x16 bytes boundary
+    float g_UVWarpingFrequency;
+
+	// Local waves related data
+    float g_localWavesSimulationDomainWorldspaceSize;
+    float2 g_localWavesSimulationDomainWorldspaceCenter;
+    float pad15;
+    
     uint displacementTextureArrayWindWaves;
     uint displacementTextureLocalWaves;
     uint gradientsTextureArrayWindWaves;
@@ -15,27 +48,22 @@ struct Ocean2Constants
     uint textureBubbles;
     uint textureWindGusts;
     
-    uint reflection;
-    uint padding12;
-    uint padding23;
-    uint padding34;
+    uint textureDynamicSkyDome;
     
-  
 };
 
-PUSHCONSTANT(push, Ocean2Constants);
 
+#define g_displacementTextureArrayWindWaves bindless_textures2DArray[displacementTextureArrayWindWaves]
+#define g_displacementTextureLocalWaves bindless_textures[displacementTextureLocalWaves]
+#define g_gradientsTextureArrayWindWaves bindless_textures2DArray[gradientsTextureArrayWindWaves]
+#define g_momentsTextureArrayWindWaves bindless_textures2DArray[momentsTextureArrayWindWaves]
+#define g_gradientsTextureLocalWaves bindless_textures[gradientsTextureLocalWaves]
 
+#define g_textureFoam bindless_textures[textureFoam]
+#define g_textureBubbles bindless_textures[textureBubbles]
+#define g_textureWindGusts bindless_textures[textureWindGusts]
 
-#define g_displacementTextureArrayWindWaves bindless_textures2DArray[push.displacementTextureArrayWindWaves]
-#define g_displacementTextureLocalWaves bindless_textures[push.displacementTextureLocalWaves]
-#define g_gradientsTextureArrayWindWaves bindless_textures2DArray[push.gradientsTextureArrayWindWaves]
-#define g_momentsTextureArrayWindWaves bindless_textures2DArray[push.momentsTextureArrayWindWaves]
-#define g_gradientsTextureLocalWaves bindless_textures[push.gradientsTextureLocalWaves]
-
-#define g_textureFoam bindless_textures[push.textureFoam]
-#define g_textureBubbles bindless_textures[push.textureBubbles]
-#define g_textureWindGusts bindless_textures[push.textureWindGusts]
+#define g_textureDynamicSkyDome bindless_textures[textureDynamicSkyDome]
 
 
 #define g_samplerBilinear           sampler_aniso_wrap
@@ -99,39 +127,7 @@ cbuffer OCEAN_VS_CBUFFER_PERINSTANCE : register(b1)
     PerInstanceElement g_perInstanceData[4096];
 };
 
-cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b2)
-{
-	// Data used in vertex shader
-    float4x4 g_matViewProj;
-    float3 g_eyePos;
-    float g_meanOceanLevel;
-	// x16 bytes boundary
-    float g_useDiamondPattern;
-	
-	// Data used in hull shader
-    float g_dynamicTesselationAmount;
-    float g_staticTesselationOffset;
 
-	// Data used in domain shader
-	// Wind waves related data
-    float g_cascade0UVScale;
-	// x16 bytes boundary
-    float g_cascade1UVScale;
-    float g_cascade2UVScale;
-    float g_cascade3UVScale;
-    float g_cascade0UVOffset;
-	// x16 bytes boundary
-    float g_cascade1UVOffset;
-    float g_cascade2UVOffset;
-    float g_cascade3UVOffset;
-    float g_UVWarpingAmplitude;
-	// x16 bytes boundary
-    float g_UVWarpingFrequency;
-
-	// Local waves related data
-    float g_localWavesSimulationDomainWorldspaceSize;
-    float2 g_localWavesSimulationDomainWorldspaceCenter;
-};
 
 cbuffer OCEAN_PS_CBUFFER : register(b3)
 {
@@ -169,12 +165,7 @@ cbuffer OCEAN_PS_CBUFFER : register(b3)
     
     
     //
-    float3 g_WaterDeepColor ;
-    float pad2;
-    
-    float3 g_WaterScatterColor ;
-    float pad3;
-    
+    float4 g_WaterColor;
     float4 g_WaterColorIntensity;
     
     float3 g_FoamColor;

@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <intrin.h> // _BitScanReverse64
 
+#include "apScene.h"
 
 // ImGui
 #include "apImguiColor.h"
@@ -4879,6 +4880,8 @@ using namespace dx12_internal;
 	{
 		HRESULT hr;
 
+		ap::scene::Scene& scene = ap::scene::GetScene();
+
 		// Submit current frame:
 		{
 			auto& frame = GetFrameResources();
@@ -4897,7 +4900,7 @@ using namespace dx12_internal;
 				{
 					submit_queue = meta.queue;
 				}
-				if (meta.queue != submit_queue || !meta.waits.empty()) // new queue type or wait breaks submit batch
+				if (meta.queue != submit_queue || !meta.waits.empty() ) // new queue type or wait breaks submit batch
 				{
 					// submit previous cmd batch:
 					if (queues[submit_queue].submit_count > 0)
@@ -4928,6 +4931,9 @@ using namespace dx12_internal;
 						);
 						assert(SUCCEEDED(hr));
 					}
+
+					
+
 				}
 
 				assert(submit_queue < QUEUE_COUNT);
@@ -4999,6 +5005,7 @@ using namespace dx12_internal;
 
 		// From here, we begin a new frame, this affects GetFrameResources()!
 		FRAMECOUNT++;
+
 
 		// Begin next frame:
 		{

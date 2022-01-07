@@ -58,6 +58,19 @@ struct OCEAN_VS_HS_DS_CBUFFER
 	// Local waves related data
 	float          g_localWavesSimulationDomainWorldspaceSize;
 	gfsdk_float2   g_localWavesSimulationDomainWorldspaceCenter;
+	float pad15;
+
+	uint displacementTextureArrayWindWaves;
+	uint displacementTextureLocalWaves;
+	uint gradientsTextureArrayWindWaves;
+	uint momentsTextureArrayWindWaves;
+
+	uint gradientsTextureLocalWaves;
+	uint textureFoam;
+	uint textureBubbles;
+	uint textureWindGusts;
+
+	uint skydomeTexture;
 };
 
 struct OCEAN_PS_CBUFFER
@@ -95,12 +108,7 @@ struct OCEAN_PS_CBUFFER
 	float pad1;
 
 	//
-	DirectX::XMFLOAT3 g_WaterDeepColor;
-	float pad2;
-
-	DirectX::XMFLOAT3 g_WaterScatterColor;
-	float pad3;
-
+	DirectX::XMFLOAT4 g_WaterColor;
 	DirectX::XMFLOAT4 g_WaterColorIntensity;
 
 	DirectX::XMFLOAT3 g_FoamColor;
@@ -136,6 +144,9 @@ namespace ap
 		ap::graphics::Texture foamIntensityTexture;
 		ap::graphics::Texture foamBubblesTexture;
 		ap::graphics::Texture windGustsTexture;
+
+		ap::graphics::Texture skydome;
+
 
 		Shader		ocean2VS;
 		Shader		ocean2HS;
@@ -192,7 +203,7 @@ namespace ap
 	{
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 		
-		HRESULT hr = device->device->CreateFence(1, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+		HRESULT hr = device->device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 		assert(SUCCEEDED(hr));
 
 
@@ -314,7 +325,7 @@ namespace ap
 
 	
 		//device->queues[QUEUE_GRAPHICS].queue->Wait(fence.Get(), 1);
-		//device->queues[QUEUE_COMPUTE].queue->Signal(fence.Get(), 0);
+		//device->queues[QUEUE_GRAPHICS].queue->Signal(fence.Get(), 0);
 
 		// Adding rain
 		if ((parameters.bRain) && (!bNeedToUpdateLocalWavesSimulationProperties))
@@ -559,7 +570,7 @@ namespace ap
 			//UpdateMarkers();
 		}
 
-		//device->queues[QUEUE_COMPUTE].queue->Signal(fence.Get(), 1);
+		//device->queues[QUEUE_GRAPHICS].queue->Signal(fence.Get(), 1);
 		
 
 	}
@@ -601,7 +612,7 @@ namespace ap
 		BlendState blend_desc;
 		blend_desc.alpha_to_coverage_enable = false;
 		blend_desc.independent_blend_enable = false;
-		blend_desc.render_target[0].blend_enable = true;
+		blend_desc.render_target[0].blend_enable = false;
 		blend_desc.render_target[0].src_blend = Blend::SRC_ALPHA;
 		blend_desc.render_target[0].dest_blend = Blend::INV_SRC_ALPHA;
 		blend_desc.render_target[0].blend_op = BlendOp::ADD;
@@ -614,9 +625,12 @@ namespace ap
 		foamIntensityTexture = ap::resourcemanager::Load("Resources/images/foam_intensity.dds").GetTexture();
 		foamBubblesTexture = ap::resourcemanager::Load("Resources/images/foam_bubbles.dds").GetTexture();
 		windGustsTexture = ap::resourcemanager::Load("Resources/images/wind_gusts.dds").GetTexture();
+		skydome = ap::resourcemanager::Load("Resources/images/sky1.dds").GetTexture();
+
 		device->SetName(&foamIntensityTexture, "foam_intensity");
 		device->SetName(&foamBubblesTexture, "foam_bubbles");
 		device->SetName(&windGustsTexture, "wind_gusts");
+		device->SetName(&skydome, "skydome");
 
 
 		static ap::eventhandler::Handle handle = ap::eventhandler::Subscribe(ap::eventhandler::EVENT_RELOAD_SHADERS, [](uint64_t userdata) { LoadShaders(); });
@@ -625,24 +639,12 @@ namespace ap
 	}
 
 
-	struct Ocean2Constants
-	{
-		uint32_t displacementTextureArrayWindWaves;
-		uint32_t displacementTextureLocalWaves;
-		uint32_t gradientsTextureArrayWindWaves;
-		uint32_t momentsTextureArrayWindWaves;
-		
-		uint32_t gradientsTextureLocalWaves;
-		uint32_t textureFoam;
-		uint32_t textureBubbles;
-		uint32_t textureWindGusts;
 
-	};
 
 	void Ocean2::Render(ap::graphics::CommandList cmd)
 	{
 
-	
+		cmdCount = cmd;
 
 		gfsdk_float2 viewportSize;
 		viewportSize.x = viewportWidth;
@@ -683,18 +685,6 @@ namespace ap
 
 
 
-		Ocean2Constants push;
-		push.displacementTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesDisplacementsTextureArray, SubresourceType::SRV);
-		push.displacementTextureLocalWaves = device->GetDescriptorIndex(&localWavesDisplacementsTexture, SubresourceType::SRV);
-		push.gradientsTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesGradientsTextureArray, SubresourceType::SRV);
-		push.momentsTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesMomentsTextureArray, SubresourceType::SRV);
-		push.gradientsTextureLocalWaves = device->GetDescriptorIndex(&localWavesGradientsTexture, SubresourceType::SRV);
-
-		push.textureFoam = device->GetDescriptorIndex(&foamIntensityTexture, SubresourceType::SRV);
-		push.textureBubbles = device->GetDescriptorIndex(&foamBubblesTexture, SubresourceType::SRV);
-		push.textureWindGusts = device->GetDescriptorIndex(&windGustsTexture, SubresourceType::SRV);
-
-
 		bool wire = ap::renderer::IsWireRender();
 		if (wire)
 		{
@@ -704,7 +694,7 @@ namespace ap
 		{
 			device->BindPipelineState(&PSO, cmd);
 		}
-		device->PushConstants(&push, sizeof(push), cmd);
+
 
 
 		XMMATRIX V = camera.GetView();
@@ -756,6 +746,18 @@ namespace ap
 		VSHSDSCB.g_UVWarpingAmplitude = windWavesRenderingData.uv_warping_amplitude;
 		VSHSDSCB.g_UVWarpingFrequency = windWavesRenderingData.uv_warping_frequency;
 
+		VSHSDSCB.displacementTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesDisplacementsTextureArray, SubresourceType::SRV);
+		VSHSDSCB.displacementTextureLocalWaves = device->GetDescriptorIndex(&localWavesDisplacementsTexture, SubresourceType::SRV);
+		VSHSDSCB.gradientsTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesGradientsTextureArray, SubresourceType::SRV);
+		VSHSDSCB.momentsTextureArrayWindWaves = device->GetDescriptorIndex(&windWavesMomentsTextureArray, SubresourceType::SRV);
+		VSHSDSCB.gradientsTextureLocalWaves = device->GetDescriptorIndex(&localWavesGradientsTexture, SubresourceType::SRV);
+		
+		VSHSDSCB.textureFoam = device->GetDescriptorIndex(&foamIntensityTexture, SubresourceType::SRV);
+		VSHSDSCB.textureBubbles = device->GetDescriptorIndex(&foamBubblesTexture, SubresourceType::SRV);
+		VSHSDSCB.textureWindGusts = device->GetDescriptorIndex(&windGustsTexture, SubresourceType::SRV);
+		VSHSDSCB.skydomeTexture= device->GetDescriptorIndex(&skydome, SubresourceType::SRV);
+
+
 		device->BindDynamicConstantBuffer(VSHSDSCB, 2, cmd);
 
 		OCEAN_PS_CBUFFER PSCB;
@@ -777,8 +779,7 @@ namespace ap
 		PSCB.g_showCascades = parameters.bShowCascades ? 1.0f : 0.0f;
 		PSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
 
-		PSCB.g_WaterDeepColor = parameters.waterDeepColor;
-		PSCB.g_WaterScatterColor = parameters.waterScatterColor;
+		PSCB.g_WaterColor = parameters.waterDeepColor;
 		PSCB.g_WaterColorIntensity = parameters.waterColorIntensity;
 		PSCB.g_FoamColor = parameters.foamColor;
 		PSCB.g_FoamUnderwaterColor = parameters.foamUnderwaterColor;
@@ -843,11 +844,12 @@ namespace ap
 
 		/*{
 			GPUBarrier barriers[] = {
-				GPUBarrier::Image(&windWavesDisplacementsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&windWavesGradientsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&windWavesMomentsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&localWavesDisplacementsTexture, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&localWavesGradientsTexture, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&windWavesDisplacementsTextureArray, windWavesDisplacementsTextureArray.desc.layout, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&windWavesGradientsTextureArray, windWavesGradientsTextureArray.desc.layout, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&windWavesMomentsTextureArray, windWavesMomentsTextureArray.desc.layout, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&localWavesDisplacementsTexture,localWavesDisplacementsTexture.desc.layout, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&localWavesGradientsTexture,localWavesGradientsTexture.desc.layout, ResourceState::SHADER_RESOURCE),
+
 			};
 			device->Barrier(barriers, arraysize(barriers), cmd);
 		}*/
@@ -871,18 +873,9 @@ namespace ap
 			}
 		}
 
+		
 
-		/*{
-			GPUBarrier barriers[] = {
-				GPUBarrier::Image(&windWavesDisplacementsTextureArray, ResourceState::SHADER_RESOURCE, ResourceState::UNORDERED_ACCESS),
-				GPUBarrier::Image(&windWavesGradientsTextureArray, ResourceState::SHADER_RESOURCE, ResourceState::UNORDERED_ACCESS),
-				GPUBarrier::Image(&windWavesMomentsTextureArray, ResourceState::SHADER_RESOURCE, ResourceState::UNORDERED_ACCESS),
-				GPUBarrier::Image(&localWavesDisplacementsTexture, ResourceState::SHADER_RESOURCE, ResourceState::UNORDERED_ACCESS),
-				GPUBarrier::Image(&localWavesGradientsTexture, ResourceState::SHADER_RESOURCE, ResourceState::UNORDERED_ACCESS),
-			};
-			device->Barrier(barriers, arraysize(barriers), cmd);
-		}*/
-
+		
 		
 		/*if (bRenderMarkers)
 		{
