@@ -639,23 +639,264 @@ namespace Panel
 						}
 					}
 
-					if (IsOceanEnabled)
+					if (IsOceanEnabled && GetScene().ocean2.get())
 					{
 
 						if (DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f"))
 							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
 						if (DrawSliderFloat("UV Frequency", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_frequency, 1.0f, 3.0f))
 							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
+						DrawCheckbox("Show cascades", weather.ocean2Parameters.bShowCascades);
 
-						if (DrawSliderFloat("Simulation period (m) }", weather.ocean2Parameters.OceanWindSimulationSettings.simulation_period, 100.0f, 10000.0f))
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						//Simulation settings
+
+						bool needSimulationSettings = false;
+						if (DrawSliderFloat("Simulation period (m) ", weather.ocean2Parameters.OceanWindSimulationSettings.simulation_period, 100.0f, 10000.0f))
+							needSimulationSettings = true;
+						if (DrawCheckbox("Use Beaufort scale", weather.ocean2Parameters.OceanWindSimulationSettings.use_Beaufort_scale))
+							needSimulationSettings = true;
+						if (DrawCheckbox("Enable CPU driven displacement readbacks", weather.ocean2Parameters.OceanWindSimulationSettings.enable_CPU_driven_displacement_calculation))
+							needSimulationSettings = true;
+						if (DrawCheckbox("Enable GPU driven displacement readbacks", weather.ocean2Parameters.OceanWindSimulationSettings.enable_GPU_driven_displacement_calculation))
+							needSimulationSettings = true;
+
+						const std::vector<std::string> ReadbackUsageStrings = { "None", "CPU", "Compute" };
+						(DrawCombo("Use displacement readbacks", ReadbackUsageStrings, ReadbackUsageStrings.size(), &weather.ocean2Parameters.iReadbackUsage));
+						
+						if(weather.ocean2Parameters.iReadbackUsage)
+						{
+							DrawCheckbox("Render readback markers", weather.ocean2Parameters.bRenderMarkers);
+							DrawSliderInt("Refinement steps", weather.ocean2Parameters.iRefinementSteps, 1, 20);
+							DrawSliderFloat("ReadbackCoord", weather.ocean2Parameters.fReadbackCoord, 0, 30);
+						}
+
+
+						const std::vector<std::string> DetailLevelStrings = { "Normal", "High", "Extreme" };
+						if(DrawCombo("Simulation Quality", DetailLevelStrings, DetailLevelStrings.size(), (int32_t*)&weather.ocean2Parameters.OceanWindSimulationSettings.detail_level))
+							needSimulationSettings = true;
+
+						
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						//Simulation parameters
+						//local wind
+						{
+							if (DrawSliderFloat("Local Wind direction (degrees)", (weather.ocean2Parameters.fBaseWindDirection), -180.0f, 180.0f, "%.0f"))
+							{
+								needSimulationSettings = true;
+								weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_direction.x = cosf(weather.ocean2Parameters.fBaseWindDirection * 0.0174532925f); // degrees to radians
+								weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_direction.y = sinf(weather.ocean2Parameters.fBaseWindDirection * 0.0174532925f); // degrees to radians
+							}
+
+							if (weather.ocean2Parameters.OceanWindSimulationSettings.use_Beaufort_scale)
+							{
+								if (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_speed > 12.0f) weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_speed = 12.0f;
+								if (DrawSliderFloat("Local Wind speed (Beaufort)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_speed), 0, 12.0f, "%.1f"))
+								{
+									needSimulationSettings = true;
+									weather.ocean2Parameters.fMaxTotalDisplacement = 0;
+									weather.ocean2Parameters.fMinTotalDisplacement = 0;
+								}
+							}
+							else
+							{
+								if (DrawSliderFloat("Local Wind speed (m/sec)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_speed), 0, 50.0f, "%.1f"))
+								{
+									needSimulationSettings = true;
+									weather.ocean2Parameters.fMaxTotalDisplacement = 0;
+									weather.ocean2Parameters.fMinTotalDisplacement = 0;
+								}
+								if (DrawSliderFloat("Local Wind distance (km)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_distance), 1.0f, 1000.0f, "%.0f")) needSimulationSettings = true;
+								if (DrawSliderFloat("Local Spectrum peaking", (weather.ocean2Parameters.OceanWindSimulationParameters.base_spectrum_peaking), 0.1f, 10.0f, "%.1f")) needSimulationSettings = true;
+								if (DrawSliderFloat("Local Amplitude", (weather.ocean2Parameters.OceanWindSimulationParameters.base_amplitude_multiplier), 0, 2.0f, "%.1f")) needSimulationSettings = true;
+							}
+							if (DrawSliderFloat("Local Wind dependency", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_dependency), 0, 1.0f, "%.1f"))  needSimulationSettings = true;
+							if (DrawSliderFloat("Local Small waves lengths (m)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_small_waves_cutoff_length), 0, 100.0f, "%.1f"))  needSimulationSettings = true;
+							if (DrawSliderFloat("Local Small waves cutoff", (weather.ocean2Parameters.OceanWindSimulationParameters.base_small_waves_cutoff_power), 0, 1.0f, "%.1f")) needSimulationSettings = true;
+
+						}
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						//Simulation parameters
+						//swell wind
+
+						
+						{
+							if (DrawSliderFloat("Swell Wind direction (degrees)", (weather.ocean2Parameters.fSwellWindDirection), -180.0f, 180.0f, "%.0f", 1.0f))
+							{
+								needSimulationSettings = true;
+								weather.ocean2Parameters.OceanWindSimulationParameters.swell_wind_direction.x = cosf(weather.ocean2Parameters.fSwellWindDirection * 0.0174532925f); // degrees to radians
+								weather.ocean2Parameters.OceanWindSimulationParameters.swell_wind_direction.y = sinf(weather.ocean2Parameters.fSwellWindDirection * 0.0174532925f); // degrees to radians
+							}
+							if (DrawSliderFloat("Swell Wind speed (m/sec)", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_wind_speed), 0, 50.0f, "%.1f", 1.0f)) needSimulationSettings = true;
+							if (DrawSliderFloat("Swell Wind distance (km)", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_wind_distance), 1.0f, 1000.0f, "%.0f", 2.0f)) needSimulationSettings = true;
+							if (DrawSliderFloat("Swell Spectrum peaking", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_spectrum_peaking), 0.1f, 10.0f, "%.1f", 1.0f))needSimulationSettings = true;
+							if (DrawSliderFloat("Swell Amplitude", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_amplitude_multiplier), 0, 2.0f, "%.1f", 1.0f)) needSimulationSettings = true;
+							if (DrawSliderFloat("Swell Wind dependency", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_wind_dependency), 0, 1.0f, "%.1f", 1.0f)) needSimulationSettings = true;
+							if (DrawSliderFloat("Swell Small waves lengths (m)", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_small_waves_cutoff_length), 0, 100.0f, "%.1f", 2.0f)) needSimulationSettings = true;
+							if (DrawSliderFloat("Swell Small waves cutoff", (weather.ocean2Parameters.OceanWindSimulationParameters.swell_small_waves_cutoff_power), 0, 1.0f, "%.1f", 1.0f))needSimulationSettings = true;
+						}
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						{
+							if (!weather.ocean2Parameters.OceanWindSimulationSettings.use_Beaufort_scale)
+							{
+
+								if (DrawSliderFloat("Choppiness", (weather.ocean2Parameters.OceanWindSimulationParameters.lateral_multiplier), 0, 4.0f, "%.1f", 1.0f))needSimulationSettings = true;
+							}
+							if (DrawSliderFloat("Time scale", (weather.ocean2Parameters.OceanWindSimulationParameters.time_scale), 0, 5.0f, "%.1f", 1.0f)) needSimulationSettings = true;
+
+							if (!weather.ocean2Parameters.OceanWindSimulationSettings.use_Beaufort_scale)
+							{
+								ImGui::Text("Foam generation parameters:");
+								if (DrawSliderFloat("Whitecaps threshold", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_whitecaps_threshold), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Generation threshold", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_generation_threshold), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Generation amount", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_generation_amount), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Dissipation speed", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_dissipation_speed), 0.f, 1.0f, "%.2f", 1.0f))  needSimulationSettings = true;
+								if (DrawSliderFloat("Falloff speed", (weather.ocean2Parameters.OceanWindSimulationParameters.foam_falloff_speed), 0.95f, 0.99f, "%.3f", 1.0f))  needSimulationSettings = true;
+							}
+
+						}
+
+						if (needSimulationSettings)
 							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
+
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+
+						bool bNeedToUpdateLocalWavesSimulationProperties = false;
+
+						//local wave
+						{
+
+							if (DrawSliderFloat("Simulation domain size (m)", (weather.ocean2Parameters.OceanLocalSimulationSettings.simulation_domain_worldspace_size), 10.0f, 1000.0f, "%.0f", 2.0f)) bNeedToUpdateLocalWavesSimulationProperties = true;
+
+							if (DrawCheckbox("Enable CPU driven displacement readbacks", (weather.ocean2Parameters.OceanLocalSimulationSettings.enable_CPU_driven_displacement_calculation))) bNeedToUpdateLocalWavesSimulationProperties = true;
+
+							if (DrawCheckbox("Enable GPU driven displacement readbacks", (weather.ocean2Parameters.OceanLocalSimulationSettings.enable_GPU_driven_displacement_calculation))) bNeedToUpdateLocalWavesSimulationProperties = true;
+
+							const std::vector<std::string> ReadbackUsageStrings = { "None", "CPU", "Compute" };
+							DrawCombo("Use displacement readbacks", ReadbackUsageStrings, ReadbackUsageStrings.size(), &weather.ocean2Parameters.iReadbackUsage);
+
+							
+							const std::vector<std::string> DetailLevelStrings = { "128", "256", "512", "1024", "2048" };
+							static int DetailLevelIndex = 2;//= std::max(,std::log2((weather.ocean2Parameters.OceanLocalSimulationSettings.simulation_domain_grid_size) / 128 ));
+							if (DrawCombo("Simulation grid size", DetailLevelStrings, DetailLevelStrings.size(),&DetailLevelIndex))
+							{
+								weather.ocean2Parameters.OceanLocalSimulationSettings.simulation_domain_grid_size = std::pow( 2,DetailLevelIndex ) *128 ;
+								bNeedToUpdateLocalWavesSimulationProperties = true;
+							}
+							if (DrawButton2("Reset simulation")) ocean2.bNeedToResetLocalWavesSimulation = true;
+							if (DrawButton2("Add disturbances"))
+							{
+								gfsdk_float4 d;
+								for (int i = -15; i < 10; i++)
+									for (int j = -15; j < 10; j++)
+									{
+										d.x = (float)(i + weather.ocean2Parameters.OceanLocalSimulationSettings.simulation_domain_grid_size / 2);
+										d.y = (float)(j + weather.ocean2Parameters.OceanLocalSimulationSettings.simulation_domain_grid_size / 2);
+										d.z = 1.0f;
+										d.w = 0;
+										GFSDK_WaveWorks_Local_Waves_Simulation_AddDisturbances(ocean2.hOceanLocalSimulation, &d, 1);
+									}
+							}
+							DrawCheckbox("Rain effect", (weather.ocean2Parameters.bRain));
+							DrawSliderFloat("Rain Drop Size", (weather.ocean2Parameters.fRainDropSize), 0.01f, 0.2f, "%.2f", 1.0f);
+							DrawCheckbox("Simulate \"boat\" ", (weather.ocean2Parameters.bBoat));
+
+						}
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						//Simulation parameters
+						{
+							if (DrawSliderFloat("Amplitude", (weather.ocean2Parameters.OceanLocalSimulationParameters.amplitude_multiplier), 0, 2.0f, "%.1f", 1.0f)) bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Choppiness", (weather.ocean2Parameters.OceanLocalSimulationParameters.lateral_multiplier), 0, 2.0f, "%.1f", 1.0f)) bNeedToUpdateLocalWavesSimulationProperties = true;
+
+							if (DrawSliderFloat("Whitecaps threshold", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold), 0.f, 1.0f, "%.2f", 1.0f))	bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Generation threshold", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_generation_threshold), 0.f, 1.0f, "%.2f", 1.0f))	bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Generation amount", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_generation_amount), 0.f, 1.0f, "%.2f", 1.0f))		bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Dissipation speed", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_dissipation_speed), 0.f, 1.0f, "%.2f", 1.0f))		bNeedToUpdateLocalWavesSimulationProperties = true;
+							if (DrawSliderFloat("Falloff speed", (weather.ocean2Parameters.OceanLocalSimulationParameters.foam_falloff_speed), 0.5f, 0.99f, "%.3f", 1.0f))				bNeedToUpdateLocalWavesSimulationProperties = true;
+
+
+						}
+
+
+						if (bNeedToUpdateLocalWavesSimulationProperties)
+							ocean2.bNeedToUpdateLocalWavesSimulationProperties = true;
+
+
+
+
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+
+						bool bNeedToUpdateQuadtreeProperties = false;
+
+						//Quadtree / geometry parameters
+						int cellCount = (int)weather.ocean2Parameters.OceanQuadtreeParameters.cell_count;
+						if (DrawSliderInt("Cells in single patch", cellCount, 8, 256))
+						{
+							weather.ocean2Parameters.OceanQuadtreeParameters.cell_count = (uint32_t)cellCount;
+							bNeedToUpdateQuadtreeProperties = false;
+						}
+
+						if (DrawSliderFloat("Minimum patch size (m)", (weather.ocean2Parameters.OceanQuadtreeParameters.min_patch_length), 1.0f, 100.0f, "%.0f", 1.0f))
+						{
+							bNeedToUpdateQuadtreeProperties = false;
+						}
+
+						if (DrawSliderFloat("Maximum edge length (pixels)", (weather.ocean2Parameters.OceanQuadtreeParameters.max_edge_length), 5.0f, 50.0f, "%.0f", 1.0f))
+						{
+							bNeedToUpdateQuadtreeProperties = false;
+						}
+
+						if (DrawSliderFloat("Mean sea level (m)", (weather.ocean2Parameters.OceanQuadtreeParameters.mean_sea_level), -50.0f, 50.0f, "%.1f", 1.0f))
+						{
+							bNeedToUpdateQuadtreeProperties = false;
+						}
+
+						if (DrawSliderFloat("Geomorphing degree", (weather.ocean2Parameters.OceanQuadtreeParameters.geomorphing_degree), 0.0f, 1.0f, "%.2f", 1.0f))
+						{
+							bNeedToUpdateQuadtreeProperties = false;
+						}
+
+						if (DrawCheckbox("Generate diamond pattern", (weather.ocean2Parameters.OceanQuadtreeParameters.generate_diamond_pattern)))
+						{
+							bNeedToUpdateQuadtreeProperties = false;
+						}
+
+						DrawSliderFloat("Static tessellation offset", (weather.ocean2Parameters.fTessellationOffset), 0.0f, 16.0f, "%.0f", 1.0f);
+						DrawSliderFloat("Dynamic tessellation amount", (weather.ocean2Parameters.fTessellationAmount), 0.1f, 100.0f, "%.2f", 1.0f);
+
+						if (bNeedToUpdateQuadtreeProperties)
+							ocean2.bNeedToUpdateQuadtreeProperties = true;
+
 
 
 					}
 	
-
-					
-
 
 
 					PropertyGridSpacing();

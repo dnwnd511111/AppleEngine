@@ -51,7 +51,7 @@ namespace ap::imgui
 	bool DrawDragFloat4(const char* label, DirectX::XMFLOAT4& value, float delta = 0.1f);
 	bool DrawSliderInt(const char* label, int& value, int min, int max);
 	bool DrawSliderInt(const char* label, uint32_t& value, uint32_t min, uint32_t max);
-	bool DrawSliderFloat(const char* label, float& value, float min, float max, const char* format = "%.3f");
+	bool DrawSliderFloat(const char* label, float& value, float min, float max, const char* format = "%.3f", float power = 1.0f);
 	bool DrawSliderFloat2(const char* label, DirectX::XMFLOAT2& value, float min, float max);
 	bool DrawSliderFloat3(const char* label, DirectX::XMFLOAT3& value, float min, float max);
 	bool DrawSliderFloat4(const char* label, DirectX::XMFLOAT4& value, float min, float max);

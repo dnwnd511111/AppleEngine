@@ -512,8 +512,11 @@ namespace ap::imgui
 	}
 
 
-	bool DrawSliderFloat(const char* label, float& value, float min, float max, const char* format )
+	bool DrawSliderFloat(const char* label, float& value, float min, float max, const char* format ,float power)
 	{
+
+		// 파워 삭제
+		
 		bool modified = false;
 
 		ImGui::Text(label);

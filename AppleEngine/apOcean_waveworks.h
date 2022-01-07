@@ -46,7 +46,7 @@ namespace ap
 
 
 			bool bRain = false;
-			bool bBoat = true;
+			bool bBoat = false;
 			float fRainDropSize = 0.05f;
 			float fBaseWindDirection = 45.0f;
 			float fSwellWindDirection = -18.0f;
@@ -64,6 +64,10 @@ namespace ap
 
 			bool bShowCascades = false;
 			
+			float fMinTotalDisplacement = 0;
+			float fMaxTotalDisplacement = 0;
+			float fSWH = 0;
+
 
 		};
 
@@ -112,9 +116,7 @@ namespace ap
 		float fMinDisplacement = 0;
 		float fMaxDisplacement = 0;
 
-		float fMinTotalDisplacement = 0;
-		float fMaxTotalDisplacement = 0;
-		float fSWH = 0;
+		
 
 		float fBoatX = 0;
 		float fBoatY = 0;
