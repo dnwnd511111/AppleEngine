@@ -93,6 +93,21 @@ struct OCEAN_PS_CBUFFER
 	// CBs must be multiple of 16 bytes large
 	float pad0;
 	float pad1;
+
+	//
+	DirectX::XMFLOAT3 g_WaterDeepColor;
+	float pad2;
+
+	DirectX::XMFLOAT3 g_WaterScatterColor;
+	float pad3;
+
+	DirectX::XMFLOAT4 g_WaterColorIntensity;
+
+	DirectX::XMFLOAT3 g_FoamColor;
+	float pad4;
+
+	DirectX::XMFLOAT3 g_FoamUnderwaterColor;
+	float pad5;
 };
 
 struct OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY
@@ -761,6 +776,13 @@ namespace ap
 		PSCB.g_useMicrofacetReflection =  1.0f ;
 		PSCB.g_showCascades = parameters.bShowCascades ? 1.0f : 0.0f;
 		PSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
+
+		PSCB.g_WaterDeepColor = parameters.waterDeepColor;
+		PSCB.g_WaterScatterColor = parameters.waterScatterColor;
+		PSCB.g_WaterColorIntensity = parameters.waterColorIntensity;
+		PSCB.g_FoamColor = parameters.foamColor;
+		PSCB.g_FoamUnderwaterColor = parameters.foamUnderwaterColor;
+
 
 		device->BindDynamicConstantBuffer(PSCB, 3, cmd);
 		

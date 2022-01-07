@@ -639,8 +639,23 @@ namespace Panel
 						}
 					}
 
+				
+
+
 					if (IsOceanEnabled && GetScene().ocean2.get())
 					{
+
+						DrawColorEdit3("Water Deep Color", weather.ocean2Parameters.waterDeepColor);
+						DrawColorEdit3("WaterScatter Color", weather.ocean2Parameters.waterScatterColor);
+						DrawColorEdit4("Water Color Intensity", weather.ocean2Parameters.waterColorIntensity);
+						DrawColorEdit3("Foam Color", weather.ocean2Parameters.foamColor);
+						DrawColorEdit3("FoamUnderWater Color", weather.ocean2Parameters.foamUnderwaterColor);
+
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
 
 						if (DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f"))
 							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;

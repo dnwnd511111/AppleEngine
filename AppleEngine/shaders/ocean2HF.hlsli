@@ -166,6 +166,23 @@ cbuffer OCEAN_PS_CBUFFER : register(b3)
 	// CBs must be multiple of 16 bytes large
     float pad0;
     float pad1;
+    
+    
+    //
+    float3 g_WaterDeepColor ;
+    float pad2;
+    
+    float3 g_WaterScatterColor ;
+    float pad3;
+    
+    float4 g_WaterColorIntensity;
+    
+    float3 g_FoamColor;
+    float pad4;
+    
+    float3 g_FoamUnderwaterColor;
+    float pad5;
+
 }
 
 #endif // AP_OCEAN2_H

@@ -443,11 +443,7 @@
     // ---------------------------------------------------------------------------
     float4 main(DS_OUTPUT In) : SV_Target
     {
-        float3 g_WaterDeepColor = { 0.0, 0.2, 0.4 };
-        float3 g_WaterScatterColor = { 0.0, 0.7, 0.6 };
-        float4 g_WaterColorIntensity = { 0.02, 0.02, 0.01, 0.2 };
-        float3 g_FoamColor = { 0.9, 0.9, 0.9 };
-        float3 g_FoamUnderwaterColor = { 0.6, 0.6, 0.6 };
+        
 
 	    // Calculating surface parameters and foam density
         SURFACE_PARAMETERS surfaceParameters = GFSDK_WaveWorks_GetSurfaceParameters(In);
@@ -677,7 +673,7 @@
 float4 main() : SV_TARGET
 {
    
-    return float4(frac(GetFrame().time / 10), 0.0, 0.0, 1.0);
+    return float4(g_WaterDeepColor, 1.0);
 }
 
 
