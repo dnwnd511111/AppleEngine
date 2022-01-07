@@ -612,14 +612,19 @@ namespace Panel
 					{
 						weather.SetVolumetricClouds(IsVolumetricClouds);
 					}
-					DrawColorEdit3("V.Cloud Color", weather.volumetricCloudParameters.Albedo);
-					DrawSliderFloat("Coverage Amount", weather.volumetricCloudParameters.CoverageAmount, 0.0f, 10.0f);
-					DrawSliderFloat("Coverage Minimmum", weather.volumetricCloudParameters.CoverageMinimum, 1.0f, 2.0f);
 
-					PropertyGridSpacing();
-					ImGui::Separator();
-					PropertyGridSpacing();
+					if (IsVolumetricClouds)
+					{
+						DrawColorEdit3("V.Cloud Color", weather.volumetricCloudParameters.Albedo);
+						DrawSliderFloat("Coverage Amount", weather.volumetricCloudParameters.CoverageAmount, 0.0f, 10.0f);
+						DrawSliderFloat("Coverage Minimmum", weather.volumetricCloudParameters.CoverageMinimum, 1.0f, 2.0f);
 
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+					}
+				
 
 					ap::Ocean2& ocean2 = *GetScene().ocean2.get();
 
@@ -634,16 +639,22 @@ namespace Panel
 						}
 					}
 
+					if (IsOceanEnabled)
+					{
+
+						if (DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f"))
+							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
+						if (DrawSliderFloat("UV Frequency", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_frequency, 1.0f, 3.0f))
+							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
+
+						if (DrawSliderFloat("Simulation period (m) }", weather.ocean2Parameters.OceanWindSimulationSettings.simulation_period, 100.0f, 10000.0f))
+							ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
+
+
+					}
 	
 
-					if (DrawSliderFloat("UV Amplitude", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_amplitude, 0.0f, 0.1f, "%.2f"))
-						ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
-					if (DrawSliderFloat("UV Frequency", weather.ocean2Parameters.OceanWindSimulationParameters.uv_warping_frequency, 1.0f, 3.0f))
-						ocean2.bNeedToUpdateWindWavesSimulationProperties = true;
 					
-
-
-
 
 
 

@@ -3843,6 +3843,7 @@ namespace ap::scene
 				{
 					ocean2 = std::make_unique<Ocean2>();
 					ocean2->Create();
+					weathers[0].ocean2Parameters = ocean2->parameters;
 				}
 
 				ocean2->parameters = weathers[0].ocean2Parameters;

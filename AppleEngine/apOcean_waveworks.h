@@ -3,6 +3,9 @@
 #include <GFSDK_WaveWorks.h>
 #include "apGraphicsDevice.h"
 #include "DirectXMath.h"
+#include "Utility\dx12\d3d12.h"
+#include <wrl/client.h> // ComPtr
+
 
 namespace ap
 { 
@@ -118,6 +121,8 @@ namespace ap
 
 
 	private:
+
+		Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 
 		ap::graphics::GPUBuffer oceanSurfaceVB;
 		ap::graphics::GPUBuffer oceanSurfaceIB;

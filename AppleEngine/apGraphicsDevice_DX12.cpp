@@ -11,6 +11,7 @@
 
 #include <string>
 
+
 #include <pix.h>
 
 #ifdef _DEBUG
@@ -4071,7 +4072,21 @@ using namespace dx12_internal;
 	bool GraphicsDevice_DX12::RecreateTextureFromNativeTexture(const TextureDesc* pDesc, Texture* pTexture, void* nativeTexture) const
 	{
 
-		auto internal_state = std::make_shared<Texture_DX12>();
+	
+		std::shared_ptr<Texture_DX12> internal_state ;
+
+		if (pTexture->internal_state)
+		{
+			internal_state = std::static_pointer_cast<Texture_DX12>(pTexture->internal_state);
+			internal_state->srv = {};
+			internal_state->subresources_srv = {};
+
+		}
+		else
+		{
+			internal_state = std::make_shared<Texture_DX12>();
+		}
+
 		internal_state->allocationhandler = allocationhandler;
 		pTexture->internal_state = internal_state;
 		pTexture->type = GPUResource::Type::TEXTURE;
@@ -4184,7 +4199,7 @@ using namespace dx12_internal;
 			}
 		}
 
-		auto comptr =internal_state->resource.ReleaseAndGetAddressOf();
+		auto comptr =internal_state->resource.GetAddressOf();
 		*comptr = static_cast<ID3D12Resource*>(nativeTexture);
 
 		

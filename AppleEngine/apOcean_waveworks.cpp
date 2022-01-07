@@ -177,6 +177,10 @@ namespace ap
 	{
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 		
+		HRESULT hr = device->device->CreateFence(1, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+		assert(SUCCEEDED(hr));
+
+
 		// Creating wind waves simulation
 		GFSDK_WaveWorks_Wind_Waves_Simulation_CreateDirectX12(
 			device->device.Get(),
@@ -197,6 +201,7 @@ namespace ap
 		// Creating quadtree
 		GFSDK_WaveWorks_Quadtree_Create(parameters.OceanQuadtreeParameters, &hOceanQuadtree);
 
+		
 		ReCreateResource();
 
 	}
@@ -287,11 +292,14 @@ namespace ap
 	void Ocean2::ResourceUpdate()
 	{
 
-
+		ap::graphics::GraphicsDevice_DX12* device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 		Scene& scene = GetScene();
 		CameraComponent& camera = GetCamera();
 		float delta = scene.dt;
 
+	
+		//device->queues[QUEUE_GRAPHICS].queue->Wait(fence.Get(), 1);
+		//device->queues[QUEUE_COMPUTE].queue->Signal(fence.Get(), 0);
 
 		// Adding rain
 		if ((parameters.bRain) && (!bNeedToUpdateLocalWavesSimulationProperties))
@@ -528,34 +536,16 @@ namespace ap
 		OceanWindSimulationStatsFiltered.GPU_total_time = OceanWindSimulationStatsFiltered.GPU_total_time * 0.999f + 0.001f * OceanWindSimulationStats.GPU_total_time;
 
 
-		// recreate resources if needed
-		if (bNeedToUpdateQuadtreeProperties)
-		{
-			GFSDK_WaveWorks_Quadtree_UpdateParams(hOceanQuadtree, parameters.OceanQuadtreeParameters);
-			ReCreateResource();
-			bNeedToUpdateQuadtreeProperties = false;
-		}
-
-		if (bNeedToUpdateLocalWavesSimulationProperties)
-		{
-			GFSDK_WaveWorks_Local_Waves_Simulation_UpdateProperties(hOceanLocalSimulation, parameters.OceanLocalSimulationSettings, parameters.OceanLocalSimulationParameters);
-			ReCreateResource();
-			bNeedToUpdateLocalWavesSimulationProperties = false;
-		}
-
-		if (bNeedToUpdateWindWavesSimulationProperties)
-		{
-			GFSDK_WaveWorks_Wind_Waves_Simulation_UpdateProperties(hOceanWindSimulation, parameters.OceanWindSimulationSettings, parameters.OceanWindSimulationParameters);
-			ReCreateResource();
-			bNeedToUpdateWindWavesSimulationProperties = false;
-		}
-
+		
 
 		// reading back marker coords
 		if (parameters.iReadbackUsage > 0)
 		{
 			//UpdateMarkers();
 		}
+
+		//device->queues[QUEUE_COMPUTE].queue->Signal(fence.Get(), 1);
+		
 
 	}
 
@@ -637,6 +627,8 @@ namespace ap
 	void Ocean2::Render(ap::graphics::CommandList cmd)
 	{
 
+
+
 		gfsdk_float2 viewportSize;
 		viewportSize.x = viewportWidth;
 		viewportSize.y = viewportHeight;
@@ -646,6 +638,34 @@ namespace ap
 		Scene& scene = GetScene();
 
 		device->EventBegin("Ocean2 Rendering", cmd);
+
+
+		// recreate resources if needed
+		if (bNeedToUpdateQuadtreeProperties)
+		{
+			
+			GFSDK_WaveWorks_Quadtree_UpdateParams(hOceanQuadtree, parameters.OceanQuadtreeParameters);
+			ReCreateResource();
+			bNeedToUpdateQuadtreeProperties = false;
+		}
+
+		if (bNeedToUpdateLocalWavesSimulationProperties)
+		{
+			
+			GFSDK_WaveWorks_Local_Waves_Simulation_UpdateProperties(hOceanLocalSimulation, parameters.OceanLocalSimulationSettings, parameters.OceanLocalSimulationParameters);
+			ReCreateResource();
+			bNeedToUpdateLocalWavesSimulationProperties = false;
+		}
+
+		if (bNeedToUpdateWindWavesSimulationProperties)
+		{
+			
+			GFSDK_WaveWorks_Wind_Waves_Simulation_UpdateProperties(hOceanWindSimulation, parameters.OceanWindSimulationSettings, parameters.OceanWindSimulationParameters);
+			ReCreateResource();
+			bNeedToUpdateWindWavesSimulationProperties = false;
+
+		}
+
 
 
 		Ocean2Constants push;
@@ -858,6 +878,8 @@ namespace ap
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 
 		
+		device->WaitForGPU();
+	
 	
 		// Creating ocean surface vertex and index buffers
 		uint32_t numVertices = 0;
@@ -937,6 +959,6 @@ namespace ap
 
 		}
 		
-	
+		device->WaitForGPU();
 	}
 }
