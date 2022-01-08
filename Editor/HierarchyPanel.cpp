@@ -233,7 +233,11 @@ namespace Panel
 		SoundComponent* sound = scene.sounds.GetComponent(entity);
 		InverseKinematicsComponent* kinematic = scene.inverse_kinematics.GetComponent(entity);
 		SpringComponent* spring = scene.springs.GetComponent(entity);
-		
+		MaterialComponent* material = scene.materials.GetComponent(entity);
+		MeshComponent* mesh = nullptr;
+
+		Entity materialEntity = entity;
+
 		BeginPropertyGrid();
 		PropertyGridSpacing();
 
@@ -1113,7 +1117,7 @@ namespace Panel
 
 		if (object)
 		{
-			MeshComponent* mesh = scene.meshes.GetComponent(object->meshID);
+			mesh = scene.meshes.GetComponent(object->meshID);
 			
 
 			
@@ -1390,252 +1394,18 @@ namespace Panel
 
 					});
 
+
+
+				material = scene.materials.GetComponent(mesh->subsets[subsetIdx].materialID);
+				materialEntity = mesh->subsets[subsetIdx].materialID;
+
+
+
 				
-
-			
-
-
-				MaterialComponent*  material = scene.materials.GetComponent(mesh->subsets[subsetIdx].materialID);
-				
-
-
-
-				if (material)
-				{
-					DrawComponent("Material", material, [=](MaterialComponent& material)
-						{
-
-
-							BeginPropertyGrid();
-							PropertyGridSpacing();
-
-
-							{
-								bool isCastingShadow = material.IsCastingShadow();
-								if (DrawCheckbox("Cast shadow", isCastingShadow))
-									material.SetCastShadow(isCastingShadow);
-
-
-								bool IsReceiveShadow = material.IsReceiveShadow();
-								if (DrawCheckbox("Receive shadow", IsReceiveShadow))
-									material.SetReceiveShadow(IsReceiveShadow);
-
-								bool IsUsingVertexColors = material.IsUsingVertexColors();
-								if (DrawCheckbox("Use vertex colors", IsUsingVertexColors))
-									material.SetUseVertexColors(IsUsingVertexColors);
-
-								bool IsUsingSpecularGlossinessWorkflow = material.IsUsingSpecularGlossinessWorkflow();
-								if (DrawCheckbox("Use Specular-Glossiness", IsUsingSpecularGlossinessWorkflow))
-									material.SetUseSpecularGlossinessWorkflow(IsUsingSpecularGlossinessWorkflow);
-
-								bool IsOcclusionEnabled_Primary = material.IsOcclusionEnabled_Primary();
-								if (DrawCheckbox("Occlusion-Primary", IsOcclusionEnabled_Primary))
-									material.SetOcclusionEnabled_Primary(IsOcclusionEnabled_Primary);
-
-								bool IsOcclusionEnabled_Secondary = material.IsOcclusionEnabled_Secondary();
-								if (DrawCheckbox("Occlusion-Secondary", IsOcclusionEnabled_Secondary))
-									material.SetOcclusionEnabled_Secondary(IsOcclusionEnabled_Secondary);
-
-								bool IsUsingWind = material.IsUsingWind();
-								if (DrawCheckbox("Use wind", IsUsingWind))
-									material.SetUseWind(IsUsingWind);
-
-								bool IsDoubleSided = material.IsDoubleSided();
-								if (DrawCheckbox("Double sided", IsDoubleSided))
-									material.SetDoubleSided(IsDoubleSided);
-
-							}
-
-							PropertyGridSpacing();
-							ImGui::Separator();
-							{
-								int selectedItem = material.userBlendMode;
-								const std::vector<std::string> items =
-								{
-									"OPAQUE",
-									"ALPHA",
-									"PREMULTIPLIED",
-									"ADDITIVE",
-									"MULTIPLY"
-								};
-								if (DrawCombo("Blend Mode", items, items.size(), &selectedItem))
-									material.userBlendMode = (ap::enums::BLENDMODE)selectedItem;
-							}
-
-							{
-								int selectedItem = material.shaderType;
-								std::vector<std::string> items =
-								{
-									"SHADERTYPE_PBR"						  ,
-									"SHADERTYPE_PBR_PLANARREFLECTION"		  ,
-									"SHADERTYPE_PBR_PARALLAXOCCLUSIONMAPPING" ,
-									"SHADERTYPE_PBR_ANISOTROPIC"			  ,
-									"SHADERTYPE_WATER"						  ,
-									"SHADERTYPE_CARTOON"					  ,
-									"SHADERTYPE_UNLIT"						  ,
-									"SHADERTYPE_PBR_CLOTH"					  ,
-									"SHADERTYPE_PBR_CLEARCOAT"				  ,
-									"SHADERTYPE_PBR_CLOTH_CLEARCOAT"		  ,
-									"SHADERTYPE_RAIN"		                  ,
-
-								};
-
-								for (auto& x : ap::renderer::GetCustomShaders())
-								{
-									items.push_back(("Custom_" + x.name));
-								}
-
-								if (DrawCombo("Shader Type", items, items.size(), &selectedItem))
-								{
-									material.shaderType = (MaterialComponent::SHADERTYPE)selectedItem;
-
-									if (selectedItem >= MaterialComponent::SHADERTYPE_COUNT)
-									{
-										material.SetCustomShaderID(selectedItem - MaterialComponent::SHADERTYPE_COUNT);
-									}
-									else
-									{
-										material.DisableCustomShader();
-									}
-
-									if (selectedItem == 4) //default water
-									{
-										material.baseColor = { 10.0f / 255.f, 63.f / 255.f, 168.f / 255.f, 5.0f / 255.f };
-										material.specularColor = { 1.0f,1.0f,1.0f,1.0f };
-										material.emissiveColor = { 1.0f,1.0f,1.0f,0.0f };
-										material.roughness = 0.2f;
-										material.reflectance = 0.10f;
-										material.metalness = 0.0f;
-										material.refraction = 0.027f;
-
-										material.transmission = 0.0f;
-										material.normalMapStrength = 1.0f;
-
-										material.texAnimFrameRate = 60.f;
-										material.texAnimDirection = { 0.0004, -0.0004 };
-										material.texMulAdd = { 1.0f,1.0f,0.0f, 0.0f };
-
-									}
-
-								}
-
-
-							}
-
-							{
-								int selectedItem = (int)material.shadingRate;
-								const std::vector<std::string> items =
-								{
-									"1X1",
-									"1X2",
-									"2X1",
-									"2X2",
-									"2X4",
-									"4X2",
-									"4X4",
-								};
-								if (DrawCombo("Shading Rate", items, items.size(), &selectedItem))
-									material.shadingRate = (ap::graphics::ShadingRate)selectedItem;
-							}
-
-							PropertyGridSpacing();
-							ImGui::Separator();
-
-							PropertyGridSpacing();
-							DrawColorEdit4("Base Color", material.baseColor);
-							DrawColorEdit4("Specular Color", material.specularColor);
-							DrawColorEdit3("Emissive Color", (float*)&material.emissiveColor);
-							DrawSliderFloat("EmissiveAlpha", material.emissiveColor.w, 0.0f, 10.0f);
-							PropertyGridSpacing();
-							ImGui::Separator();
-
-							PropertyGridSpacing();
-							DrawSliderFloat("Roughness", material.roughness, 0.0f, 1.0f);
-							DrawSliderFloat("Reflectance", material.reflectance, 0.0f, 1.0f);
-							DrawSliderFloat("Matalness", material.metalness, 0.0f, 1.0f);
-							DrawSliderFloat("Refraction", material.refraction, 0.0f, 1.0f);
-							PropertyGridSpacing();
-
-							ImGui::Separator();
-							PropertyGridSpacing();
-							DrawSliderFloat("Transmission", material.transmission, 0.0f, 1.0f);
-							DrawSliderFloat("Normal", material.normalMapStrength, 0.0f, 8.0f);
-							DrawSliderFloat("Parallax Occlusion", material.parallaxOcclusionMapping, 0.0f,0.1f, "%.5f");
-							DrawSliderFloat("Displacement", material.displacementMapping, 0.0f, 0.1f, "%.5f");
-							DrawSliderFloat("AlphaRef", material.alphaRef, 0.0f, 1.0f - 1.0f / 256.0f);
-
-							ImGui::Separator();
-							PropertyGridSpacing();
-							
-
-							DrawColorEdit3("Subsurface Scattering Color", (float*)&material.subsurfaceScattering);
-							DrawSliderFloat("Subsurface Scattering", material.subsurfaceScattering.w, 0.0f, 2);
-
-							ImGui::Separator();
-							PropertyGridSpacing();
-
-							DrawColorEdit4("Sheen Color", material.sheenColor);
-							DrawSliderFloat("Sheen Roughness", material.sheenRoughness, 0.0f, 1.0f );
-
-							ImGui::Separator();
-							PropertyGridSpacing();
-							
-							DrawSliderFloat("ClearCoat", material.clearcoat, 0.0f, 1.0f);
-							DrawSliderFloat("ClearCoat Roughness", material.clearcoatRoughness, 0.0f, 1.f);
-
-
-							PropertyGridSpacing();
-
-							ImGui::Separator();
-							PropertyGridSpacing();
-							DrawSliderFloat("Texcoord anim FPS", material.texAnimFrameRate, 0, 60);
-							DrawSliderFloat("Texcoord anim U", material.texAnimDirection.x, -0.02f, 0.02f, "%.6f");
-							DrawSliderFloat("Texcoord anim V", material.texAnimDirection.y, -0.02f, 0.02f, "%.6f");
-							DrawSliderFloat("Texture TileSize X", material.texMulAdd.x, 0.0f, 10.0f);
-							DrawSliderFloat("Texture TileSize Y", material.texMulAdd.y, 0.0f, 10.0f);
-							PropertyGridSpacing();
-
-
-
-							const char* textureNames[] =
-							{
-								"BaseColorMap			   ",
-								"NormalMap				   ",
-								"SurfaceMap				   ",
-								"EmissiveMap			   ",
-								"DisplacementMap		   ",
-								"OcclusionMap			   ",
-								"TransmissionMap		   ",
-								"SheenColorMap			   ",
-								"SheenRoughnessMap		   ",
-								"ClearcoatMap			   ",
-								"ClearcoatRoughnessMap	   ",
-								"ClearcoatNormalMap		   ",
-								"SpecularMap			   "
-							};
-
-
-
-							for (int i = 0; i < MaterialComponent::TEXTURESLOT::TEXTURESLOT_COUNT; i++)
-							{
-								DrawImage(textureNames[i], mesh->subsets[subsetIdx].materialID, i);
-								if (i != MaterialComponent::TEXTURESLOT::TEXTURESLOT_COUNT - 1)
-								{
-									ImGui::Separator();
-									PropertyGridSpacing();
-
-								}
-							}
-
-
-							PropertyGridSpacing();
-
-							EndPropertyGrid();
-
-							material.SetDirty();
-						}, false);
-				}
 			}
+
+
+
 
 
 		}
@@ -1643,7 +1413,241 @@ namespace Panel
 		
 
 		
+		if (material)
+		{
+			DrawComponent("Material", material, [=](MaterialComponent& material)
+				{
 
+
+					BeginPropertyGrid();
+					PropertyGridSpacing();
+
+
+					{
+						bool isCastingShadow = material.IsCastingShadow();
+						if (DrawCheckbox("Cast shadow", isCastingShadow))
+							material.SetCastShadow(isCastingShadow);
+
+
+						bool IsReceiveShadow = material.IsReceiveShadow();
+						if (DrawCheckbox("Receive shadow", IsReceiveShadow))
+							material.SetReceiveShadow(IsReceiveShadow);
+
+						bool IsUsingVertexColors = material.IsUsingVertexColors();
+						if (DrawCheckbox("Use vertex colors", IsUsingVertexColors))
+							material.SetUseVertexColors(IsUsingVertexColors);
+
+						bool IsUsingSpecularGlossinessWorkflow = material.IsUsingSpecularGlossinessWorkflow();
+						if (DrawCheckbox("Use Specular-Glossiness", IsUsingSpecularGlossinessWorkflow))
+							material.SetUseSpecularGlossinessWorkflow(IsUsingSpecularGlossinessWorkflow);
+
+						bool IsOcclusionEnabled_Primary = material.IsOcclusionEnabled_Primary();
+						if (DrawCheckbox("Occlusion-Primary", IsOcclusionEnabled_Primary))
+							material.SetOcclusionEnabled_Primary(IsOcclusionEnabled_Primary);
+
+						bool IsOcclusionEnabled_Secondary = material.IsOcclusionEnabled_Secondary();
+						if (DrawCheckbox("Occlusion-Secondary", IsOcclusionEnabled_Secondary))
+							material.SetOcclusionEnabled_Secondary(IsOcclusionEnabled_Secondary);
+
+						bool IsUsingWind = material.IsUsingWind();
+						if (DrawCheckbox("Use wind", IsUsingWind))
+							material.SetUseWind(IsUsingWind);
+
+						bool IsDoubleSided = material.IsDoubleSided();
+						if (DrawCheckbox("Double sided", IsDoubleSided))
+							material.SetDoubleSided(IsDoubleSided);
+
+					}
+
+					PropertyGridSpacing();
+					ImGui::Separator();
+					{
+						int selectedItem = material.userBlendMode;
+						const std::vector<std::string> items =
+						{
+							"OPAQUE",
+							"ALPHA",
+							"PREMULTIPLIED",
+							"ADDITIVE",
+							"MULTIPLY"
+						};
+						if (DrawCombo("Blend Mode", items, items.size(), &selectedItem))
+							material.userBlendMode = (ap::enums::BLENDMODE)selectedItem;
+					}
+
+					{
+						int selectedItem = material.shaderType;
+						std::vector<std::string> items =
+						{
+							"SHADERTYPE_PBR"						  ,
+							"SHADERTYPE_PBR_PLANARREFLECTION"		  ,
+							"SHADERTYPE_PBR_PARALLAXOCCLUSIONMAPPING" ,
+							"SHADERTYPE_PBR_ANISOTROPIC"			  ,
+							"SHADERTYPE_WATER"						  ,
+							"SHADERTYPE_CARTOON"					  ,
+							"SHADERTYPE_UNLIT"						  ,
+							"SHADERTYPE_PBR_CLOTH"					  ,
+							"SHADERTYPE_PBR_CLEARCOAT"				  ,
+							"SHADERTYPE_PBR_CLOTH_CLEARCOAT"		  ,
+							"SHADERTYPE_RAIN"		                  ,
+
+						};
+
+						for (auto& x : ap::renderer::GetCustomShaders())
+						{
+							items.push_back(("Custom_" + x.name));
+						}
+
+						if (DrawCombo("Shader Type", items, items.size(), &selectedItem))
+						{
+							material.shaderType = (MaterialComponent::SHADERTYPE)selectedItem;
+
+							if (selectedItem >= MaterialComponent::SHADERTYPE_COUNT)
+							{
+								material.SetCustomShaderID(selectedItem - MaterialComponent::SHADERTYPE_COUNT);
+							}
+							else
+							{
+								material.DisableCustomShader();
+							}
+
+							if (selectedItem == 4) //default water
+							{
+								material.baseColor = { 10.0f / 255.f, 63.f / 255.f, 168.f / 255.f, 5.0f / 255.f };
+								material.specularColor = { 1.0f,1.0f,1.0f,1.0f };
+								material.emissiveColor = { 1.0f,1.0f,1.0f,0.0f };
+								material.roughness = 0.2f;
+								material.reflectance = 0.10f;
+								material.metalness = 0.0f;
+								material.refraction = 0.027f;
+
+								material.transmission = 0.0f;
+								material.normalMapStrength = 1.0f;
+
+								material.texAnimFrameRate = 60.f;
+								material.texAnimDirection = { 0.0004, -0.0004 };
+								material.texMulAdd = { 1.0f,1.0f,0.0f, 0.0f };
+
+							}
+
+						}
+
+
+					}
+
+					{
+						int selectedItem = (int)material.shadingRate;
+						const std::vector<std::string> items =
+						{
+							"1X1",
+							"1X2",
+							"2X1",
+							"2X2",
+							"2X4",
+							"4X2",
+							"4X4",
+						};
+						if (DrawCombo("Shading Rate", items, items.size(), &selectedItem))
+							material.shadingRate = (ap::graphics::ShadingRate)selectedItem;
+					}
+
+					PropertyGridSpacing();
+					ImGui::Separator();
+
+					PropertyGridSpacing();
+					DrawColorEdit4("Base Color", material.baseColor);
+					DrawColorEdit4("Specular Color", material.specularColor);
+					DrawColorEdit3("Emissive Color", (float*)&material.emissiveColor);
+					DrawSliderFloat("EmissiveAlpha", material.emissiveColor.w, 0.0f, 10.0f);
+					PropertyGridSpacing();
+					ImGui::Separator();
+
+					PropertyGridSpacing();
+					DrawSliderFloat("Roughness", material.roughness, 0.0f, 1.0f);
+					DrawSliderFloat("Reflectance", material.reflectance, 0.0f, 1.0f);
+					DrawSliderFloat("Matalness", material.metalness, 0.0f, 1.0f);
+					DrawSliderFloat("Refraction", material.refraction, 0.0f, 1.0f);
+					PropertyGridSpacing();
+
+					ImGui::Separator();
+					PropertyGridSpacing();
+					DrawSliderFloat("Transmission", material.transmission, 0.0f, 1.0f);
+					DrawSliderFloat("Normal", material.normalMapStrength, 0.0f, 8.0f);
+					DrawSliderFloat("Parallax Occlusion", material.parallaxOcclusionMapping, 0.0f, 0.1f, "%.5f");
+					DrawSliderFloat("Displacement", material.displacementMapping, 0.0f, 0.1f, "%.5f");
+					DrawSliderFloat("AlphaRef", material.alphaRef, 0.0f, 1.0f - 1.0f / 256.0f);
+
+					ImGui::Separator();
+					PropertyGridSpacing();
+
+
+					DrawColorEdit3("Subsurface Scattering Color", (float*)&material.subsurfaceScattering);
+					DrawSliderFloat("Subsurface Scattering", material.subsurfaceScattering.w, 0.0f, 2);
+
+					ImGui::Separator();
+					PropertyGridSpacing();
+
+					DrawColorEdit4("Sheen Color", material.sheenColor);
+					DrawSliderFloat("Sheen Roughness", material.sheenRoughness, 0.0f, 1.0f);
+
+					ImGui::Separator();
+					PropertyGridSpacing();
+
+					DrawSliderFloat("ClearCoat", material.clearcoat, 0.0f, 1.0f);
+					DrawSliderFloat("ClearCoat Roughness", material.clearcoatRoughness, 0.0f, 1.f);
+
+
+					PropertyGridSpacing();
+
+					ImGui::Separator();
+					PropertyGridSpacing();
+					DrawSliderFloat("Texcoord anim FPS", material.texAnimFrameRate, 0, 60);
+					DrawSliderFloat("Texcoord anim U", material.texAnimDirection.x, -0.02f, 0.02f, "%.6f");
+					DrawSliderFloat("Texcoord anim V", material.texAnimDirection.y, -0.02f, 0.02f, "%.6f");
+					DrawSliderFloat("Texture TileSize X", material.texMulAdd.x, 0.0f, 10.0f);
+					DrawSliderFloat("Texture TileSize Y", material.texMulAdd.y, 0.0f, 10.0f);
+					PropertyGridSpacing();
+
+
+
+					const char* textureNames[] =
+					{
+						"BaseColorMap			   ",
+						"NormalMap				   ",
+						"SurfaceMap				   ",
+						"EmissiveMap			   ",
+						"DisplacementMap		   ",
+						"OcclusionMap			   ",
+						"TransmissionMap		   ",
+						"SheenColorMap			   ",
+						"SheenRoughnessMap		   ",
+						"ClearcoatMap			   ",
+						"ClearcoatRoughnessMap	   ",
+						"ClearcoatNormalMap		   ",
+						"SpecularMap			   "
+					};
+
+
+
+					for (int i = 0; i < MaterialComponent::TEXTURESLOT::TEXTURESLOT_COUNT; i++)
+					{
+						DrawImage(textureNames[i], materialEntity, i);
+						if (i != MaterialComponent::TEXTURESLOT::TEXTURESLOT_COUNT - 1)
+						{
+							ImGui::Separator();
+							PropertyGridSpacing();
+
+						}
+					}
+
+
+					PropertyGridSpacing();
+
+					EndPropertyGrid();
+
+					material.SetDirty();
+				}, false);
+		}
 
 
 
