@@ -12,7 +12,7 @@
 //#pragma comment(lib,"nvrhi_d3d12.lib")
 
 
-
+using namespace ap::scene;
 
 static uint32_t getNumMipLevels(uint32_t const squareTextureSize)
 {
@@ -140,8 +140,6 @@ namespace ap
 	namespace ocean2_internal
 	{
 
-		
-
 		ap::graphics::Texture foamIntensityTexture;
 		ap::graphics::Texture foamBubblesTexture;
 		ap::graphics::Texture windGustsTexture;
@@ -202,6 +200,11 @@ namespace ap
 
 	void Ocean2::Create()
 	{
+
+		// Allocating memory for readback positions and results
+		m_pReadbackPositions = (gfsdk_float2*)malloc(NumMarkers * sizeof(gfsdk_float2));
+		m_pReadbackResults = (gfsdk_float4*)malloc(NumMarkers * sizeof(gfsdk_float4));
+
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 		
 		HRESULT hr = device->device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
@@ -316,7 +319,12 @@ namespace ap
 		parameters.OceanQuadtreeParameters.geomorphing_degree = 1.0f;
 		parameters.OceanQuadtreeParameters.generate_diamond_pattern = false;
 	}
-	void Ocean2::ResourceUpdate()
+	Ocean2::~Ocean2()
+	{
+		free(m_pReadbackPositions);
+		free(m_pReadbackResults);
+	}
+	void Ocean2::ResourceUpdate(const ap::renderer::Visibility* vis)
 	{
 
 		ap::graphics::GraphicsDevice_DX12* device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
@@ -563,12 +571,55 @@ namespace ap
 		OceanWindSimulationStatsFiltered.GPU_total_time = OceanWindSimulationStatsFiltered.GPU_total_time * 0.999f + 0.001f * OceanWindSimulationStats.GPU_total_time;
 
 
-		
-
 		// reading back marker coords
 		if (parameters.iReadbackUsage > 0)
 		{
-			//UpdateMarkers();
+			
+			
+
+			if (1)
+			{
+				//ap::renderer::DrawLine
+				float distance_between_markers = 2.0f;// *OceanWindSimulationSettings.simulation_period / (float)NumMarkersXY;
+				float center_x = 0;
+				float center_y = 0;
+
+				for (int i = 0; i < NumMarkersXY; i++)
+					for (int j = 0; j < NumMarkersXY; j++)
+					{
+						float x = center_x - distance_between_markers * (i - NumMarkersXY / 2);
+						float y = center_y - distance_between_markers * (j - NumMarkersXY / 2);
+						m_pReadbackPositions[i + j * NumMarkersXY].x = x;
+						m_pReadbackPositions[i + j * NumMarkersXY].y = y;
+					}
+
+
+				fMinDisplacement = 0;
+				fMaxDisplacement = 0;
+
+
+				int k = 1;
+				for (int i = 0; i < k; i++)
+				{
+					GFSDK_WaveWorks_Wind_Waves_Simulation_GetDisplacements(hOceanWindSimulation, &m_pReadbackPositions[(NumMarkers * i) / k], &m_pReadbackResults[(NumMarkers * i) / k], NumMarkers / k, parameters.iReadbackUsage == 2 ? true : false);
+				}
+
+
+				float variance_sqr = 0;
+				for (int i = 0; i < NumMarkers; i++)
+				{
+					m_pReadbackResults[i].x += m_pReadbackPositions[i].x;
+					m_pReadbackResults[i].y += m_pReadbackPositions[i].y;
+					if (m_pReadbackResults[i].z < fMinDisplacement) fMinDisplacement = m_pReadbackResults[i].z;
+					if (m_pReadbackResults[i].z > fMaxDisplacement) fMaxDisplacement = m_pReadbackResults[i].z;
+					variance_sqr += m_pReadbackResults[i].z * m_pReadbackResults[i].z;
+				}
+				if (fMaxTotalDisplacement < fMaxDisplacement)fMaxTotalDisplacement = fMaxDisplacement;
+				if (fMinTotalDisplacement > fMinDisplacement) fMinTotalDisplacement = fMinDisplacement;
+				variance_sqr /= NumMarkers;
+				fSWH = 4.0f * sqrtf(variance_sqr);
+			}
+
 		}
 
 		//device->queues[QUEUE_GRAPHICS].queue->Signal(fence.Get(), 1);
@@ -579,6 +630,8 @@ namespace ap
 	void Ocean2::Initialize()
 	{
 		
+	
+
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 
 		GFSDK_WaveWorks_Init(nullptr, GFSDK_WAVEWORKS_API_GUID);
@@ -613,7 +666,7 @@ namespace ap
 		BlendState blend_desc;
 		blend_desc.alpha_to_coverage_enable = false;
 		blend_desc.independent_blend_enable = false;
-		blend_desc.render_target[0].blend_enable = false;
+		blend_desc.render_target[0].blend_enable = true;
 		blend_desc.render_target[0].src_blend = Blend::SRC_ALPHA;
 		blend_desc.render_target[0].dest_blend = Blend::INV_SRC_ALPHA;
 		blend_desc.render_target[0].blend_op = BlendOp::ADD;
@@ -878,12 +931,24 @@ namespace ap
 			}
 		}
 
+
 		
 		
-		/*if (bRenderMarkers)
+		
+		
+		if (parameters.bRenderMarkers)
 		{
-			RenderMarkers(FB);
-		}*/
+			for (int i = 0; i < NumMarkersXY; i++)
+				for (int j = 0; j < NumMarkersXY; j++)
+				{
+					XMFLOAT3 center = XMFLOAT3(m_pReadbackResults[i + j * NumMarkersXY].x, m_pReadbackResults[i + j * NumMarkersXY].z, m_pReadbackResults[i + j * NumMarkersXY].y);
+					ap::primitive::Sphere s = ap::primitive::Sphere(center, 1);
+					ap::renderer::DrawSphere(s);
+				}
+
+			
+			
+		}
 
 
 		device->EventEnd(cmd);

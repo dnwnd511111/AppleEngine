@@ -2621,6 +2621,7 @@ namespace ap::scene
 			HierarchyComponent& hier = hierarchy[args.jobIndex];
 			Entity entity = hierarchy.GetEntity(args.jobIndex);
 
+			
 			TransformComponent* transform_child = transforms.GetComponent(entity);
 			XMMATRIX worldmatrix;
 			if (transform_child != nullptr)

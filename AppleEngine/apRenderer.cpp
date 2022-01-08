@@ -3851,7 +3851,7 @@ void UpdateRenderDataAsync(
 	if (vis.scene->weather.IsOceanEnabled())
 	{
 		auto range = ap::profiler::BeginRangeGPU("Ocean - Simulate", cmd);
-		vis.scene->ocean2->ResourceUpdate();
+		vis.scene->ocean2->ResourceUpdate(&vis);
 		//vis.scene->ocean.UpdateDisplacementMap(vis.scene->weather.oceanParameters, cmd);
 		ap::profiler::EndRange(range);
 

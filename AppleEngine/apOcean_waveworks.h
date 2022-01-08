@@ -6,14 +6,19 @@
 #include "Utility\dx12\d3d12.h"
 #include <wrl/client.h> // ComPtr
 
-
 namespace ap
 { 
+
+	namespace renderer
+	{
+		struct Visibility;
+	}
 
 	class Ocean2
 	{
 	public:
 		Ocean2();
+		~Ocean2();
 
 		enum SynchronizationMode
 		{
@@ -23,7 +28,7 @@ namespace ap
 			Num_SynchronizationModes
 		};
 
-		enum { NumMarkersXY = 1000, NumMarkers = NumMarkersXY * NumMarkersXY };
+		enum { NumMarkersXY = 10, NumMarkers = NumMarkersXY * NumMarkersXY };
 
 		
 
@@ -64,12 +69,9 @@ namespace ap
 
 			bool bShowCascades = false;
 			
-			float fMinTotalDisplacement = 0;
-			float fMaxTotalDisplacement = 0;
-			float fSWH = 0;
+			
 
-
-			DirectX::XMFLOAT4 waterColor = { 0.0, 0.2, 0.4,1.0 };
+			DirectX::XMFLOAT4 waterColor = { 0.0, 0.1, 0.2,1.0 };
 			DirectX::XMFLOAT4 waterDeepColor = { 0.0, 0.2, 0.4,1.0 };
 			DirectX::XMFLOAT4 waterColorIntensity = { 0.2, 0.2, 0.2, 0.3 };
 			DirectX::XMFLOAT3 foamColor = { 0.9, 0.9, 0.9 };
@@ -119,6 +121,11 @@ namespace ap
 
 		double dSimulationTime = 0.0;
 
+
+		float fMinTotalDisplacement = 0;
+		float fMaxTotalDisplacement = 0;
+		float fSWH = 0;
+
 		bool bForceKick = false;
 		float fMinDisplacement = 0;
 		float fMaxDisplacement = 0;
@@ -130,6 +137,12 @@ namespace ap
 
 
 		int cmdCount =9;
+
+		
+		gfsdk_float2* m_pReadbackPositions =nullptr;
+		gfsdk_float4* m_pReadbackResults = nullptr;
+
+
 
 	private:
 
@@ -152,7 +165,7 @@ namespace ap
 	public:
 		static void Initialize();
 		void Create();
-		void ResourceUpdate();
+		void ResourceUpdate(const ap::renderer::Visibility* vis);
 		void Render( ap::graphics::CommandList cmd);
 		void ReCreateResource();
 

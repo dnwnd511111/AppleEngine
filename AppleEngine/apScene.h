@@ -612,6 +612,9 @@ namespace ap::scene
 
 	struct ObjectComponent
 	{
+		//юс╫ц
+		bool isFloat = false;
+
 		enum FLAGS
 		{
 			EMPTY = 0,

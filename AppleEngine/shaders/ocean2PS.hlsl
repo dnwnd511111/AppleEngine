@@ -524,7 +524,7 @@
     Surface surface;
     surface.init();
     surface.albedo = color.rgb;
-    surface.f0 = 0.01;
+    surface.f0 = 0.04;
     surface.roughness = 0.1;
     surface.P = worldPos;
     surface.N = N;
@@ -555,12 +555,12 @@
         lighting.indirect.specular = reflectiveColor.rgb * surface.F;
     }
 
-    LightingPart combined_lighting = CombineLighting(surface, lighting);
+    //LightingPart combined_lighting = CombineLighting(surface, lighting);
     
     //float3 refractionColor = g_WaterScatterColor * scatterFactor * combined_lighting.diffuse * g_sunIntensity;
 
 	// Adding shallow scattering as if the water surface reflects as a diffuse surface and emits some light
-   // refractionColor += (g_WaterColorIntensity.x + g_WaterColorIntensity.y * max(0, dot(L, N))) * g_WaterDeepColor.rgb * combined_lighting.diffuse * g_sunIntensity;
+    //refractionColor += (g_WaterColorIntensity.x + g_WaterColorIntensity.y * max(0, dot(L, N))) * g_WaterDeepColor.rgb * combined_lighting.diffuse * g_sunIntensity;
 
 	// Adding color that provide foam bubbles spread in water 
     //refractionColor += g_FoamUnderwaterColor * saturate(surfaceParameters.foamEnergy * 0.05) * combined_lighting.diffuse * g_sunIntensity;
@@ -596,7 +596,7 @@
     ApplyFog(dist, GetCamera().position, V, color);
 
   
-    foamDiffuseColor += combined_lighting.diffuse;
+    //foamDiffuseColor += combined_lighting.diffuse;
 
     color.rgb = lerp(color.rgb, foamDiffuseColor, foamIntensity);
 

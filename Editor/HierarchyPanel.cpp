@@ -715,8 +715,8 @@ namespace Panel
 								if (DrawSliderFloat("Local Wind speed (Beaufort)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_speed), 0, 12.0f, "%.1f"))
 								{
 									needSimulationSettings = true;
-									weather.ocean2Parameters.fMaxTotalDisplacement = 0;
-									weather.ocean2Parameters.fMinTotalDisplacement = 0;
+									ocean2.fMaxTotalDisplacement = 0;
+									ocean2.fMinTotalDisplacement = 0;
 								}
 							}
 							else
@@ -724,8 +724,8 @@ namespace Panel
 								if (DrawSliderFloat("Local Wind speed (m/sec)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_speed), 0, 50.0f, "%.1f"))
 								{
 									needSimulationSettings = true;
-									weather.ocean2Parameters.fMaxTotalDisplacement = 0;
-									weather.ocean2Parameters.fMinTotalDisplacement = 0;
+									ocean2.fMaxTotalDisplacement = 0;
+									ocean2.fMinTotalDisplacement = 0;
 								}
 								if (DrawSliderFloat("Local Wind distance (km)", (weather.ocean2Parameters.OceanWindSimulationParameters.base_wind_distance), 1.0f, 1000.0f, "%.0f")) needSimulationSettings = true;
 								if (DrawSliderFloat("Local Spectrum peaking", (weather.ocean2Parameters.OceanWindSimulationParameters.base_spectrum_peaking), 0.1f, 10.0f, "%.1f")) needSimulationSettings = true;
@@ -804,8 +804,8 @@ namespace Panel
 
 							if (DrawCheckbox("Enable GPU driven displacement readbacks", (weather.ocean2Parameters.OceanLocalSimulationSettings.enable_GPU_driven_displacement_calculation))) bNeedToUpdateLocalWavesSimulationProperties = true;
 
-							const std::vector<std::string> ReadbackUsageStrings = { "None", "CPU", "Compute" };
-							DrawCombo("Use displacement readbacks", ReadbackUsageStrings, ReadbackUsageStrings.size(), &weather.ocean2Parameters.iReadbackUsage);
+							//const std::vector<std::string> ReadbackUsageStrings = { "None", "CPU", "Compute" };
+							//DrawCombo("Use displacement readbacks_", ReadbackUsageStrings, ReadbackUsageStrings.size(), &weather.ocean2Parameters.iReadbackUsage);
 
 							
 							const std::vector<std::string> DetailLevelStrings = { "128", "256", "512", "1024", "2048" };
