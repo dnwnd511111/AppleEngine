@@ -69,6 +69,7 @@ namespace ap
 			float fSWH = 0;
 
 
+			DirectX::XMFLOAT4 waterColor = { 0.0, 0.2, 0.4,1.0 };
 			DirectX::XMFLOAT4 waterDeepColor = { 0.0, 0.2, 0.4,1.0 };
 			DirectX::XMFLOAT4 waterColorIntensity = { 0.02, 0.02, 0.01, 0.2 };
 			DirectX::XMFLOAT3 foamColor = { 0.9, 0.9, 0.9 };

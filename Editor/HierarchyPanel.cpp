@@ -645,7 +645,8 @@ namespace Panel
 					if (IsOceanEnabled && GetScene().ocean2.get())
 					{
 
-						DrawColorEdit4("Water Color", weather.ocean2Parameters.waterDeepColor);
+						DrawColorEdit4("Water Color", weather.ocean2Parameters.waterColor);
+						DrawColorEdit4("Water DeepColor", weather.ocean2Parameters.waterDeepColor);
 						DrawColorEdit4("Water Color Intensity", weather.ocean2Parameters.waterColorIntensity);
 						DrawColorEdit3("Foam Color", weather.ocean2Parameters.foamColor);
 						DrawColorEdit3("FoamUnderWater Color", weather.ocean2Parameters.foamUnderwaterColor);

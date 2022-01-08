@@ -1,8 +1,11 @@
-
-
+#define DISABLE_DECALS
+#define DISABLE_ENVMAPS
+#define DISABLE_TRANSPARENT_SHADOWMAP
+#define TRANSPARENT
+//#define DISABLE_VOXELGI
 #include "ocean2HF.hlsli"
 
-#if 0
+#if 1
     #include "objectHF.hlsli"
     float4 CalculateMiplevels(float2 largestCascadeUV)
     {
@@ -444,133 +447,141 @@
     // ---------------------------------------------------------------------------
     float4 main(DS_OUTPUT In) : SV_Target
     {
-        
+       
 
-	    // Calculating surface parameters and foam density
-        SURFACE_PARAMETERS surfaceParameters = GFSDK_WaveWorks_GetSurfaceParameters(In);
-        float foamIntensity = GetFoam(In.worldspacePositionUndisplaced, surfaceParameters);
 
-     
-    float3 eyeVec = g_eyePos - In.worldspacePositionUndisplaced;
-        float dist = length(eyeVec);
-        float3 V = normalize(eyeVec);
-        float3 N = surfaceParameters.normal;
-        float3 R = reflect(-V, N);
+	// Calculating surface parameters and foam density
+    SURFACE_PARAMETERS surfaceParameters = GFSDK_WaveWorks_GetSurfaceParameters(In);
+    float foamIntensity = GetFoam(In.worldspacePositionUndisplaced, surfaceParameters);
 
-	    // Bending backfacing normals if we encounter those
-    #if 0
-        float NdotV = dot(N, V);
-        if (NdotV < 0.01)
-        {
-            N += V * (-NdotV + 0.01);
-            N = -normalize(N);
-        }
-    #endif
+    float fresnelFactor;
+    float scatterFactor;
 
-        float4 color = g_WaterColor;
+   
+    float3 eyeVec = g_eyePos - In.worldspacePositionDisplaced;
+    float3 L = normalize(g_sunDirection);
+    float3 V = normalize(eyeVec);
+    float3 N = surfaceParameters.normal;
+    float3 R = reflect(-V, N);
 
-	  
-        Surface surface;
-        surface.init();
-        surface.albedo = color.rgb;
-        surface.f0 = 0.02;
-        surface.roughness = 0.1;
-    surface.P = In.worldspacePositionUndisplaced;
-        surface.N = N;
-        surface.V = V;
-        surface.update();
-
-        Lighting lighting;
-        lighting.create(0.5, 0, GetAmbient(surface.N), 0);
-
+	// Bending backfacing normals if we encounter those
+    float NdotV = dot(N, V);
+    if (NdotV < 0.01)
+    {
+        N += V * (-NdotV + 0.01);
+        N = -normalize(N);
+    }
     
-        surface.pixel = In.clipSpacePosition.xy;
-        float depth = In.clipSpacePosition.z;
+    float3 foamDiffuseColor = g_FoamColor * max(0, 0.3 + max(0, 0.7 * dot(L, N)));
+    
+    float3 worldPos = float3(In.worldspacePositionDisplaced.x, In.worldspacePositionDisplaced.z, In.worldspacePositionDisplaced.y);
+    V = float3(V.x, V.z, V.y);
+    L = float3(L.x, L.z, L.y);
+    N = float3(N.x, N.z, N.y);
+    float dist = length(eyeVec);
+    
+  
+    
+    float4 color = g_WaterColor;
+    
+    Surface surface;
+    surface.init();
+    surface.albedo = color.rgb;
+    surface.f0 = 0.01;
+    surface.roughness = 0.1;
+    surface.P = worldPos;
+    surface.N = N;
+    surface.V = V;
+    surface.update();
+
+	//return float4(input.pos3D.x / 100, input.pos3D.y / 100, input.pos3D.z / 100, 1.0);
+
+    Lighting lighting;
+    lighting.create(0, 0, GetAmbient(surface.N), 0);
+
+    surface.pixel = In.clipSpacePosition.xy;
+    float depth = In.clipSpacePosition.z;
+
+    TiledLighting(surface, lighting);
 
     #if 1
-        TiledLighting(surface, lighting);
-    #endif
+ 
+    float2 ScreenCoord = surface.pixel * GetCamera().internal_resolution_rcp;
+    float4 ReflectionMapSamplingPos = mul(GetCamera().reflection_view_projection, float4(worldPos, 1));
     
-        float4 ReflectionMapSamplingPos = mul(GetCamera().reflection_view_projection, float4(surface.P, 1));
+	[branch]
+    if (GetCamera().texture_reflection_index >= 0)
+    {
+		//REFLECTION
+        float2 RefTex = float2(1, -1) * ReflectionMapSamplingPos.xy / ReflectionMapSamplingPos.w / 2.0f + 0.5f;
+        float4 reflectiveColor = bindless_textures[GetCamera().texture_reflection_index].SampleLevel(sampler_linear_mirror, RefTex + surface.N.xz * 0.04f, 0);
+        lighting.indirect.specular = reflectiveColor.rgb * surface.F;
+    }
 
-        float2 refUV = float2(1, -1) * ReflectionMapSamplingPos.xy / ReflectionMapSamplingPos.w * 0.5f + 0.5f;
-        float2 ScreenCoord = surface.pixel * GetCamera().internal_resolution_rcp;
-
-    
-    #if 0
-	    [branch]
-        if (GetCamera().texture_reflection_index >= 0)
-        {
-		    //REFLECTION
-            float2 RefTex = float2(1, -1) * ReflectionMapSamplingPos.xy / ReflectionMapSamplingPos.w / 2.0f + 0.5f;
-            float4 reflectiveColor = bindless_textures[GetCamera().texture_reflection_index].SampleLevel(sampler_linear_mirror, RefTex + surface.N.xz * 0.04f, 0);
-            lighting.indirect.specular = reflectiveColor.rgb * surface.F;
-        }
-
-    
-    #endif
-
-    #if 0
-	    [branch]
+	[branch]
     if (GetCamera().texture_refraction_index >= 0)
     {
-		    // WATER REFRACTION 
+		// WATER REFRACTION 
         Texture2D texture_refraction = bindless_textures[GetCamera().texture_refraction_index];
         float lineardepth = In.clipSpacePosition.w;
         float sampled_lineardepth = texture_lineardepth.SampleLevel(sampler_point_clamp, ScreenCoord.xy + surface.N.xz * 0.04f, 0) * GetCamera().z_far;
         float depth_difference = sampled_lineardepth - lineardepth;
-        surface.refraction.rgb = texture_refraction.SampleLevel(sampler_linear_mirror, ScreenCoord.xy + surface.N.xz * 0.04f * saturate(0.5 * depth_difference), 0).rgb;
+        surface.refraction.rgb =  texture_refraction.SampleLevel(sampler_linear_mirror, ScreenCoord.xy + surface.N.xz * 0.04f * saturate(0.5 * depth_difference), 0).rgb;
+        surface.refraction.rgb *= (g_WaterColorIntensity.x + g_WaterColorIntensity.y * max(0, dot(L, N))) * g_WaterDeepColor.rgb;
+        surface.refraction.rgb += g_FoamUnderwaterColor * saturate(surfaceParameters.foamEnergy * 0.05);
         if (depth_difference < 0)
         {
-			    // Fix cutoff by taking unperturbed depth diff to fill the holes with fog:
+			// Fix cutoff by taking unperturbed depth diff to fill the holes with fog:
             sampled_lineardepth = texture_lineardepth.SampleLevel(sampler_point_clamp, ScreenCoord.xy, 0) * GetCamera().z_far;
             depth_difference = sampled_lineardepth - lineardepth;
         }
-		    // WATER FOG:
-            
-            //surface.refraction.a = 1 - saturate(color.a * 0.1f * depth_difference);
-            
+		// WATER FOG:
+        surface.refraction.a = 1 - saturate(color.a * 0.1f * depth_difference);
     }
     #endif
     
-	    // Blend out at distance:
-        color.a = pow(saturate(1 - saturate(dist / GetCamera().z_far)), 2);
+	// Blend out at distance:
+    //color.a = color.a * pow(saturate(1 - saturate(dist / GetCamera().z_far)), 2);
 
-        ApplyLighting(surface, lighting, color);
+    ApplyLighting(surface, lighting, color);
 
-        //ApplyFog(dist, GetCamera().position, V, color);
+    ApplyFog(dist, GetCamera().position, V, color);
 
+    float4 foamCol = float4(foamDiffuseColor, 1.0);
+    //ApplyLighting(surface, lighting, foamCol);
     
-    color.rgb = lerp(color.rgb, g_FoamColor, foamIntensity);
 
- 
-	    // Showing cascade edges if needed
-    #if 0
-        if (g_showCascades > 0)
-        {
-            if (frac(In.UVForCascade01.x) < 0.05)
-                color.r += 0.25;
-            if (frac(In.UVForCascade01.y) < 0.05)
-                 color.r += 0.25;
+    color.rgb = lerp(color.rgb, foamCol.rgb, foamIntensity);
 
-            if (frac(In.UVForCascade01.z) < 0.05)
-                color.g += 0.25;
-            if (frac(In.UVForCascade01.w) < 0.05)
-             color.g += 0.25;
+    // Showing cascade edges if needed
+    if (g_showCascades > 0)
+    {
+        if (frac(In.UVForCascade01.x) < 0.05)
+            color.r += 0.25;
+        if (frac(In.UVForCascade01.y) < 0.05)
+            color.r += 0.25;
 
-            if (frac(In.UVForCascade23.x) < 0.05)
-                color.b += 0.5;
-            if (frac(In.UVForCascade23.y) < 0.05)
-                color.b += 0.5;
+        if (frac(In.UVForCascade01.z) < 0.05)
+            color.g += 0.25;
+        if (frac(In.UVForCascade01.w) < 0.05)
+            color.g += 0.25;
 
-            if (frac(In.UVForCascade23.z) < 0.05)
-                color.rgb += 0.25;
-            if (frac(In.UVForCascade23.w) < 0.05)
-                color.rgb += 0.25;
+        if (frac(In.UVForCascade23.x) < 0.05)
+            color.b += 0.5;
+        if (frac(In.UVForCascade23.y) < 0.05)
+            color.b += 0.5;
+
+        if (frac(In.UVForCascade23.z) < 0.05)
+            color.rgb += 0.25;
+        if (frac(In.UVForCascade23.w) < 0.05)
+            color.rgb += 0.25;
     }
-    #endif
-        
-    return float4(color.rgb, 1);
+    
+    return color;
+    
+    
+    
+
 }
 
 #else

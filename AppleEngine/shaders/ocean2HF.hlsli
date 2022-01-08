@@ -4,7 +4,7 @@
 #include "globals.hlsli"
 
 
-cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b2)
+cbuffer OCEAN_VS_HS_DS_CBUFFER : register(b3)
 {
 	// Data used in vertex shader
     float4x4 g_matViewProj;
@@ -122,14 +122,14 @@ struct PerInstanceElement
     float patchMorphConstantAndSign;
 };
 
-cbuffer OCEAN_VS_CBUFFER_PERINSTANCE : register(b1)
+cbuffer OCEAN_VS_CBUFFER_PERINSTANCE : register(b2)
 {
     PerInstanceElement g_perInstanceData[4096];
 };
 
 
 
-cbuffer OCEAN_PS_CBUFFER : register(b3)
+cbuffer OCEAN_PS_CBUFFER : register(b4)
 {
 	// Defined by wind waves simulation
     float g_cascadeToCascadeScale;
@@ -166,6 +166,7 @@ cbuffer OCEAN_PS_CBUFFER : register(b3)
     
     //
     float4 g_WaterColor;
+    float4 g_WaterDeepColor;
     float4 g_WaterColorIntensity;
     
     float3 g_FoamColor;

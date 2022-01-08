@@ -109,6 +109,7 @@ struct OCEAN_PS_CBUFFER
 
 	//
 	DirectX::XMFLOAT4 g_WaterColor;
+	DirectX::XMFLOAT4 g_WaterDeepColor;
 	DirectX::XMFLOAT4 g_WaterColorIntensity;
 
 	DirectX::XMFLOAT3 g_FoamColor;
@@ -643,7 +644,7 @@ namespace ap
 
 	void Ocean2::Render(ap::graphics::CommandList cmd)
 	{
-
+		
 		cmdCount = cmd;
 
 		gfsdk_float2 viewportSize;
@@ -758,7 +759,7 @@ namespace ap
 		VSHSDSCB.skydomeTexture= device->GetDescriptorIndex(&skydome, SubresourceType::SRV);
 
 
-		device->BindDynamicConstantBuffer(VSHSDSCB, 2, cmd);
+		device->BindDynamicConstantBuffer(VSHSDSCB, 3, cmd);
 
 		OCEAN_PS_CBUFFER PSCB;
 		PSCB.g_cascadeToCascadeScale = windWavesRenderingData.cascade_to_cascade_scale;
@@ -779,13 +780,14 @@ namespace ap
 		PSCB.g_showCascades = parameters.bShowCascades ? 1.0f : 0.0f;
 		PSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
 
-		PSCB.g_WaterColor = parameters.waterDeepColor;
+		PSCB.g_WaterColor = parameters.waterColor;
+		PSCB.g_WaterDeepColor = parameters.waterDeepColor;
 		PSCB.g_WaterColorIntensity = parameters.waterColorIntensity;
 		PSCB.g_FoamColor = parameters.foamColor;
 		PSCB.g_FoamUnderwaterColor = parameters.foamUnderwaterColor;
 
 
-		device->BindDynamicConstantBuffer(PSCB, 3, cmd);
+		device->BindDynamicConstantBuffer(PSCB, 4, cmd);
 		
 		uint32_t numNodes;
 		GFSDK_WaveWorks_Quadtree_NodeRenderingProperties* pNodes;
@@ -844,15 +846,18 @@ namespace ap
 
 		/*{
 			GPUBarrier barriers[] = {
-				GPUBarrier::Image(&windWavesDisplacementsTextureArray, windWavesDisplacementsTextureArray.desc.layout, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&windWavesGradientsTextureArray, windWavesGradientsTextureArray.desc.layout, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&windWavesMomentsTextureArray, windWavesMomentsTextureArray.desc.layout, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&localWavesDisplacementsTexture,localWavesDisplacementsTexture.desc.layout, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&localWavesGradientsTexture,localWavesGradientsTexture.desc.layout, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::MEMORY(&windWavesDisplacementsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&windWavesGradientsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&windWavesMomentsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&localWavesDisplacementsTexture,ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
+				GPUBarrier::Image(&localWavesGradientsTexture,ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
 
 			};
 			device->Barrier(barriers, arraysize(barriers), cmd);
 		}*/
+
+		
+		
 
 		// Rendering the quadtree patches using instancing
 		for (uint32_t i = 0; i < 16; i++)
@@ -861,7 +866,7 @@ namespace ap
 			if (perInstanceBuffers[i].size() > 0)
 			{
 				// Writing the entire constant buffer
-				device->BindDynamicConstantBuffer_Array((void*)perInstanceBuffers[i].data(), 4096 * sizeof(OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY), 1, cmd);
+				device->BindDynamicConstantBuffer_Array((void*)perInstanceBuffers[i].data(), 4096 * sizeof(OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY), 2, cmd);
 				
 				// Setting up draw arguments to render up to 4096 instances.
 				// Ocean quadtree usually generates <100 instances of patches of each type, 
@@ -872,8 +877,6 @@ namespace ap
 				
 			}
 		}
-
-		
 
 		
 		
