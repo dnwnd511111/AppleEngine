@@ -1388,6 +1388,32 @@ namespace Panel
 						ImGui::Separator();
 						PropertyGridSpacing();
 
+						
+						(DrawSliderFloat("Tessellation Factor", mesh.tessellationFactor, 0.0f, 100.0f));
+
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
+
+						if (DrawButton2("Flip Culling", true))
+							mesh.FlipCulling();
+
+						if (DrawButton2("Flip Normals", true))
+							mesh.FlipNormals();
+						
+						if (DrawButton2("Normals Smooth", true))
+							mesh.ComputeNormals(MeshComponent::COMPUTE_NORMALS_SMOOTH);
+
+						if (DrawButton2("Normals Hard", true))
+							mesh.ComputeNormals(MeshComponent::COMPUTE_NORMALS_HARD);
+						
+
+						if (DrawButton2("Recenter", true))
+							mesh.Recenter();
+
+						if (DrawButton2("RecenterToBottom", true))
+							mesh.RecenterToBottom();
+
 
 
 						EndPropertyGrid();

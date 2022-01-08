@@ -177,86 +177,88 @@ namespace Panel
 		{
 		case MODE_TEXTURE:
 		{
-			//const ap::scene::PickResult& intersect = editor->hovered;
-			//if (intersect.entity != entity)
-			//	break;
+			const ap::scene::PickResult& intersect = editor->renderComponent.hovered;
+			if (intersect.entity != entity)
+				break;
 
-			//ObjectComponent* object = scene.objects.GetComponent(entity);
-			//if (object == nullptr || object->meshID == INVALID_ENTITY)
-			//	break;
+			ObjectComponent* object = scene.objects.GetComponent(entity);
+			if (object == nullptr || object->meshID == INVALID_ENTITY)
+				break;
 
-			//MeshComponent* mesh = scene.meshes.GetComponent(object->meshID);
-			//if (mesh == nullptr || (mesh->vertex_uvset_0.empty() && mesh->vertex_uvset_1.empty()))
-			//	break;
+			MeshComponent* mesh = scene.meshes.GetComponent(object->meshID);
+			if (mesh == nullptr || (mesh->vertex_uvset_0.empty() && mesh->vertex_uvset_1.empty()))
+				break;
 
-			//MaterialComponent* material = subset >= 0 && subset < (int)mesh->subsets.size() ? scene.materials.GetComponent(mesh->subsets[subset].materialID) : nullptr;
-			//if (material == nullptr)
-			//	break;
+			MaterialComponent* material = subset >= 0 && subset < (int)mesh->subsets.size() ? scene.materials.GetComponent(mesh->subsets[subset].materialID) : nullptr;
+			if (material == nullptr)
+				break;
 
-			//int uvset = 0;
-			//Texture editTexture = GetEditTextureSlot(*material, &uvset);
-			//if (!editTexture.IsValid())
-			//	break;
-			//const TextureDesc& desc = editTexture.GetDesc();
-			//auto& vertex_uvset = uvset == 0 ? mesh->vertex_uvset_0 : mesh->vertex_uvset_1;
+			int uvset = 0;
+			Texture editTexture;
+			if (material->textures[selectedTextureIdx].resource.IsValid())
+				editTexture = material->textures[selectedTextureIdx].resource.GetTexture();
+			if (!editTexture.IsValid())
+				break;
+			const TextureDesc& desc = editTexture.GetDesc();
+			auto& vertex_uvset = uvset == 0 ? mesh->vertex_uvset_0 : mesh->vertex_uvset_1;
 
-			//const float u = intersect.bary.x;
-			//const float v = intersect.bary.y;
-			//const float w = 1 - u - v;
-			//XMFLOAT2 uv;
-			//uv.x = vertex_uvset[intersect.vertexID0].x * w +
-			//	vertex_uvset[intersect.vertexID1].x * u +
-			//	vertex_uvset[intersect.vertexID2].x * v;
-			//uv.y = vertex_uvset[intersect.vertexID0].y * w +
-			//	vertex_uvset[intersect.vertexID1].y * u +
-			//	vertex_uvset[intersect.vertexID2].y * v;
-			//uint2 center = XMUINT2(uint32_t(uv.x * desc.width), uint32_t(uv.y * desc.height));
+			const float u = intersect.bary.x;
+			const float v = intersect.bary.y;
+			const float w = 1 - u - v;
+			XMFLOAT2 uv;
+			uv.x = vertex_uvset[intersect.vertexID0].x * w +
+				vertex_uvset[intersect.vertexID1].x * u +
+				vertex_uvset[intersect.vertexID2].x * v;
+			uv.y = vertex_uvset[intersect.vertexID0].y * w +
+				vertex_uvset[intersect.vertexID1].y * u +
+				vertex_uvset[intersect.vertexID2].y * v;
+			uint2 center = XMUINT2(uint32_t(uv.x * desc.width), uint32_t(uv.y * desc.height));
 
-			//if (painting)
-			//{
-			//	GraphicsDevice* device = ap::graphics::GetDevice();
-			//	CommandList cmd = device->BeginCommandList();
+			if (painting)
+			{
+				GraphicsDevice* device = ap::graphics::GetDevice();
+				CommandList cmd = device->BeginCommandList();
 
-			//	//RecordHistory(true, cmd);
+				//RecordHistory(true, cmd);
 
-			//	// Need to requery this because RecordHistory might swap textures on material:
-			//	editTexture = GetEditTextureSlot(*material, &uvset);
+				// Need to requery this because RecordHistory might swap textures on material:
+				//editTexture = GetEditTextureSlot(*material, &uvset);
 
-			//	device->BindComputeShader(ap::renderer::GetShader(ap::enums::CSTYPE_PAINT_TEXTURE), cmd);
+				device->BindComputeShader(ap::renderer::GetShader(ap::enums::CSTYPE_PAINT_TEXTURE), cmd);
 
-			//	device->BindResource(ap::texturehelper::getWhite(), 0, cmd);
-			//	device->BindUAV(&editTexture, 0, cmd);
+				device->BindResource(ap::texturehelper::getWhite(), 0, cmd);
+				device->BindUAV(&editTexture, 0, cmd);
 
-			//	PaintTextureCB cb;
-			//	cb.xPaintBrushCenter = center;
-			//	cb.xPaintBrushRadius = (uint32_t)pressure_radius;
-			//	cb.xPaintBrushAmount = amount;
-			//	cb.xPaintBrushFalloff = falloff;
-			//	cb.xPaintBrushColor = color.rgba;
-			//	device->PushConstants(&cb, sizeof(cb), cmd);
+				PaintTextureCB cb;
+				cb.xPaintBrushCenter = center;
+				cb.xPaintBrushRadius = (uint32_t)pressure_radius;
+				cb.xPaintBrushAmount = amount;
+				cb.xPaintBrushFalloff = falloff;
+				cb.xPaintBrushColor = color.rgba;
+				device->PushConstants(&cb, sizeof(cb), cmd);
 
-			//	const uint diameter = cb.xPaintBrushRadius * 2;
-			//	const uint dispatch_dim = (diameter + PAINT_TEXTURE_BLOCKSIZE - 1) / PAINT_TEXTURE_BLOCKSIZE;
-			//	device->Dispatch(dispatch_dim, dispatch_dim, 1, cmd);
+				const uint diameter = cb.xPaintBrushRadius * 2;
+				const uint dispatch_dim = (diameter + PAINT_TEXTURE_BLOCKSIZE - 1) / PAINT_TEXTURE_BLOCKSIZE;
+				device->Dispatch(dispatch_dim, dispatch_dim, 1, cmd);
 
-			//	GPUBarrier barriers[] = {
-			//		GPUBarrier::Memory(),
-			//	};
-			//	device->Barrier(barriers, arraysize(barriers), cmd);
+				GPUBarrier barriers[] = {
+					GPUBarrier::Memory(),
+				};
+				device->Barrier(barriers, arraysize(barriers), cmd);
 
 
-			//	ap::renderer::GenerateMipChain(editTexture, ap::renderer::MIPGENFILTER::MIPGENFILTER_LINEAR, cmd);
-			//}
+				ap::renderer::GenerateMipChain(editTexture, ap::renderer::MIPGENFILTER::MIPGENFILTER_LINEAR, cmd);
+			}
 
-			//ap::renderer::PaintRadius paintrad;
-			//paintrad.objectEntity = entity;
-			//paintrad.subset = subset;
-			//paintrad.radius = radius;
-			//paintrad.center = center;
-			//paintrad.uvset = uvset;
-			//paintrad.dimensions.x = desc.width;
-			//paintrad.dimensions.y = desc.height;
-			//ap::renderer::DrawPaintRadius(paintrad);
+			ap::renderer::PaintRadius paintrad;
+			paintrad.objectEntity = entity;
+			paintrad.subset = subset;
+			paintrad.radius = radius;
+			paintrad.center = center;
+			paintrad.uvset = uvset;
+			paintrad.dimensions.x = desc.width;
+			paintrad.dimensions.y = desc.height;
+			ap::renderer::DrawPaintRadius(paintrad);
 		}
 		break;
 

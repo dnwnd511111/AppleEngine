@@ -2298,7 +2298,7 @@ void EditorComponent::Update(float dt)
 				{
 					const ap::scene::PickResult& picked = translator.selected.back();
 
-					main->paintToolPanel.SetEntity(picked.entity);
+					main->paintToolPanel.SetEntity(picked.entity, picked.subsetIndex);
 				}
 
 
