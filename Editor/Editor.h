@@ -141,4 +141,5 @@ private:
 	void ImGuiRender_PostProcess();
 	void ImGuiRender_ToolBar();
 	void ImGuiRender_Renderer();
+	void ImGuiRender_Terrain();
 };

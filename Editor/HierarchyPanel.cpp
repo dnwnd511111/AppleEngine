@@ -1296,8 +1296,61 @@ namespace Panel
 								}
 							}
 
+							if (mesh.IsTerrain())
+							{
+
+								int selectedMat1 = scene.materials.GetIndex(mesh.terrain_material1) + 1;
+								if (DrawCombo("Terrain Material_1", items, items.size(), &selectedMat1))
+								{
+									if (selectedMat1 == 0)
+									{
+										mesh.terrain_material1 = INVALID_ENTITY;
+									}
+									else
+									{
+										mesh.terrain_material1 = scene.materials.GetEntity(selectedMat1 - 1);
+									}
+
+								}
+
+								int selectedMat2 = scene.materials.GetIndex(mesh.terrain_material2) + 1;
+								if (DrawCombo("Terrain Material_2", items, items.size(), &selectedMat2))
+								{
+									if (selectedMat2 == 0)
+									{
+										mesh.terrain_material2 = INVALID_ENTITY;
+									}
+									else
+									{
+										mesh.terrain_material2 = scene.materials.GetEntity(selectedMat2 - 1);
+									}
+
+								}
+
+								int selectedMat3 = scene.materials.GetIndex(mesh.terrain_material3) + 1;
+								if (DrawCombo("Terrain Material_3", items, items.size(), &selectedMat3))
+								{
+									if (selectedMat3 == 0)
+									{
+										mesh.terrain_material3 = INVALID_ENTITY;
+									}
+									else
+									{
+										mesh.terrain_material3 = scene.materials.GetEntity(selectedMat3 - 1);
+									}
+
+								}
+								
+
+							}
+
 
 						}
+
+
+
+
+
 
 
 						bool IsDoubleSided = mesh.IsDoubleSided();
@@ -1414,7 +1467,11 @@ namespace Panel
 						if (DrawButton2("RecenterToBottom", true))
 							mesh.RecenterToBottom();
 
+						PropertyGridSpacing();
+						ImGui::Separator();
+						PropertyGridSpacing();
 
+						
 
 						EndPropertyGrid();
 

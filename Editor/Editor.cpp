@@ -5,6 +5,7 @@
 
 #include "ModelImporter.h"
 #include "Translator.h"
+#include "Utility/stb_image.h"
 
 #include "apImGui.h"
 
@@ -488,6 +489,7 @@ void Editor::ImGuiRender()
 		ImGui::End();
 
 		//
+		ImGuiRender_Terrain();
 		ImGuiRender_ToolBar();
 		ImGuiRender_Renderer();
 
@@ -1471,6 +1473,200 @@ void Editor::ImGuiRender_Renderer()
 	EndPropertyGrid();
 
 	ImGui::End();
+}
+
+void Editor::ImGuiRender_Terrain()
+{
+	ImGui::Begin("Terrain");
+
+	BeginPropertyGrid();
+	PropertyGridSpacing();
+
+
+	auto generate_mesh = [](MeshComponent* mesh, int width, int height, unsigned char* rgb = nullptr,
+		int channelCount = 4, float heightmap_scale = 1)
+	{
+
+		if (mesh == nullptr)
+			return;
+		mesh->vertex_positions.resize(width * height);
+		mesh->vertex_normals.resize(width * height);
+		mesh->vertex_colors.resize(width * height);
+		mesh->vertex_uvset_0.resize(width * height);
+		mesh->vertex_uvset_1.resize(width * height);
+		mesh->vertex_atlas.resize(width * height);
+		for (int i = 0; i < width; ++i)
+		{
+			for (int j = 0; j < height; ++j)
+			{
+				size_t index = size_t(i + j * width);
+				mesh->vertex_positions[index] = XMFLOAT3((float)i - (float)width * 0.5f, 0, (float)j - (float)height * 0.5f);
+				if (rgb != nullptr)
+					mesh->vertex_positions[index].y = ((float)rgb[index * channelCount] - 127.0f) * heightmap_scale;
+				mesh->vertex_colors[index] = ap::Color::Red().rgba;
+				XMFLOAT2 uv = XMFLOAT2((float)i / (float)width, (float)j / (float)height);
+				mesh->vertex_uvset_0[index] = uv;
+				mesh->vertex_uvset_1[index] = uv;
+				mesh->vertex_atlas[index] = uv;
+			}
+		}
+		mesh->indices.resize((width - 1) * (height - 1) * 6);
+		size_t counter = 0;
+		for (int x = 0; x < width - 1; x++)
+		{
+			for (int y = 0; y < height - 1; y++)
+			{
+				int lowerLeft = x + y * width;
+				int lowerRight = (x + 1) + y * width;
+				int topLeft = x + (y + 1) * width;
+				int topRight = (x + 1) + (y + 1) * width;
+
+				mesh->indices[counter++] = topLeft;
+				mesh->indices[counter++] = lowerLeft;
+				mesh->indices[counter++] = lowerRight;
+
+				mesh->indices[counter++] = topLeft;
+				mesh->indices[counter++] = lowerRight;
+				mesh->indices[counter++] = topRight;
+			}
+		}
+		mesh->subsets.back().indexCount = (uint32_t)mesh->indices.size();
+
+		mesh->ComputeNormals(MeshComponent::COMPUTE_NORMALS_SMOOTH_FAST);
+	};
+
+	//terrain
+	
+	static int terrainX = 128;
+	static float terrainY = 0.5;
+	static int terrainZ = 128;
+	const int channelCount = 4;
+	
+	static unsigned char* rgb = nullptr;
+	static std::string textureName;
+
+	MeshComponent* mesh = nullptr;
+	
+	if (renderComponent.translator.selected.size() == 1)
+	{
+		Entity ent = renderComponent.translator.selected[0].entity;
+		Scene& scene = ap::scene::GetScene();
+		ObjectComponent* object =scene.objects.GetComponent(ent);
+		if (object)
+		{
+			mesh =  scene.meshes.GetComponent(object->meshID);
+			if (!(mesh && mesh->IsTerrain()))
+			{
+				mesh == nullptr;
+			}
+		}
+		
+	}
+
+	
+	
+	if (DrawSliderInt("Terrain X", terrainX, 16, 1024))
+	{
+		generate_mesh(mesh, terrainX, terrainZ, rgb, channelCount, terrainY);
+	}
+	if (DrawSliderInt("Terrain Z", terrainZ, 16, 1024))
+	{
+		generate_mesh(mesh, terrainX, terrainZ, rgb, channelCount, terrainY);
+	}
+
+	if (DrawSliderFloat("Terrain Y", terrainY, 0, 1.0f))
+	{
+		generate_mesh(mesh, terrainX, terrainZ, rgb, channelCount, terrainY);
+	}
+
+	
+
+	if (DrawButton2("Generate Terrain", true))
+	{
+
+		Scene& scene = ap::scene::GetScene();
+		Entity entity = scene.Entity_CreateObject("editorTerrain");
+		ObjectComponent& object = *scene.objects.GetComponent(entity);
+		object.meshID = scene.Entity_CreateMesh("terrainMesh");
+		mesh = scene.meshes.GetComponent(object.meshID);
+		mesh->SetTerrain(true);
+		mesh->subsets.emplace_back();
+		mesh->subsets.back().materialID = scene.Entity_CreateMaterial("terrainMaterial");
+		mesh->subsets.back().indexOffset = 0;
+		MaterialComponent* material = scene.materials.GetComponent(mesh->subsets.back().materialID);
+		material->SetUseVertexColors(true);
+
+
+		ap::scene::PickResult pick;
+		pick.entity = entity;
+		pick.subsetIndex = 0;
+		renderComponent.ClearSelected();
+		renderComponent.AddSelected(pick);
+
+		generate_mesh(mesh,terrainX, terrainZ);
+
+
+	}
+
+
+	const char* buttonTitle =  "Load HeightMap";
+
+	if (DrawButton2(buttonTitle, true))
+	{
+
+		ap::helper::FileDialogParams params;
+		params.type = ap::helper::FileDialogParams::OPEN;
+		params.description = "Texture";
+		params.extensions = ap::resourcemanager::GetSupportedImageExtensions();
+		ap::helper::FileDialog(params, [&](std::string fileName) {
+
+				if (rgb != nullptr)
+				{
+					stbi_image_free(rgb);
+					rgb = nullptr;
+				}
+
+				int bpp;
+				rgb = stbi_load(fileName.c_str(), &terrainX, &terrainZ, &bpp, channelCount);
+				textureName = fileName;
+
+				if (mesh == nullptr)
+				{
+					Scene& scene = ap::scene::GetScene();
+					Entity entity = scene.Entity_CreateObject("editorTerrain");
+					ObjectComponent& object = *scene.objects.GetComponent(entity);
+					object.meshID = scene.Entity_CreateMesh("terrainMesh");
+					mesh = scene.meshes.GetComponent(object.meshID);
+					mesh->SetTerrain(true);
+					mesh->subsets.emplace_back();
+					mesh->subsets.back().materialID = scene.Entity_CreateMaterial("terrainMaterial");
+					mesh->subsets.back().indexOffset = 0;
+					MaterialComponent* material = scene.materials.GetComponent(mesh->subsets.back().materialID);
+					material->SetUseVertexColors(true);
+
+					ap::scene::PickResult pick;
+					pick.entity = entity;
+					pick.subsetIndex = 0;
+					renderComponent.ClearSelected();
+					renderComponent.AddSelected(pick);
+
+					
+				}
+				
+				generate_mesh(mesh, terrainX, terrainZ, rgb, channelCount, terrainY);
+			
+
+	
+			});
+
+
+
+	}
+
+
+	EndPropertyGrid();
+	ImGui::End();
+
 }
 
 
