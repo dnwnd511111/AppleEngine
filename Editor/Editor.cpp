@@ -548,6 +548,12 @@ void Editor::ImGuiRender_PlaceActors()
 
 	}
 
+	if (DrawButton("Hair", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateHair("editorHair", frontCamPos);
+
+	}
+
 	if (DrawButton("Sound", ImVec2(70, 20)))
 	{
 		ap::helper::FileDialogParams params;
@@ -1479,6 +1485,16 @@ void Editor::ImGuiRender_Terrain()
 {
 	ImGui::Begin("Terrain");
 
+	static int terrainX = 128;
+	static float terrainY = 0.5;
+	static int terrainZ = 128;
+	const int channelCount = 4;
+
+	MeshComponent* mesh = nullptr;
+
+	static unsigned char* rgb = nullptr;
+	static std::string textureName = "";
+
 	BeginPropertyGrid();
 	PropertyGridSpacing();
 
@@ -1503,7 +1519,7 @@ void Editor::ImGuiRender_Terrain()
 				mesh->vertex_positions[index] = XMFLOAT3((float)i - (float)width * 0.5f, 0, (float)j - (float)height * 0.5f);
 				if (rgb != nullptr)
 					mesh->vertex_positions[index].y = ((float)rgb[index * channelCount] - 127.0f) * heightmap_scale;
-				mesh->vertex_colors[index] = ap::Color::Red().rgba;
+				mesh->vertex_colors[index] = ap::Color::White().rgba;
 				XMFLOAT2 uv = XMFLOAT2((float)i / (float)width, (float)j / (float)height);
 				mesh->vertex_uvset_0[index] = uv;
 				mesh->vertex_uvset_1[index] = uv;
@@ -1537,15 +1553,7 @@ void Editor::ImGuiRender_Terrain()
 
 	//terrain
 	
-	static int terrainX = 128;
-	static float terrainY = 0.5;
-	static int terrainZ = 128;
-	const int channelCount = 4;
 	
-	static unsigned char* rgb = nullptr;
-	static std::string textureName;
-
-	MeshComponent* mesh = nullptr;
 	
 	if (renderComponent.translator.selected.size() == 1)
 	{

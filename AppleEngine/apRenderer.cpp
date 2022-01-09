@@ -1271,6 +1271,7 @@ void LoadShaders()
 
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) {
 		PipelineStateDesc desc;
+
 		desc.vs = &shaders[VSTYPE_OBJECT_SIMPLE];
 		desc.ps = &shaders[PSTYPE_OBJECT_SIMPLE];
 		desc.rs = &rasterizers[RSTYPE_WIRE];

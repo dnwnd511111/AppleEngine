@@ -2076,6 +2076,7 @@ using namespace dx12_internal;
 		else
 		{
 			pipeline = it->second.Get();
+			
 		}
 		assert(pipeline != nullptr);
 

@@ -238,6 +238,20 @@ namespace Panel
 
 		Entity materialEntity = entity;
 
+
+		std::vector<std::string> meshNames = { "No Mesh" };
+		meshNames.reserve(scene.meshes.GetCount() + 1);
+
+		for (int i = 0; i < scene.meshes.GetCount(); i++)
+		{
+			Entity ent = scene.meshes.GetEntity(i);
+			NameComponent* name = scene.names.GetComponent(ent);
+			meshNames.push_back(name->name);
+
+		}
+
+
+
 		BeginPropertyGrid();
 		PropertyGridSpacing();
 
@@ -888,31 +902,48 @@ namespace Panel
 
 		if (emitter)
 		{
-			DrawComponent("Emitter", emitter, [this](ap::EmittedParticleSystem& particle)
+			DrawComponent("Emitter", emitter, [this,&meshNames,&scene](ap::EmittedParticleSystem& particle)
 				{
 
 					
 					BeginPropertyGrid();
 					PropertyGridSpacing();
 
-					int selectedIdx = (int)particle.shaderType;
-
-					const std::vector<std::string> items =
 					{
-						"SOFT",
-						"SOFT_DISTORTION",
-						"SIMPLE",
-						"SOFT_LIGHTING"
+						int selectedIdx = (int)particle.shaderType;
 
-					};
-					DrawCombo("Shader Type", items, items.size(), &selectedIdx);
-					particle.shaderType = (ap::EmittedParticleSystem::PARTICLESHADERTYPE)selectedIdx;
+						const std::vector<std::string> items =
+						{
+							"SOFT",
+							"SOFT_DISTORTION",
+							"SIMPLE",
+							"SOFT_LIGHTING"
 
-					if (DrawButton2("Restart", true))
-						particle.Restart();
+						};
+						DrawCombo("Shader Type", items, items.size(), &selectedIdx);
+						particle.shaderType = (ap::EmittedParticleSystem::PARTICLESHADERTYPE)selectedIdx;
 
-					//std::string meshName = particle.meshUUID ? scene->GetEntity(particle.meshUUID).GetComponent<NameComponent>().name : "NULL";
-					//DrawInputText("MeshName", meshName.c_str());
+						if (DrawButton2("Restart", true))
+							particle.Restart();
+
+					}
+
+					{
+						int selectedIdx = scene.meshes.GetIndex(particle.meshID) + 1;
+
+
+						if (DrawCombo("Mesh", meshNames, meshNames.size(), &selectedIdx))
+						{
+							if (selectedIdx == 0)
+							{
+								particle.meshID = INVALID_ENTITY;
+							}
+							else
+							{
+								particle.meshID = scene.meshes.GetEntity(selectedIdx - 1);
+							}
+						}
+					}
 
 					std::string memoryBudget = std::to_string(particle.GetMemorySizeInBytes());
 					DrawInputText("Memory Budget", memoryBudget);
@@ -1494,6 +1525,60 @@ namespace Panel
 		}
 
 		
+		if (hair)
+		{
+			DrawComponent("Hair", hair, [&meshNames,&scene]( ap::HairParticleSystem& hair)
+				{
+
+
+					BeginPropertyGrid();
+					PropertyGridSpacing();
+
+
+					
+					int selectedIdx = scene.meshes.GetIndex(hair.meshID) + 1;
+
+
+					if (DrawCombo("Mesh", meshNames, meshNames.size(), &selectedIdx))
+					{
+						if (selectedIdx == 0)
+						{
+							hair.meshID = INVALID_ENTITY;
+						}
+						else
+						{
+							hair.meshID = scene.meshes.GetEntity(selectedIdx - 1);
+						}
+					}
+
+					DrawSliderInt("Strand Count", hair.strandCount, 0, 100000);
+					DrawSliderFloat("Length", hair.length, 0, 4);
+					DrawSliderFloat("Stiffness", hair.stiffness, 0,20);
+					DrawSliderFloat("Ramdomness", hair.randomness, 0, 1);
+					DrawSliderInt("Segment Count", hair.segmentCount, 0, 10);
+					DrawSliderInt("Random Seed", hair.randomSeed, 1, 123456);
+					DrawSliderFloat("View Distance", hair.viewDistance, 0, 1000);
+
+					DrawSliderInt("Frame X", hair.framesX, 1, 10);
+					DrawSliderInt("Frame Y", hair.framesY, 1, 10);
+					DrawSliderInt("Frame Count", hair.frameCount, 1, 100);
+					DrawSliderInt("First Frame", hair.frameStart, 0, 100);
+
+
+
+
+
+
+
+
+
+
+					PropertyGridSpacing();
+
+					EndPropertyGrid();
+
+				});
+		}
 
 		
 		if (material)

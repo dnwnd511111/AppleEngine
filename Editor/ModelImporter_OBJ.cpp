@@ -150,10 +150,14 @@ void ImportModel_OBJ(const std::string& fileName, Scene& scene)
 			materialLibrary.push_back(materialEntity); // for subset-indexing...
 		}
 
+
+		static int num = 0;
+
 		if (materialLibrary.empty())
 		{
+			std::string materialName = "OBJImport_defaultMaterial" + std::to_string(num++);
 			// Create default material if nothing was found:
-			Entity materialEntity = scene.Entity_CreateMaterial("OBJImport_defaultMaterial");
+			Entity materialEntity = scene.Entity_CreateMaterial(materialName);
 			MaterialComponent& material = *scene.materials.GetComponent(materialEntity);
 			materialLibrary.push_back(materialEntity); // for subset-indexing...
 		}

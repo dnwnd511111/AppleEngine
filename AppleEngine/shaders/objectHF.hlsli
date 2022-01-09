@@ -14,7 +14,7 @@
 #define DISABLE_VOXELGI
 #endif
 
-#define LIGHTMAP_QUALITY_BICUBIC
+#define LIGHTMAP_QUALITY_BICUBICOBJECTSHADER_USE_COLOR
 
 
 #include "globals.hlsli"
