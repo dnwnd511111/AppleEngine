@@ -8,7 +8,7 @@ gltf
 obj
 
 Features
-PBR (
+PBR (Anisotropic, Sheen, ClearCoat)
 Forward+ 
 Hardware Occlusion
 MSAA, TAA
