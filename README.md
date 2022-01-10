@@ -17,6 +17,8 @@ https://www.youtube.com/channel/UCXFu2PFC0sFkW04UkozFj4Q
 
 
 **Features**
+
+  * ECS
   * PBR (Anisotropic, Sheen, ClearCoat)
   * Forward+ 
   * Hardware Occlusion
