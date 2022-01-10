@@ -38,7 +38,8 @@ This engine is based on Wicked, Hazel, Unreal Engine
  
   **ThirdParty**
   * Nvidia Waveworks
-
+  * ImGui
+  * Bullet
 
 
 
