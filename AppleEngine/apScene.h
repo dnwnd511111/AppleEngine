@@ -1409,8 +1409,9 @@ namespace ap::scene
 		);
 		ap::ecs::Entity Entity_CreateDecal(
 			const std::string& name,
-			const std::string& textureName,
-			const std::string& normalMapName = ""
+			const XMFLOAT3& position
+			//const std::string& textureName,
+			//const std::string& normalMapName = ""
 		);
 		ap::ecs::Entity Entity_CreateCamera(
 			const std::string& name,

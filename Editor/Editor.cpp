@@ -554,6 +554,12 @@ void Editor::ImGuiRender_PlaceActors()
 
 	}
 
+	if (DrawButton("Decal", ImVec2(70, 20)))
+	{
+		scene.Entity_CreateDecal("Decal", frontCamPos);
+
+	}
+
 	if (DrawButton("Sound", ImVec2(70, 20)))
 	{
 		ap::helper::FileDialogParams params;
@@ -1519,7 +1525,7 @@ void Editor::ImGuiRender_Terrain()
 				mesh->vertex_positions[index] = XMFLOAT3((float)i - (float)width * 0.5f, 0, (float)j - (float)height * 0.5f);
 				if (rgb != nullptr)
 					mesh->vertex_positions[index].y = ((float)rgb[index * channelCount] - 127.0f) * heightmap_scale;
-				mesh->vertex_colors[index] = ap::Color::White().rgba;
+				mesh->vertex_colors[index] =  ap::Color(255, 0, 0, 0).rgba;
 				XMFLOAT2 uv = XMFLOAT2((float)i / (float)width, (float)j / (float)height);
 				mesh->vertex_uvset_0[index] = uv;
 				mesh->vertex_uvset_1[index] = uv;

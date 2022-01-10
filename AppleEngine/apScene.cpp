@@ -2078,8 +2078,9 @@ namespace ap::scene
 	}
 	Entity Scene::Entity_CreateDecal(
 		const std::string& name,
-		const std::string& textureName,
-		const std::string& normalMapName
+		const XMFLOAT3& position
+		//const std::string& textureName,
+		//const std::string& normalMapName
 	)
 	{
 		Entity entity = CreateEntity();
@@ -2088,16 +2089,20 @@ namespace ap::scene
 
 		layers.Create(entity);
 
-		transforms.Create(entity);
+		TransformComponent& transform = transforms.Create(entity);
+		transform.Translate(position);
+		transform.UpdateTransform();
 
 		aabb_decals.Create(entity);
 
 		decals.Create(entity);
 
+		
+
 		MaterialComponent& material = materials.Create(entity);
-		material.textures[MaterialComponent::BASECOLORMAP].name = textureName;
-		material.textures[MaterialComponent::NORMALMAP].name = normalMapName;
-		material.CreateRenderData();
+		//material.textures[MaterialComponent::BASECOLORMAP].name = textureName;
+		//material.textures[MaterialComponent::NORMALMAP].name = normalMapName;
+		//material.CreateRenderData();
 
 		return entity;
 	}
@@ -3688,7 +3693,7 @@ namespace ap::scene
 			HairParticleSystem& hair = hairs[args.jobIndex];
 			Entity entity = hairs.GetEntity(args.jobIndex);
 
-			const LayerComponent* layer = layers.GetComponent(entity);
+			const LayerComponent* layer = layers.GetComponent(entity); 
 			if (layer != nullptr)
 			{
 				hair.layerMask = layer->GetLayerMask();

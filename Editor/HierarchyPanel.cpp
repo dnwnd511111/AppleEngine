@@ -1534,7 +1534,6 @@ namespace Panel
 					BeginPropertyGrid();
 					PropertyGridSpacing();
 
-
 					
 					int selectedIdx = scene.meshes.GetIndex(hair.meshID) + 1;
 
@@ -1563,15 +1562,6 @@ namespace Panel
 					DrawSliderInt("Frame Y", hair.framesY, 1, 10);
 					DrawSliderInt("Frame Count", hair.frameCount, 1, 100);
 					DrawSliderInt("First Frame", hair.frameStart, 0, 100);
-
-
-
-
-
-
-
-
-
 
 					PropertyGridSpacing();
 
