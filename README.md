@@ -26,7 +26,9 @@ https://www.youtube.com/channel/UCXFu2PFC0sFkW04UkozFj4Q
   * MSAA, TAA
   * VRS
   * Tessellation
+  * Inverse Kinematics
   * Skeletal Animation
+  * Physics (Rigid, Soft Body)
   * Morph Target
   * Decal
   * Normal, Displacement, Parallax Occlusion Mapping
@@ -35,7 +37,6 @@ https://www.youtube.com/channel/UCXFu2PFC0sFkW04UkozFj4Q
   * Ripple
   * Fog
   * Paint Tool
-  * Physics (Rigid, Soft Body)
   * Particle
   * Sound
   * Terrain
