@@ -60,7 +60,7 @@ namespace ap::imgui
 	bool DrawColorEdit3(const char* label, float* value);
 	bool DrawButton(const char* label, const ImVec2& size = ImVec2(0, 0));
 	bool DrawButton2(const char* label, bool fill = false ,const ImVec2& size = ImVec2(90.0f, 20.0f));
-	void DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, bool isScale = false, float columnWidth = 100.0f);
+	bool DrawVec3Control(const std::string& label, DirectX::XMFLOAT3& values, float resetValue = 0.0f, bool isScale = false, float columnWidth = 100.0f);
 
 	//gonna be deleted
 	bool ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1));

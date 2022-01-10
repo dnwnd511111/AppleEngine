@@ -250,6 +250,17 @@ namespace Panel
 
 		}
 
+		std::vector<std::string> objectNames = { "No Object" };
+		objectNames.reserve(scene.objects.GetCount() + 1);
+
+		for (int i = 0; i < scene.objects.GetCount(); i++)
+		{
+			Entity ent = scene.objects.GetEntity(i);
+			NameComponent* name = scene.names.GetComponent(ent);
+			objectNames.push_back(name->name);
+
+		}
+
 
 
 		BeginPropertyGrid();
@@ -284,8 +295,12 @@ namespace Panel
 
 		if (ImGui::BeginPopup("AddComponent"))
 		{
-			//if (ImGui::MenuItem("Camera"))
-			
+			if (ImGui::MenuItem("Inverse Kinematics"))
+			{
+				scene.inverse_kinematics.Create(entity).chain_length = 1;
+
+				
+			}
 			ImGui::EndPopup();
 		}
 
@@ -328,25 +343,76 @@ namespace Panel
 
 			DrawComponent("Transform", transform, [](TransformComponent& transform)
 				{
+				
+					bool modified = false;
 
 					PropertyGridSpacing();
-					DrawVec3Control("Translation", transform.translation_local);
+					if (DrawVec3Control("Translation", transform.translation_local))
+						modified = true;
 					XMFLOAT3 euler = ap::math::QuaternionToRollPitchYaw(transform.rotation_local);
 
 					euler.x = XMConvertToDegrees(euler.x);
 					euler.y = XMConvertToDegrees(euler.y);
 					euler.z = XMConvertToDegrees(euler.z);
 
-					DrawVec3Control("Rotation", euler);
-					XMStoreFloat4(&transform.rotation_local, XMQuaternionRotationRollPitchYaw(XMConvertToRadians(euler.x), XMConvertToRadians(euler.y), XMConvertToRadians(euler.z)));
-					DrawVec3Control("Scale", transform.scale_local, 1.0f, true);
+					if (DrawVec3Control("Rotation", euler))
+					{
+						XMStoreFloat4(&transform.rotation_local, XMQuaternionRotationRollPitchYaw(XMConvertToRadians(euler.x), XMConvertToRadians(euler.y), XMConvertToRadians(euler.z)));
+						modified = true;
+					}
+					if(DrawVec3Control("Scale", transform.scale_local, 1.0f, true))
+						modified = true;
 
 					PropertyGridSpacing();
-					transform.SetDirty();
+
+					if(modified)
+						transform.SetDirty();
+					
 
 
 
 				});
+
+
+			if (kinematic)
+			{
+				DrawComponent("Inverse Kinematics", kinematic, [&objectNames,&scene](InverseKinematicsComponent& kinematics)
+					{
+
+						BeginPropertyGrid();
+						PropertyGridSpacing();
+					
+
+
+
+						int selectedIdx = scene.objects.GetIndex(kinematics.target) + 1;
+
+
+						if (DrawCombo("Target", objectNames, objectNames.size(), &selectedIdx))
+						{
+							if (selectedIdx == 0)
+							{
+								kinematics.target = INVALID_ENTITY;
+							}
+							else
+							{
+								kinematics.target = scene.objects.GetEntity(selectedIdx - 1);
+							}
+						}
+
+						bool IsDisabled = kinematics.IsDisabled();
+						if (DrawCheckbox("Disabled", IsDisabled))
+						{
+							kinematics.SetDisabled(IsDisabled);
+						}
+						DrawSliderInt("Chain Length", kinematics.chain_length, 0, 10);
+						DrawSliderInt("Interation Count", kinematics.iteration_count, 0, 10);
+
+
+						EndPropertyGrid();
+					});
+			}
+
 		}
 
 
@@ -1646,8 +1712,8 @@ namespace Panel
 							"SHADERTYPE_UNLIT"						  ,
 							"SHADERTYPE_PBR_CLOTH"					  ,
 							"SHADERTYPE_PBR_CLEARCOAT"				  ,
-							"SHADERTYPE_PBR_CLOTH_CLEARCOAT"		  ,
-							"SHADERTYPE_RAIN"		                  ,
+							"SHADERTYPE_PBR_CLOTH_CLEARCOAT"		  
+							
 
 						};
 

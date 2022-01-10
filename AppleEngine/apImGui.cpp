@@ -724,8 +724,12 @@ namespace ap::imgui
 
 
 
-	void DrawVec3Control(const std::string& label, XMFLOAT3& values, float resetValue  , bool isScale , float columnWidth )
+	bool DrawVec3Control(const std::string& label, XMFLOAT3& values, float resetValue  , bool isScale , float columnWidth )
 	{
+
+
+		bool modified = false;
+
 		ImGuiIO& io = ImGui::GetIO();
 		auto boldFont = io.Fonts->Fonts[0];
 
@@ -758,12 +762,16 @@ namespace ap::imgui
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("X", buttonSize))
+		{
 			values.x = resetValue;
+			modified = true;
+		}
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
+		if(ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f"))
+			modified = true;
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -772,12 +780,17 @@ namespace ap::imgui
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("Y", buttonSize))
+		{
 			values.y = resetValue;
+			modified = true;
+		}
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f");
+
+		if(ImGui::DragFloat("##Y", &values.y, 0.1f, min, max, "%.2f"))
+			modified = true;
 		ImGui::PopItemWidth();
 		ImGui::SameLine();
 
@@ -786,12 +799,16 @@ namespace ap::imgui
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
 		ImGui::PushFont(boldFont);
 		if (ImGui::Button("Z", buttonSize))
+		{
 			values.z = resetValue;
+			modified = true;
+		}
 		ImGui::PopFont();
 		ImGui::PopStyleColor(3);
 
 		ImGui::SameLine();
-		ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f");
+		if(ImGui::DragFloat("##Z", &values.z, 0.1f, min, max, "%.2f"))
+			modified = true;
 		ImGui::PopItemWidth();
 
 		ImGui::PopStyleVar();
@@ -802,6 +819,8 @@ namespace ap::imgui
 			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
 
 		ImGui::PopID();
+
+		return modified;
 	}
 
 	bool ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
