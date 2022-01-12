@@ -15,6 +15,7 @@
 #include "apMath.h"
 #include "apECS.h"
 #include "apVector.h"
+#include "apOcean_waveworks.h"
 
 #include <string>
 #include <memory>
@@ -22,6 +23,7 @@
 
 namespace ap
 {
+	class Ocean2;
 	class Archive;
 }
 
@@ -610,6 +612,9 @@ namespace ap::scene
 
 	struct ObjectComponent
 	{
+		//юс╫ц
+		bool isFloat = false;
+
 		enum FLAGS
 		{
 			EMPTY = 0,
@@ -1143,6 +1148,7 @@ namespace ap::scene
 		float windSpeed = 1;
 
 		ap::Ocean::OceanParameters oceanParameters;
+		ap::Ocean2::Ocean2Parameters ocean2Parameters;
 		AtmosphereParameters atmosphereParameters;
 		VolumetricCloudParameters volumetricCloudParameters;
 
@@ -1357,6 +1363,12 @@ namespace ap::scene
 		// Ocean GPU state:
 		ap::Ocean ocean;
 		void OceanRegenerate() { ocean.Create(weather.oceanParameters); }
+
+
+		// Ocean_waveworks
+		std::unique_ptr<ap::Ocean2> ocean2;
+
+
 
 		// Simple water ripple sprites:
 		mutable ap::vector<ap::Sprite> waterRipples;

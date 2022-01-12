@@ -1,5 +1,6 @@
 #include "apInitializer.h"
 #include "AppleEngine.h"
+#include "apOcean_waveworks.h"
 
 #include <string>
 #include <thread>
@@ -51,6 +52,7 @@ namespace ap::initializer
 		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::GPUBVH::Initialize(); systems[INITIALIZED_SYSTEM_GPUBVH].store(true); });
 		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::physics::Initialize(); systems[INITIALIZED_SYSTEM_PHYSICS].store(true); });
 		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::audio::Initialize(); systems[INITIALIZED_SYSTEM_AUDIO].store(true); });
+		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::Ocean2::Initialize(); systems[INITIALIZED_SYSTEM_OCEAN2].store(true); });
 
 
 		std::thread([] {

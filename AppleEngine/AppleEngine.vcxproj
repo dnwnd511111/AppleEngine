@@ -45,26 +45,35 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;_NODEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\ImGui;$(ProjectDir)\vendor\Bullet;$(ProjectDir)\Utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\ImGui;$(ProjectDir)vendor\Bullet;$(ProjectDir)Utility;$(SolutionDir)AppleEngine\vendor\waveworks</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>NVWaveWorks_static.d3d12.lib;nvrhi_d3d12.lib;d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)vendor\waveworks\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -77,7 +86,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\vendor\ImGui;$(ProjectDir)\vendor\Bullet;$(ProjectDir)\Utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\ImGui;$(ProjectDir)vendor\Bullet;$(ProjectDir)Utility;$(SolutionDir)AppleEngine\vendor\waveworks</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -86,6 +95,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>NVWaveWorks_static.d3d12.lib;nvrhi_d3d12.lib;d3d12.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)vendor\waveworks\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="apApplication.h" />
@@ -119,6 +134,7 @@
     <ClInclude Include="apLoadingScreen.h" />
     <ClInclude Include="apMath.h" />
     <ClInclude Include="apOcean.h" />
+    <ClInclude Include="apOcean_waveworks.h" />
     <ClInclude Include="apPhysics.h" />
     <ClInclude Include="apPlatform.h" />
     <ClInclude Include="AppleEngine.h" />
@@ -194,6 +210,7 @@
     <ClCompile Include="apLoadingScreen.cpp" />
     <ClCompile Include="apMath.cpp" />
     <ClCompile Include="apOcean.cpp" />
+    <ClCompile Include="apOcean_waveworks.cpp" />
     <ClCompile Include="apPhysics_Bullet.cpp" />
     <ClCompile Include="apPrimitive.cpp" />
     <ClCompile Include="apProfiler.cpp" />

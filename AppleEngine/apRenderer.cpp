@@ -20,6 +20,7 @@
 #include "apShaderCompiler.h"
 #include "apTimer.h"
 #include "apUnorderedMap.h" // leave it here for shader dump!
+#include "apOcean_waveworks.h"
 
 #include "shaders/ShaderInterop_Postprocess.h"
 #include "shaders/ShaderInterop_Raytracing.h"
@@ -645,7 +646,7 @@ enum DEBUGRENDERING
 PipelineState PSO_debug[DEBUGRENDERING_COUNT];
 
 
-#if __has_include("wiShaderDump.h")
+#if __has_include("apShaderDump.h")
 // In this case, wiShaderDump.h contains precompiled shader binary data
 #include "apShaderDump.h"
 #define SHADERDUMP_ENABLED
@@ -2972,7 +2973,7 @@ void UpdateVisibility(Visibility& vis)
 	{
 		// Ocean will override any current reflectors
 		vis.planar_reflection_visible = true;
-		XMVECTOR _refPlane = XMPlaneFromPointNormal(XMVectorSet(0, vis.scene->weather.oceanParameters.waterHeight, 0, 0), XMVectorSet(0, 1, 0, 0));
+		XMVECTOR _refPlane = XMPlaneFromPointNormal(XMVectorSet(0, vis.scene->weather.ocean2Parameters.OceanQuadtreeParameters.mean_sea_level, 0, 0), XMVectorSet(0, 1, 0, 0));
 		XMStoreFloat4(&vis.reflectionPlane, _refPlane);
 	}
 
@@ -3846,13 +3847,17 @@ void UpdateRenderDataAsync(
 		ap::profiler::EndRange(range);
 	}
 
-	// Compute water simulation:
+
+	// water simulation:
 	if (vis.scene->weather.IsOceanEnabled())
 	{
 		auto range = ap::profiler::BeginRangeGPU("Ocean - Simulate", cmd);
-		vis.scene->ocean.UpdateDisplacementMap(vis.scene->weather.oceanParameters, cmd);
+		vis.scene->ocean2->ResourceUpdate(&vis);
+		//vis.scene->ocean.UpdateDisplacementMap(vis.scene->weather.oceanParameters, cmd);
 		ap::profiler::EndRange(range);
+
 	}
+
 
 	device->EventEnd(cmd);
 }
@@ -4881,8 +4886,13 @@ void DrawScene(
 
 	if (transparent && vis.scene->weather.IsOceanEnabled())
 	{
-		vis.scene->ocean.Render(*vis.camera, vis.scene->weather.oceanParameters, cmd);
+		vis.scene->ocean2->Render(cmd);
+		//vis.scene->ocean.Render(*vis.camera, vis.scene->weather.oceanParameters, cmd);
 	}
+	
+
+	
+
 
 	if (hairparticle)
 	{

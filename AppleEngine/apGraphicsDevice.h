@@ -85,6 +85,8 @@ namespace ap::graphics
 		virtual bool CreateRaytracingAccelerationStructure(const RaytracingAccelerationStructureDesc* pDesc, RaytracingAccelerationStructure* bvh) const { return false; }
 		virtual bool CreateRaytracingPipelineState(const RaytracingPipelineStateDesc* pDesc, RaytracingPipelineState* rtpso) const { return false; }
 		
+		virtual bool RecreateTextureFromNativeTexture(const TextureDesc* pDesc, Texture* pTexture , void* nativeTexture ) const = 0;
+
 		virtual int CreateSubresource(Texture* texture, SubresourceType type, uint32_t firstSlice, uint32_t sliceCount, uint32_t firstMip, uint32_t mipCount) const = 0;
 		virtual int CreateSubresource(GPUBuffer* buffer, SubresourceType type, uint64_t offset, uint64_t size = ~0) const = 0;
 
@@ -293,6 +295,15 @@ namespace ap::graphics
 			std::memcpy(allocation.data, &data, sizeof(T));
 			BindConstantBuffer(&allocation.buffer, slot, cmd, allocation.offset);
 		}
+
+		void BindDynamicConstantBuffer_Array(void* data, uint32_t dataSize, uint32_t slot, CommandList cmd)
+		{
+			GPUAllocation allocation = AllocateGPU(dataSize, cmd);
+			std::memcpy(allocation.data, data, dataSize);
+			BindConstantBuffer(&allocation.buffer, slot, cmd, allocation.offset);
+		}
+
+
 	};
 
 

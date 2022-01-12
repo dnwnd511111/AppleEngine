@@ -31,6 +31,9 @@
     <Filter Include="VS">
       <UniqueIdentifier>{77c8ca45-1482-4191-a60e-18cccc075cae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Ocean">
+      <UniqueIdentifier>{b4839e08-2bae-4be3-ab33-cf2908945789}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)bitonicSortHF.hlsli">
@@ -128,6 +131,9 @@
     </None>
     <None Include="$(MSBuildThisFileDirectory)voxelHF.hlsli">
       <Filter>HF</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)ocean2HF.hlsli">
+      <Filter>Ocean</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1047,6 +1053,18 @@
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)envMap_skyVS_emulation.hlsl">
       <Filter>VS</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Ocean2VS.hlsl">
+      <Filter>Ocean</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ocean2HS.hlsl">
+      <Filter>Ocean</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ocean2DS.hlsl">
+      <Filter>Ocean</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)ocean2PS.hlsl">
+      <Filter>Ocean</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

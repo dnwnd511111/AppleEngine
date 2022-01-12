@@ -11,6 +11,7 @@
 #include "apBacklog.h"
 #include "apTimer.h"
 #include "apUnorderedMap.h"
+#include "apOcean_waveworks.h"
 
 #include "shaders/ShaderInterop_SurfelGI.h"
 
@@ -2625,6 +2626,7 @@ namespace ap::scene
 			HierarchyComponent& hier = hierarchy[args.jobIndex];
 			Entity entity = hierarchy.GetEntity(args.jobIndex);
 
+			
 			TransformComponent* transform_child = transforms.GetComponent(entity);
 			XMMATRIX worldmatrix;
 			if (transform_child != nullptr)
@@ -3833,15 +3835,27 @@ namespace ap::scene
 	}
 	void Scene::RunWeatherUpdateSystem(ap::jobsystem::context& ctx)
 	{
-		
+
+
+
 		if (weathers.GetCount() > 0)
 		{
 			weather = weathers[0];
 			weather.most_important_light_index = ~0;
 
-			if (weather.IsOceanEnabled() && !ocean.IsValid())
+			if (weather.IsOceanEnabled())
 			{
-				OceanRegenerate();
+				if (!ocean2)
+				{
+					ocean2 = std::make_unique<Ocean2>();
+					ocean2->Create();
+					weathers[0].ocean2Parameters = ocean2->parameters;
+				}
+
+				ocean2->parameters = weathers[0].ocean2Parameters;
+				
+	
+				//OceanRegenerate();
 			}
 		}
 	}

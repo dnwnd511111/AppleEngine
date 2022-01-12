@@ -190,6 +190,9 @@
     <ClCompile Include="apImGui.cpp">
       <Filter>Engine\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="apOcean_waveworks.cpp">
+      <Filter>Engine\Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\arial.h">
@@ -431,6 +434,9 @@
     </ClInclude>
     <ClInclude Include="apImGui.h">
       <Filter>Engine\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="apOcean_waveworks.h">
+      <Filter>Engine\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
