@@ -63,6 +63,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ShaderInterop_Renderer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ShaderInterop_SurfelGI.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ShaderInterop_Weather.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Shaderinterop_Ocean2.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)bloomseparateCS.hlsl" />

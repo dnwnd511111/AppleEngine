@@ -24,6 +24,9 @@ namespace ap::eventhandler
 	// helper event wrappers can be placed below:
 	inline void SetVSync(bool enabled)
 	{
-		FireEvent(EVENT_SET_VSYNC, enabled ? 1ull : 0ull);
+		ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [=](uint64_t userdata) {
+			FireEvent(EVENT_SET_VSYNC, enabled ? 1ull : 0ull);
+			});
+		
 	}
 }

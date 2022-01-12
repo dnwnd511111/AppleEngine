@@ -7,6 +7,8 @@
 #include "apEventHandler.h"
 #include "apRenderer.h"
 
+#include "shaders\Shaderinterop_Ocean2.h"
+
 //#pragma comment(lib,"NVWaveWorks_static.d3d12.lib")
 //#pragma comment(lib,"d3d12.lib")
 //#pragma comment(lib,"nvrhi_d3d12.lib")
@@ -26,110 +28,7 @@ static uint32_t getNumMipLevels(uint32_t const squareTextureSize)
 	return mipLevels;
 }
 
-struct OCEAN_VS_HS_DS_CBUFFER
-{
-	// Data used in vertex shader
-	gfsdk_float4x4 g_matViewProj;
-	gfsdk_float3   g_eyePos;
-	float          g_meanOceanLevel;
-	// x16 bytes boundary
-	float          g_useDiamondPattern;
 
-	// Data used in hull shader
-	float          g_dynamicTesselationAmount;
-	float          g_staticTesselationOffset;
-
-	// Data used in domain shader
-	// Wind waves related data
-	float          g_cascade0UVScale;
-	// x16 bytes boundary
-	float          g_cascade1UVScale;
-	float          g_cascade2UVScale;
-	float          g_cascade3UVScale;
-	float          g_cascade0UVOffset;
-	// x16 bytes boundary
-	float          g_cascade1UVOffset;
-	float          g_cascade2UVOffset;
-	float          g_cascade3UVOffset;
-	float          g_UVWarpingAmplitude;
-	// x16 bytes boundary
-	float          g_UVWarpingFrequency;
-
-	// Local waves related data
-	float          g_localWavesSimulationDomainWorldspaceSize;
-	gfsdk_float2   g_localWavesSimulationDomainWorldspaceCenter;
-	float pad15;
-
-	uint displacementTextureArrayWindWaves;
-	uint displacementTextureLocalWaves;
-	uint gradientsTextureArrayWindWaves;
-	uint momentsTextureArrayWindWaves;
-
-	uint gradientsTextureLocalWaves;
-	uint textureFoam;
-	uint textureBubbles;
-	uint textureWindGusts;
-
-	uint skydomeTexture;
-};
-
-struct OCEAN_PS_CBUFFER
-{
-	// Defined by wind waves simulation
-	float g_cascadeToCascadeScale;
-	float g_windWavesTextureSizeInTexels;
-	float g_UVWarpingAmplitude;
-	float g_UVWarpingFrequency;
-	// x16 bytes boundary
-	float g_windWavesFoamWhitecapsThreshold;
-
-	// Defined by local waves simulation
-	float g_localWavesTextureSizeInTexels;
-	float g_localWavesFoamWhitecapsThreshold;
-	float g_SimulationDomainSize;
-	// x16 bytes boundary
-	gfsdk_float2 g_SimulationDomainCenter;
-
-	// Defined by application
-	float g_beckmannRoughness;
-	float g_showCascades;
-	// x16 bytes boundary
-	gfsdk_float3 g_sunDirection;
-	float g_sunIntensity;
-	// x16 bytes boundary
-	gfsdk_float3 g_eyePos;
-	float g_useMicrofacetFresnel;
-	// x16 bytes boundary
-	float g_useMicrofacetSpecular;
-	float g_useMicrofacetReflection;
-
-	// CBs must be multiple of 16 bytes large
-	float pad0;
-	float pad1;
-
-	//
-	DirectX::XMFLOAT4 g_WaterColor;
-	DirectX::XMFLOAT4 g_WaterDeepColor;
-	DirectX::XMFLOAT4 g_WaterColorIntensity;
-
-	DirectX::XMFLOAT3 g_FoamColor;
-	float pad4;
-
-	DirectX::XMFLOAT3 g_FoamUnderwaterColor;
-	float pad5;
-};
-
-struct OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY
-{
-	gfsdk_float2 g_patchWorldspaceOrigin;
-	float g_patchWorldspaceScale;
-	float g_patchMorphConstantAndSign;
-};
-
-struct MARKER_VS_CBUFFER
-{
-	gfsdk_float4x4 g_matViewProj;
-};
 
 
 namespace ap
@@ -332,9 +231,6 @@ namespace ap
 		CameraComponent& camera = GetCamera();
 		float delta = scene.dt;
 
-	
-		//device->queues[QUEUE_GRAPHICS].queue->Wait(fence.Get(), 1);
-		//device->queues[QUEUE_GRAPHICS].queue->Signal(fence.Get(), 0);
 
 		// Adding rain
 		if ((parameters.bRain) && (!bNeedToUpdateLocalWavesSimulationProperties))
@@ -630,8 +526,6 @@ namespace ap
 	void Ocean2::Initialize()
 	{
 		
-	
-
 		auto device = static_cast<ap::graphics::GraphicsDevice_DX12*>(ap::graphics::GetDevice());
 
 		GFSDK_WaveWorks_Init(nullptr, GFSDK_WAVEWORKS_API_GUID);
@@ -780,8 +674,11 @@ namespace ap
 		GFSDK_WaveWorks_Local_Waves_Rendering_Data localWavesRenderingData;
 		GFSDK_WaveWorks_Local_Waves_GetDataForRendering(hOceanLocalSimulation, localWavesRenderingData);
 
+
+		gfsdk_float4x4 vp = projMatrix2 * vm;
+
 		OCEAN_VS_HS_DS_CBUFFER VSHSDSCB;
-		VSHSDSCB.g_matViewProj = projMatrix2 * vm;
+		VSHSDSCB.g_matViewProj = *(DirectX::XMFLOAT4X4*)&vp;
 		VSHSDSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
 		VSHSDSCB.g_meanOceanLevel = parameters.OceanQuadtreeParameters.mean_sea_level;
 		VSHSDSCB.g_dynamicTesselationAmount = parameters.fTessellationAmount;
@@ -794,7 +691,7 @@ namespace ap
 		VSHSDSCB.g_cascade2UVScale = windWavesRenderingData.cascade2_UV_scale;
 		VSHSDSCB.g_cascade3UVOffset = windWavesRenderingData.cascade3_UV_offset;
 		VSHSDSCB.g_cascade3UVScale = windWavesRenderingData.cascade3_UV_scale;
-		VSHSDSCB.g_localWavesSimulationDomainWorldspaceCenter = localWavesRenderingData.simulation_domain_worldspace_center;
+		VSHSDSCB.g_localWavesSimulationDomainWorldspaceCenter = *(DirectX::XMFLOAT2*)&localWavesRenderingData.simulation_domain_worldspace_center;
 		VSHSDSCB.g_localWavesSimulationDomainWorldspaceSize = localWavesRenderingData.simulation_domain_worldspace_size;
 		VSHSDSCB.g_useDiamondPattern = parameters.OceanQuadtreeParameters.generate_diamond_pattern ? 1.0f : 0.0f;
 		VSHSDSCB.g_UVWarpingAmplitude = windWavesRenderingData.uv_warping_amplitude;
@@ -809,38 +706,36 @@ namespace ap
 		VSHSDSCB.textureFoam = device->GetDescriptorIndex(&foamIntensityTexture, SubresourceType::SRV);
 		VSHSDSCB.textureBubbles = device->GetDescriptorIndex(&foamBubblesTexture, SubresourceType::SRV);
 		VSHSDSCB.textureWindGusts = device->GetDescriptorIndex(&windGustsTexture, SubresourceType::SRV);
-		VSHSDSCB.skydomeTexture= device->GetDescriptorIndex(&skydome, SubresourceType::SRV);
+		VSHSDSCB.textureDynamicSkyDome= device->GetDescriptorIndex(&skydome, SubresourceType::SRV);
+
+
+		VSHSDSCB.g_cascadeToCascadeScale = windWavesRenderingData.cascade_to_cascade_scale;
+		VSHSDSCB.g_windWavesTextureSizeInTexels = (float)windWavesRenderingData.size_of_texture_arrays;
+		VSHSDSCB.g_windWavesFoamWhitecapsThreshold = windWavesRenderingData.foam_whitecaps_threshold;
+		VSHSDSCB.g_SimulationDomainCenter = *(DirectX::XMFLOAT2*)&localWavesRenderingData.simulation_domain_worldspace_center;
+		VSHSDSCB.g_SimulationDomainSize = localWavesRenderingData.simulation_domain_worldspace_size;
+
+		VSHSDSCB.g_localWavesTextureSizeInTexels = (float)localWavesRenderingData.size_of_texture;
+		VSHSDSCB.g_localWavesFoamWhitecapsThreshold = parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold;
+		VSHSDSCB.g_beckmannRoughness = 0.00001f;
+		VSHSDSCB.g_sunIntensity = 1.1f;
+		VSHSDSCB.g_sunDirection = { cosf(45.0 * 0.0174533f), 0, sinf(45.0 * 0.0174533f) };
+		VSHSDSCB.g_useMicrofacetFresnel = 1.0f;
+		VSHSDSCB.g_useMicrofacetSpecular = 1.0f;
+		VSHSDSCB.g_useMicrofacetReflection = 1.0f;
+		VSHSDSCB.g_showCascades = parameters.bShowCascades ? 1.0f : 0.0f;
+	
+		VSHSDSCB.g_WaterColor = parameters.waterColor;
+		VSHSDSCB.g_WaterDeepColor = parameters.waterDeepColor;
+		VSHSDSCB.g_WaterColorIntensity = parameters.waterColorIntensity;
+		VSHSDSCB.g_FoamColor = parameters.foamColor;
+		VSHSDSCB.g_FoamUnderwaterColor = parameters.foamUnderwaterColor;
+		
 
 
 		device->BindDynamicConstantBuffer(VSHSDSCB, 3, cmd);
 
-		OCEAN_PS_CBUFFER PSCB;
-		PSCB.g_cascadeToCascadeScale = windWavesRenderingData.cascade_to_cascade_scale;
-		PSCB.g_windWavesTextureSizeInTexels = (float)windWavesRenderingData.size_of_texture_arrays;
-		PSCB.g_UVWarpingAmplitude = windWavesRenderingData.uv_warping_amplitude;
-		PSCB.g_UVWarpingFrequency = windWavesRenderingData.uv_warping_frequency;
-		PSCB.g_windWavesFoamWhitecapsThreshold = windWavesRenderingData.foam_whitecaps_threshold;
-		PSCB.g_SimulationDomainCenter = localWavesRenderingData.simulation_domain_worldspace_center;
-		PSCB.g_SimulationDomainSize = localWavesRenderingData.simulation_domain_worldspace_size;
-		PSCB.g_localWavesTextureSizeInTexels = (float)localWavesRenderingData.size_of_texture;
-		PSCB.g_localWavesFoamWhitecapsThreshold = parameters.OceanLocalSimulationParameters.foam_whitecaps_threshold;
-		PSCB.g_beckmannRoughness = 0.00001f;
-		PSCB.g_sunIntensity = 1.1f;
-		PSCB.g_sunDirection = { cosf(45.0 * 0.0174533f), 0, sinf(45.0 * 0.0174533f) };
-		PSCB.g_useMicrofacetFresnel = 1.0f ;
-		PSCB.g_useMicrofacetSpecular = 1.0f;
-		PSCB.g_useMicrofacetReflection =  1.0f ;
-		PSCB.g_showCascades = parameters.bShowCascades ? 1.0f : 0.0f;
-		PSCB.g_eyePos = { eyePoint.x, eyePoint.z, eyePoint.y };
-
-		PSCB.g_WaterColor = parameters.waterColor;
-		PSCB.g_WaterDeepColor = parameters.waterDeepColor;
-		PSCB.g_WaterColorIntensity = parameters.waterColorIntensity;
-		PSCB.g_FoamColor = parameters.foamColor;
-		PSCB.g_FoamUnderwaterColor = parameters.foamUnderwaterColor;
-
-
-		device->BindDynamicConstantBuffer(PSCB, 4, cmd);
+		
 		
 		uint32_t numNodes;
 		GFSDK_WaveWorks_Quadtree_NodeRenderingProperties* pNodes;
@@ -858,7 +753,7 @@ namespace ap
 		std::vector<uint32_t> indexCounts(16);
 
 		// Per-instance data for patch types
-		std::vector <std::vector< OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY > > perInstanceBuffers(16);
+		std::vector <std::vector< OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY >> perInstanceBuffers(16);
 
 		// Reserving space for the entire constant buffer size (64kb or 4096 entries) in perInstanceBuffers
 		// as current NVRHI implementation updates the entire contents of the constant buffers.
@@ -876,9 +771,9 @@ namespace ap
 			indexCounts[patchType] = nodes[i].num_indices;
 
 			OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY cbEntry;
-			cbEntry.g_patchWorldspaceOrigin = nodes[i].patch_worldspace_origin;
-			cbEntry.g_patchWorldspaceScale = nodes[i].patch_worldspace_scale;
-			cbEntry.g_patchMorphConstantAndSign = nodes[i].geomorphing_distance_constant * nodes[i].geomorphing_sign;
+			cbEntry.patchWorldspaceOrigin = *(DirectX::XMFLOAT2*)&(nodes[i].patch_worldspace_origin);
+			cbEntry.patchWorldspaceScale = nodes[i].patch_worldspace_scale;
+			cbEntry.patchMorphConstantAndSign = nodes[i].geomorphing_distance_constant * nodes[i].geomorphing_sign;
 			perInstanceBuffers[patchType].push_back(cbEntry);
 		}
 
@@ -895,22 +790,6 @@ namespace ap
 
 
 
-		
-
-		/*{
-			GPUBarrier barriers[] = {
-				GPUBarrier::MEMORY(&windWavesDisplacementsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&windWavesGradientsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&windWavesMomentsTextureArray, ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&localWavesDisplacementsTexture,ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-				GPUBarrier::Image(&localWavesGradientsTexture,ResourceState::UNORDERED_ACCESS, ResourceState::SHADER_RESOURCE),
-
-			};
-			device->Barrier(barriers, arraysize(barriers), cmd);
-		}*/
-
-		
-		
 
 		// Rendering the quadtree patches using instancing
 		for (uint32_t i = 0; i < 16; i++)

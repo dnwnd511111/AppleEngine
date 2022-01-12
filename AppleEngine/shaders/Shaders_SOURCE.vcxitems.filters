@@ -179,6 +179,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ShaderInterop_Weather.h">
       <Filter>Interop</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Shaderinterop_Ocean2.h">
+      <Filter>Ocean</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="$(MSBuildThisFileDirectory)bloomseparateCS.hlsl">
