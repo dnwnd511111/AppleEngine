@@ -447,24 +447,26 @@
     float4 main(DS_OUTPUT In) : SV_Target
     {
        
-
+   
+    //
+    //float3 g_WaterDeepColor = { 0.0, 0.2, 0.4 };
+    //float3 g_WaterScatterColor = { 0.0, 0.7, 0.6 };
+    //float4 g_WaterColorIntensity = { 0.02, 0.02, 0.01, 0.2 };
+    float3 g_FoamColor = { 0.9, 0.9, 0.9 };
+   
+ 
 
 	// Calculating surface parameters and foam density
     SURFACE_PARAMETERS surfaceParameters = GFSDK_WaveWorks_GetSurfaceParameters(In);
     float foamIntensity = GetFoam(In.worldspacePositionUndisplaced, surfaceParameters);
-
-    float fresnelFactor;
-    float scatterFactor;
-
-    float2 firstOrderMoments = surfaceParameters.firstOrderMoments;
-    float3 secondOrderMoments = surfaceParameters.secondOrderMoments;
-    float2 secondOrderMomentsLowestLOD = surfaceParameters.secondOrderMomentsLowestLOD;
-
-    
-    
+    float windGusts =
+		g_textureWindGusts.Sample(g_samplerBilinear, In.worldspacePositionDisplaced.xy * 0.0001).x *
+		g_textureWindGusts.Sample(g_samplerBilinear, In.worldspacePositionDisplaced.xy * 0.00001).x;
    
+    
+  
     float3 eyeVec = g_eyePos - In.worldspacePositionDisplaced;
-    float3 L = normalize(g_sunDirection);
+    //float3 L = normalize(g_sunDirection);
     float3 V = normalize(eyeVec);
     float3 N = surfaceParameters.normal;
     float3 R = reflect(-V, N);
@@ -477,42 +479,12 @@
         N = -normalize(N);
     }
     
-    // Adding roughness defined by application
-    secondOrderMoments.xy += g_beckmannRoughness;
 
-	// Applying overall roughness variation of surface roughness to fake wind gusts by adding two octaves of noise from texture 
-    float windGusts =
-		g_textureWindGusts.Sample(g_samplerBilinear, In.worldspacePositionDisplaced.xy * 0.0001).x *
-		g_textureWindGusts.Sample(g_samplerBilinear, In.worldspacePositionDisplaced.xy * 0.00001).x;
-    secondOrderMoments.xy *= 1.0 + 2.0 * windGusts; // TODO: fade down to 1.0 near camera
-
-	// Adding roughness in areas covered by foam
-    secondOrderMoments.xy += min(0.2, 2.5 * pow(foamIntensity, 4.0));
-    
-    float3 foamDiffuseColor = g_FoamColor * max(0, 0.3 + max(0, 0.7 * dot(L, N)));
-    
-    // Only the crests of water waves generate double refracted light
-    scatterFactor = 1.0 * max(0, (In.worldspacePositionDisplaced.z - In.worldspacePositionUndisplaced.z) * 0.001 + 0.3);
-
-	// The waves that lie between camera and light projection on water plane generate maximal amount of double refracted light 
-    scatterFactor *= pow(max(0.0, dot(L, -V)), 4.0);
-
-	// The slopes of waves that are oriented back to light generate maximal amount of double refracted light 
-    scatterFactor *= g_WaterColorIntensity.w * pow(max(0.0, 0.5 - 0.5 * dot(L, N)), 3.0);
-
-	// The scattered light is best seen if observing direction is normal to slope surface
-    scatterFactor += g_WaterColorIntensity.z * max(0, pow(dot(V, N), 2.0));
-
-	// Applying Smith masking to it
-    scatterFactor /= (1.0 + SmithMasking(V, N, secondOrderMoments));
-    
-    
-    float3 g_WaterScatterColor = { 0.0, 0.7, 0.6 };
     
     //
     float3 worldPos = float3(In.worldspacePositionDisplaced.x, In.worldspacePositionDisplaced.z, In.worldspacePositionDisplaced.y);
     V = float3(V.x, V.z, V.y);
-    L = float3(L.x, L.z, L.y);
+   // L = float3(L.x, L.z, L.y);
     N = float3(N.x, N.z, N.y);
     float dist = length(eyeVec);
     //
@@ -523,14 +495,13 @@
     Surface surface;
     surface.init();
     surface.albedo = color.rgb;
-    surface.f0 = 0.02;
+    surface.f0 =  0.02;
     surface.roughness = 0.1;
     surface.P = worldPos;
     surface.N = N;
     surface.V = V;
     surface.update();
 
-	
 
     Lighting lighting;
     lighting.create(0, 0, GetAmbient(surface.N), 0);
@@ -554,16 +525,7 @@
         lighting.indirect.specular = reflectiveColor.rgb * surface.F;
     }
 
-    //LightingPart combined_lighting = CombineLighting(surface, lighting);
-    
-    //float3 refractionColor = g_WaterScatterColor * scatterFactor * combined_lighting.diffuse * g_sunIntensity;
-
-	// Adding shallow scattering as if the water surface reflects as a diffuse surface and emits some light
-    //refractionColor += (g_WaterColorIntensity.x + g_WaterColorIntensity.y * max(0, dot(L, N))) * g_WaterDeepColor.rgb * combined_lighting.diffuse * g_sunIntensity;
-
-	// Adding color that provide foam bubbles spread in water 
-    //refractionColor += g_FoamUnderwaterColor * saturate(surfaceParameters.foamEnergy * 0.05) * combined_lighting.diffuse * g_sunIntensity;
-    
+ 
     
 	[branch]
     if (GetCamera().texture_refraction_index >= 0)
@@ -573,9 +535,8 @@
         float lineardepth = In.clipSpacePosition.w;
         float sampled_lineardepth = texture_lineardepth.SampleLevel(sampler_point_clamp, ScreenCoord.xy + surface.N.xz * 0.04f, 0) * GetCamera().z_far;
         float depth_difference = sampled_lineardepth - lineardepth;
-        surface.refraction.rgb =  texture_refraction.SampleLevel(sampler_linear_mirror, ScreenCoord.xy + surface.N.xz * 0.04f * saturate(0.5 * depth_difference), 0).rgb;
-        //surface.refraction.rgb *= refractionColor;
-        surface.refraction.rgb += g_FoamUnderwaterColor * saturate(surfaceParameters.foamEnergy * 0.05);
+        surface.refraction.rgb = texture_refraction.SampleLevel(sampler_linear_mirror, ScreenCoord.xy + surface.N.xz * 0.04f * saturate(0.5 * depth_difference), 0).rgb ;
+       
         if (depth_difference < 0)
         {
 			// Fix cutoff by taking unperturbed depth diff to fill the holes with fog:
@@ -594,12 +555,11 @@
 
     ApplyFog(dist, GetCamera().position, V, color);
 
-  
-    //foamDiffuseColor += combined_lighting.diffuse;
 
-    color.rgb = lerp(color.rgb, foamDiffuseColor, foamIntensity);
+    color.rgb = lerp(color.rgb, g_FoamColor, foamIntensity);
 
     // Showing cascade edges if needed
+    #if 0
     if (g_showCascades > 0)
     {
         if (frac(In.UVForCascade01.x) < 0.05)
@@ -622,6 +582,7 @@
         if (frac(In.UVForCascade23.w) < 0.05)
             color.rgb += 0.25;
     }
+    #endif
     
     return color;
     

@@ -728,10 +728,7 @@ namespace ap
 		VSHSDSCB.g_WaterColor = parameters.waterColor;
 		VSHSDSCB.g_WaterDeepColor = parameters.waterDeepColor;
 		VSHSDSCB.g_WaterColorIntensity = parameters.waterColorIntensity;
-		VSHSDSCB.g_FoamColor = parameters.foamColor;
-		VSHSDSCB.g_FoamUnderwaterColor = parameters.foamUnderwaterColor;
-		
-
+	
 
 		device->BindDynamicConstantBuffer(VSHSDSCB, 3, cmd);
 

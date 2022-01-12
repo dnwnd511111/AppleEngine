@@ -84,11 +84,6 @@ CBUFFER(OCEAN_VS_HS_DS_CBUFFER, 3)
     float4 g_WaterDeepColor;
     float4 g_WaterColorIntensity;
 
-    float3 g_FoamColor;
-    float pad5;
-
-    float3 g_FoamUnderwaterColor;
-    float pad6;
 
 
 
