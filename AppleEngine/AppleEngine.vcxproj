@@ -60,7 +60,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\ImGui;$(ProjectDir)vendor\Bullet;$(ProjectDir)Utility;$(SolutionDir)AppleEngine\vendor\waveworks</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\ImGui;$(ProjectDir)vendor\Bullet;$(ProjectDir)Utility;$(SolutionDir)AppleEngine\vendor\waveworks;$(ProjectDir)vendor\ImGui\imguieditor</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -86,7 +86,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)vendor\ImGui;$(ProjectDir)vendor\Bullet;$(ProjectDir)Utility;$(SolutionDir)AppleEngine\vendor\waveworks</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)vendor\ImGui;$(ProjectDir)vendor\Bullet;$(ProjectDir)Utility;$(SolutionDir)AppleEngine\vendor\waveworks;$(ProjectDir)vendor\ImGui\imguieditor</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -231,6 +231,7 @@
     <ClCompile Include="apTextureHelper.cpp" />
     <ClCompile Include="apVersion.cpp" />
     <ClCompile Include="apXInput.cpp" />
+    <ClCompile Include="blueprints-example.cpp" />
     <ClCompile Include="Utility\D3D12MemAlloc.cpp" />
     <ClCompile Include="Utility\samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp.cpp" />
     <ClCompile Include="Utility\spirv_reflect.c" />

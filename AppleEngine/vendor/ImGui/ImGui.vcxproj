@@ -55,7 +55,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_NODEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)imguiEditor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -71,7 +71,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)imguiEditor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -84,6 +84,15 @@
     <ClInclude Include="backends\imgui_impl_dx12.h" />
     <ClInclude Include="backends\imgui_impl_win32.h" />
     <ClInclude Include="imgui.h" />
+    <ClInclude Include="ImguiEditor\crude_json.h" />
+    <ClInclude Include="ImguiEditor\imgui_bezier_math.h" />
+    <ClInclude Include="ImguiEditor\imgui_canvas.h" />
+    <ClInclude Include="ImguiEditor\imgui_extra_math.h" />
+    <ClInclude Include="ImguiEditor\imgui_node_editor.h" />
+    <ClInclude Include="ImguiEditor\imgui_node_editor_internal.h" />
+    <ClInclude Include="ImguiEditor\utilities\builders.h" />
+    <ClInclude Include="ImguiEditor\utilities\drawing.h" />
+    <ClInclude Include="ImguiEditor\utilities\widgets.h" />
     <ClInclude Include="ImGuizmo.h" />
     <ClInclude Include="imgui_internal.h" />
     <ClInclude Include="imstb_rectpack.h" />
@@ -94,11 +103,23 @@
     <ClCompile Include="backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="backends\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="ImguiEditor\crude_json.cpp" />
+    <ClCompile Include="ImguiEditor\imgui_canvas.cpp" />
+    <ClCompile Include="ImguiEditor\imgui_node_editor.cpp" />
+    <ClCompile Include="ImguiEditor\imgui_node_editor_api.cpp" />
+    <ClCompile Include="ImguiEditor\utilities\builders.cpp" />
+    <ClCompile Include="ImguiEditor\utilities\drawing.cpp" />
+    <ClCompile Include="ImguiEditor\utilities\widgets.cpp" />
     <ClCompile Include="ImGuizmo.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
     <ClCompile Include="imgui_tables.cpp" />
     <ClCompile Include="imgui_widgets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ImguiEditor\imgui_bezier_math.inl" />
+    <None Include="ImguiEditor\imgui_extra_math.inl" />
+    <None Include="ImguiEditor\imgui_node_editor_internal.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -9,6 +9,15 @@
     <ClInclude Include="backends\imgui_impl_dx12.h" />
     <ClInclude Include="backends\imgui_impl_win32.h" />
     <ClInclude Include="ImGuizmo.h" />
+    <ClInclude Include="ImguiEditor\crude_json.h" />
+    <ClInclude Include="ImguiEditor\imgui_bezier_math.h" />
+    <ClInclude Include="ImguiEditor\imgui_canvas.h" />
+    <ClInclude Include="ImguiEditor\imgui_extra_math.h" />
+    <ClInclude Include="ImguiEditor\imgui_node_editor.h" />
+    <ClInclude Include="ImguiEditor\imgui_node_editor_internal.h" />
+    <ClInclude Include="ImguiEditor\utilities\builders.h" />
+    <ClInclude Include="ImguiEditor\utilities\drawing.h" />
+    <ClInclude Include="ImguiEditor\utilities\widgets.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imgui_demo.cpp" />
@@ -19,5 +28,17 @@
     <ClCompile Include="backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="backends\imgui_impl_win32.cpp" />
     <ClCompile Include="ImGuizmo.cpp" />
+    <ClCompile Include="ImguiEditor\crude_json.cpp" />
+    <ClCompile Include="ImguiEditor\imgui_canvas.cpp" />
+    <ClCompile Include="ImguiEditor\imgui_node_editor.cpp" />
+    <ClCompile Include="ImguiEditor\imgui_node_editor_api.cpp" />
+    <ClCompile Include="ImguiEditor\utilities\builders.cpp" />
+    <ClCompile Include="ImguiEditor\utilities\drawing.cpp" />
+    <ClCompile Include="ImguiEditor\utilities\widgets.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ImguiEditor\imgui_bezier_math.inl" />
+    <None Include="ImguiEditor\imgui_extra_math.inl" />
+    <None Include="ImguiEditor\imgui_node_editor_internal.inl" />
   </ItemGroup>
 </Project>

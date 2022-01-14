@@ -493,6 +493,9 @@ void Editor::ImGuiRender()
 		ImGuiRender_ToolBar();
 		ImGuiRender_Renderer();
 
+
+		DrawBlueprint();
+
 	}
 	
 	

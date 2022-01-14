@@ -8,7 +8,8 @@
 #include "AppleEngine.h"
 #pragma warning(disable : 4996)
 
-
+void Application_Initialize();
+void Application_Frame();
 
 #include <filesystem>
 
@@ -35,7 +36,12 @@ namespace ap::imgui
 		s_ClearIcon = ap::resourcemanager::Load("Resources/images/close.png");
 		s_GearIcon = ap::resourcemanager::Load("Resources/images/gear_icon.png");
 
+		Application_Initialize();
+	}
 
+	void DrawBlueprint()
+	{
+		Application_Frame();
 	}
 
 	const char* GenerateID()

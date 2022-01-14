@@ -20,6 +20,7 @@ namespace ap::graphics
 namespace ap::imgui
 {
 	void Initialize();
+    void DrawBlueprint();
 
     const char* GenerateID();
 	void ShiftCursorX(float distance);
