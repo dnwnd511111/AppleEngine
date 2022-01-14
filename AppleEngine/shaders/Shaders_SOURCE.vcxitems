@@ -337,6 +337,9 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)surfel_raytraceCS_rtapi.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)surfel_updateCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)temporalaaCS.hlsl" />
+    <FxCompile Include="$(MSBuildThisFileDirectory)Test.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)tileFrustumsCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)tonemapCS.hlsl" />
     <FxCompile Include="$(MSBuildThisFileDirectory)upsample_bilateralPS.hlsl" />

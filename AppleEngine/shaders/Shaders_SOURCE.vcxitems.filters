@@ -34,6 +34,9 @@
     <Filter Include="Ocean">
       <UniqueIdentifier>{b4839e08-2bae-4be3-ab33-cf2908945789}</UniqueIdentifier>
     </Filter>
+    <Filter Include="TEST">
+      <UniqueIdentifier>{b3a10453-c9b2-4b0d-9fc0-7c20a4e3400f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)bitonicSortHF.hlsli">
@@ -1068,6 +1071,9 @@
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)ocean2PS.hlsl">
       <Filter>Ocean</Filter>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)Test.hlsl">
+      <Filter>TEST</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

@@ -452,7 +452,7 @@
     //float3 g_WaterDeepColor = { 0.0, 0.2, 0.4 };
     //float3 g_WaterScatterColor = { 0.0, 0.7, 0.6 };
     //float4 g_WaterColorIntensity = { 0.02, 0.02, 0.01, 0.2 };
-    float3 g_FoamColor = { 0.9, 0.9, 0.9 };
+    float4 g_FoamColor = { 0.9, 0.9, 0.9, 1.0 };
    
  
 
@@ -466,7 +466,7 @@
     
   
     float3 eyeVec = g_eyePos - In.worldspacePositionDisplaced;
-    //float3 L = normalize(g_sunDirection);
+    float3 L = normalize(g_sunDirection);
     float3 V = normalize(eyeVec);
     float3 N = surfaceParameters.normal;
     float3 R = reflect(-V, N);
@@ -484,7 +484,7 @@
     //
     float3 worldPos = float3(In.worldspacePositionDisplaced.x, In.worldspacePositionDisplaced.z, In.worldspacePositionDisplaced.y);
     V = float3(V.x, V.z, V.y);
-   // L = float3(L.x, L.z, L.y);
+    //L = float3(L.x, L.z, L.y);
     N = float3(N.x, N.z, N.y);
     float dist = length(eyeVec);
     //
@@ -551,12 +551,11 @@
 	// Blend out at distance:
     color.a = color.a * pow(saturate(1 - saturate(dist / GetCamera().z_far)), 2);
     ApplyLighting(surface, lighting, color);
-   
-
+    
     ApplyFog(dist, GetCamera().position, V, color);
 
 
-    color.rgb = lerp(color.rgb, g_FoamColor, foamIntensity);
+    color.rgb = lerp(color.rgb, g_FoamColor.rgb, foamIntensity);
 
     // Showing cascade edges if needed
     #if 0

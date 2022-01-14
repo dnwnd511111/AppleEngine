@@ -3406,6 +3406,17 @@ void UpdateRenderData(
 			entityArray[entityCounter].color = ap::math::CompressColor(light.color);
 			entityArray[entityCounter].SetEnergy(light.energy);
 
+			if (light.lightMask.IsValid())
+			{
+				
+				entityArray[entityCounter].userdata = device->GetDescriptorIndex(&light.lightMask.GetTexture(), SubresourceType::SRV);
+			}
+			else
+			{
+				entityArray[entityCounter].userdata = ~0;
+			}
+		
+
 			// mark as no shadow by default:
 			entityArray[entityCounter].indices = ~0;
 

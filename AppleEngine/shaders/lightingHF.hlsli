@@ -229,7 +229,8 @@ inline void light_point(in ShaderEntity light, in Surface surface, inout Lightin
 			[branch]
 			if (any(shadow))
 			{
-				float3 light_color = light.GetColor().rgb * light.GetEnergy() * shadow;
+                
+                float3 light_color = light.GetColor().rgb * light.GetEnergy() * shadow;
 
 				const float att = saturate(1 - (dist2 / range2));
 				const float attenuation = att * att;
@@ -289,7 +290,23 @@ inline void light_spot(in ShaderEntity light, in Surface surface, inout Lighting
 				[branch]
 				if (any(shadow))
 				{
-					float3 light_color = light.GetColor().rgb * light.GetEnergy() * shadow;
+					
+                    float3 light_color = 1;
+				
+					//test lightmask
+					[branch]
+                    if (light.userdata != -1 && light.IsCastingShadow())
+                    {
+                        float4 shadow_pos = mul(load_entitymatrix(light.GetMatrixIndex() + 0), float4(surface.P, 1));
+                        shadow_pos.xyz /= shadow_pos.w;
+                        float2 shadow_uv = shadow_pos.xy * float2(0.5, -0.5) + 0.5;
+						
+                        light_color *= bindless_textures[light.userdata].SampleLevel(sampler_linear_wrap, (shadow_uv.xy * 4), 0).rgb;
+
+                    }
+					
+					
+					light_color *= light.GetColor().rgb * light.GetEnergy() * shadow;
 
 					const float att = saturate(1 - (dist2 / range2));
 					float attenuation = att * att;

@@ -1047,6 +1047,115 @@ namespace Panel
 					ImGui::Separator();
 					PropertyGridSpacing();
 
+					//test lightmask
+					{
+
+						ImGui::Text("LightMask");
+						ImGui::NextColumn();
+						ImGui::PushItemWidth(-1);
+
+
+						ap::graphics::Texture* texture = nullptr;
+						if (light.lightMask.IsValid())
+							texture = const_cast<ap::graphics::Texture*>(&light.lightMask.GetTexture());
+
+						bool textureIsValid = texture;
+						if (!textureIsValid)
+						{
+							texture = const_cast<ap::graphics::Texture*>(ap::texturehelper::getWhite());
+						}
+
+
+						uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(texture);;
+						ImGui::Image((void*)textureID, ImVec2(70.f, 70.0f));
+
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::BeginTooltip();
+							ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+							ImGui::TextUnformatted("Image");
+							ImGui::PopTextWrapPos();
+							ImGui::Image((void*)textureID, ImVec2(384.f, 384.0f));
+							ImGui::EndTooltip();
+
+
+							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+							{
+								if (textureIsValid)
+								{
+									light.lightMask = {};
+
+								}
+								else
+								{
+									ap::helper::FileDialogParams params;
+									params.type = ap::helper::FileDialogParams::OPEN;
+									params.description = "Texture";
+									params.extensions.push_back("dds");
+									params.extensions.push_back("png");
+									params.extensions.push_back("jpg");
+									params.extensions.push_back("jpeg");
+									params.extensions.push_back("tga");
+									params.extensions.push_back("bmp");
+
+
+									ap::helper::FileDialog(params, [&light](std::string fileName) {
+										ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [fileName, &light](uint64_t userdata) {
+											//light.lightMask = fileName;
+											light.lightMask = ap::resourcemanager::Load(fileName, ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+											});
+										});
+								}
+
+							}
+
+							if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+
+
+							}
+
+
+
+
+						}
+
+
+						if (ImGui::BeginDragDropTarget())
+						{
+							auto data = ImGui::AcceptDragDropPayload("Asset");
+							if (data)
+							{
+								std::filesystem::path assetPath = *((std::filesystem::path*)data->Data);
+								if (assetPath.extension() == ".png" || assetPath.extension() == ".dds" || assetPath.extension() == ".jpg")
+								{
+
+									light.lightMask = ap::resourcemanager::Load(assetPath.string().c_str(), ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+									//light.lensFlareNames[i] = assetPath.string();
+
+								}
+
+							}
+							ImGui::EndDragDropTarget();
+						}
+
+
+
+						if (!IsItemDisabled())
+							DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+						ImGui::PopItemWidth();
+						ImGui::NextColumn();
+
+					}
+					
+
+
+					PropertyGridSpacing();
+					ImGui::Separator();
+					PropertyGridSpacing();
+
+
 					const int maxLensFlare = 7;
 
 					const std::string lensBasePath = "resources/images/flare";
