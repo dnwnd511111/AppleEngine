@@ -617,6 +617,7 @@ void DrawPinIcon(const Pin& pin, bool connected, int alpha)
 void Application_Frame()
 {
     
+    
     int mipmap = -1;
     uint64_t textureID1 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex1.GetTexture(), mipmap);
     uint64_t textureID2 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex2.GetTexture(), mipmap);
@@ -629,6 +630,12 @@ void Application_Frame()
 
 
     ImGui::Begin("Material");
+
+    if (ImGui::IsWindowDocked() && !ImGui::IsWindowFocused())
+    {
+        ImGui::End();
+        return;
+    }
 
     UpdateTouch();
 
