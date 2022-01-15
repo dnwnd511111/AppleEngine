@@ -1057,6 +1057,7 @@ namespace Panel
 
 						DrawImage(light.lightMask);
 
+						ImGui::PopItemWidth();
 						ImGui::NextColumn();
 
 					}
@@ -1106,6 +1107,7 @@ namespace Panel
 						ImGui::PushItemWidth(-1);
 
 						DrawImage(light.lensFlareRimTextures[i]);
+						ImGui::PopItemWidth();
 						ImGui::NextColumn();
 
 					}

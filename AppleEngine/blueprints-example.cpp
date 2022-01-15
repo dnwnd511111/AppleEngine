@@ -12,12 +12,15 @@
 #include <map>
 #include <algorithm>
 #include <utility>
+#include "apImGui.h"
 
 
 #include "apResourceManager.h"
 #include "apGraphicsDevice_DX12.h"
 #include "apGraphics.h"
 
+
+using namespace ap::imgui;
 
 static inline ImRect ImGui_GetItemRect()
 {
@@ -61,6 +64,9 @@ enum class PinType
     Bool,
     Int,
     Float,
+    Float2,
+    Float3,
+    Float4,
     String,
     Object,
     Function,
@@ -91,7 +97,7 @@ struct Pin
     std::string Name;
     PinType     Type;
     PinKind     Kind;
-    ImColor     Color;  //temp
+    ImColor     Color = {0,0,0,0};  //temp
 
     Pin(int id, const char* name, PinType type):
         ID(id), Node(nullptr), Name(name), Type(type), Kind(PinKind::Input)
@@ -110,6 +116,7 @@ struct Node
     ImVec2 Size;
 
     XMFLOAT4 data;   //
+    ap::Resource texture;
 
     std::string State;
     std::string SavedState;
@@ -273,10 +280,17 @@ static void BuildNode(Node* node)
 static Node* SpawnTextureSampleNode()
 {
     s_Nodes.emplace_back(GetNextId(), "Texture Sample", ImColor(128, 195, 248));
-   
+
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), "RGB", PinType::Float3);
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "R", PinType::Float);
+    s_Nodes.back().Outputs.back().Color = ImColor(255, 0, 0);
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "G", PinType::Float);
+    s_Nodes.back().Outputs.back().Color = ImColor(0, 255, 0);
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "B", PinType::Float);
+    s_Nodes.back().Outputs.back().Color = ImColor(0, 0, 255);
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), "A", PinType::Float);
+    s_Nodes.back().Outputs.back().Color = ImColor(150, 150, 150);
+
 
 
     BuildNode(&s_Nodes.back());
@@ -604,7 +618,12 @@ ImColor GetIconColor(PinType type)
         case PinType::Flow:     return ImColor(255, 255, 255);
         case PinType::Bool:     return ImColor(220,  48,  48);
         case PinType::Int:      return ImColor( 68, 201, 156);
-        case PinType::Float:    return ImColor(147, 226,  74);
+  
+        case PinType::Float:    return ImColor(147, 226, 74);
+        case PinType::Float2:     return ImColor(200, 200, 200);
+        case PinType::Float3:     return ImColor(200, 200, 200);
+        case PinType::Float4:     return ImColor(200, 200, 200);
+
         case PinType::String:   return ImColor(124,  21, 153);
         case PinType::Object:   return ImColor( 51, 150, 215);
         case PinType::Function: return ImColor(218,   0, 183);
@@ -612,17 +631,25 @@ ImColor GetIconColor(PinType type)
     }
 };
 
+
 void DrawPinIcon(const Pin& pin, bool connected, int alpha)
 {
     IconType iconType;
-    ImColor  color = GetIconColor(pin.Type);
+
+
+    ImColor  color = pin.Color.Value.w ? pin.Color :  GetIconColor(pin.Type);
     color.Value.w = alpha / 255.0f;
     switch (pin.Type)
     {
         case PinType::Flow:     iconType = IconType::Flow;   break;
         case PinType::Bool:     iconType = IconType::Circle; break;
         case PinType::Int:      iconType = IconType::Circle; break;
+
         case PinType::Float:    iconType = IconType::Circle; break;
+        case PinType::Float2:     iconType = IconType::Circle; break;
+        case PinType::Float3:     iconType = IconType::Circle; break;
+        case PinType::Float4:     iconType = IconType::Circle; break;
+
         case PinType::String:   iconType = IconType::Circle; break;
         case PinType::Object:   iconType = IconType::Circle; break;
         case PinType::Function: iconType = IconType::Circle; break;
@@ -743,6 +770,12 @@ void Application_Frame()
                             ImGui::Spring(0);
                     builder.EndHeader();
                 }
+
+                if (node.Name == "Texture Sample")
+                {
+                    DrawImage(node.texture, ImVec2(85.f, 85.0f), false);
+                }
+
 
                 for (auto& input : node.Inputs)
                 {

@@ -968,7 +968,7 @@ namespace ap::imgui
 
 	}
 
-	bool DrawImage(ap::Resource& texture_input, ImVec2 size)
+	bool DrawImage(ap::Resource& texture_input, ImVec2 size, bool tooltip)
 	{
 		bool changed = false;
 
@@ -988,12 +988,16 @@ namespace ap::imgui
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted("Image");
-			ImGui::PopTextWrapPos();
-			ImGui::Image((void*)textureID, ImVec2(384.f, 384.0f));
-			ImGui::EndTooltip();
+			if (tooltip)
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted("Image");
+				ImGui::PopTextWrapPos();
+				ImGui::Image((void*)textureID, ImVec2(384.f, 384.0f));
+				ImGui::EndTooltip();
+			}
+			
 
 
 			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
@@ -1061,7 +1065,7 @@ namespace ap::imgui
 		if (!IsItemDisabled())
 			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
 
-		ImGui::PopItemWidth();
+		//ImGui::PopItemWidth();
 		//ImGui::NextColumn();
 
 		return changed;
