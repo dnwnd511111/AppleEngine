@@ -91,6 +91,7 @@ struct Pin
     std::string Name;
     PinType     Type;
     PinKind     Kind;
+    ImColor     Color;  //temp
 
     Pin(int id, const char* name, PinType type):
         ID(id), Node(nullptr), Name(name), Type(type), Kind(PinKind::Input)
@@ -107,6 +108,8 @@ struct Node
     ImColor Color;
     NodeType Type;
     ImVec2 Size;
+
+    XMFLOAT4 data;   //
 
     std::string State;
     std::string SavedState;
@@ -266,6 +269,21 @@ static void BuildNode(Node* node)
     }
 }
 
+
+static Node* SpawnTextureSampleNode()
+{
+    s_Nodes.emplace_back(GetNextId(), "Texture Sample", ImColor(128, 195, 248));
+   
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), "R", PinType::Float);
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), "G", PinType::Float);
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), "B", PinType::Float);
+
+
+    BuildNode(&s_Nodes.back());
+
+    return &s_Nodes.back();
+}
+
 static Node* SpawnInputActionNode()
 {
     s_Nodes.emplace_back(GetNextId(), "InputAction Fire", ImColor(255, 128, 128));
@@ -277,6 +295,8 @@ static Node* SpawnInputActionNode()
 
     return &s_Nodes.back();
 }
+
+
 
 static Node* SpawnBranchNode()
 {
@@ -488,6 +508,12 @@ ap::Resource  g_tex3;
 
 void Application_Initialize()
 {
+    g_tex1 = ap::resourcemanager::Load("resources\\images\\BlueprintBackground.png");
+    g_tex2 = ap::resourcemanager::Load("resources\\images\\ic_save_white_24dp.png");
+    g_tex3 = ap::resourcemanager::Load("resources\\images\\ic_restore_white_24dp.png");
+
+
+
     ed::Config config;
 
     config.SettingsFile = "Blueprints.json";
@@ -550,11 +576,7 @@ void Application_Initialize()
 
     s_Links.push_back(Link(GetNextLinkId(), s_Nodes[14].Outputs[0].ID, s_Nodes[15].Inputs[0].ID));
 
-      g_tex1 = ap::resourcemanager::Load("resources\\images\\BlueprintBackground.png");
-      g_tex2 = ap::resourcemanager::Load("resources\\images\\ic_save_white_24dp.png");
-      g_tex3 = ap::resourcemanager::Load("resources\\images\\ic_restore_white_24dp.png");
-
-   
+    
 
 
     //auto& io = ImGui::GetIO();
@@ -631,11 +653,11 @@ void Application_Frame()
 
     ImGui::Begin("Material");
 
-    if (ImGui::IsWindowDocked() && !ImGui::IsWindowFocused())
+   /* if (ImGui::IsWindowDocked() && !ImGui::IsWindowFocused())
     {
         ImGui::End();
         return;
-    }
+    }*/
 
     UpdateTouch();
 
@@ -658,6 +680,7 @@ void Application_Frame()
     ed::Begin("Node editor");
     {
         auto cursorTopLeft = ImGui::GetCursorScreenPos();
+       
 
         util::BlueprintNodeBuilder builder(s_HeaderBackground, (int)g_tex1.GetTexture().desc.width, (int)g_tex1.GetTexture().desc.height);
 
@@ -770,6 +793,7 @@ void Application_Frame()
                         static char buffer[128] = "Edit Me\nMultiline!";
                         static bool wasActive = false;
 
+                        
                         ImGui::PushItemWidth(100.0f);
                         ImGui::InputText("##edit", buffer, 127);
                         ImGui::PopItemWidth();
@@ -1061,36 +1085,7 @@ void Application_Frame()
 
             auto drawList = ed::GetNodeBackgroundDrawList(node.ID);
 
-            //const auto fringeScale = ImGui::GetStyle().AntiAliasFringeScale;
-            //const auto unitSize    = 1.0f / fringeScale;
-
-            //const auto ImDrawList_AddRect = [](ImDrawList* drawList, const ImVec2& a, const ImVec2& b, ImU32 col, float rounding, int rounding_corners, float thickness)
-            //{
-            //    if ((col >> 24) == 0)
-            //        return;
-            //    drawList->PathRect(a, b, rounding, rounding_corners);
-            //    drawList->PathStroke(col, true, thickness);
-            //};
-
-            //drawList->AddRectFilled(inputsRect.GetTL() + ImVec2(0, 1), inputsRect.GetBR(),
-            //    IM_COL32((int)(255 * pinBackground.x), (int)(255 * pinBackground.y), (int)(255 * pinBackground.z), inputAlpha), 4.0f, 12);
-            //ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
-            //drawList->AddRect(inputsRect.GetTL() + ImVec2(0, 1), inputsRect.GetBR(),
-            //    IM_COL32((int)(255 * pinBackground.x), (int)(255 * pinBackground.y), (int)(255 * pinBackground.z), inputAlpha), 4.0f, 12);
-            //ImGui::PopStyleVar();
-            //drawList->AddRectFilled(outputsRect.GetTL(), outputsRect.GetBR() - ImVec2(0, 1),
-            //    IM_COL32((int)(255 * pinBackground.x), (int)(255 * pinBackground.y), (int)(255 * pinBackground.z), outputAlpha), 4.0f, 3);
-            ////ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
-            //drawList->AddRect(outputsRect.GetTL(), outputsRect.GetBR() - ImVec2(0, 1),
-            //    IM_COL32((int)(255 * pinBackground.x), (int)(255 * pinBackground.y), (int)(255 * pinBackground.z), outputAlpha), 4.0f, 3);
-            ////ImGui::PopStyleVar();
-            //drawList->AddRectFilled(contentRect.GetTL(), contentRect.GetBR(), IM_COL32(24, 64, 128, 200), 0.0f);
-            //ImGui::PushStyleVar(ImGuiStyleVar_AntiAliasFringeScale, 1.0f);
-            //drawList->AddRect(
-            //    contentRect.GetTL(),
-            //    contentRect.GetBR(),
-            //    IM_COL32(48, 128, 255, 100), 0.0f);
-            //ImGui::PopStyleVar();
+           
         }
 
         for (auto& node : s_Nodes)
@@ -1366,6 +1361,8 @@ void Application_Frame()
         //drawList->AddCircleFilled(ImGui::GetMousePosOnOpeningCurrentPopup(), 10.0f, 0xFFFF00FF);
 
         Node* node = nullptr;
+        if (ImGui::MenuItem("Texture Sample"))
+            node = SpawnTextureSampleNode();
         if (ImGui::MenuItem("Input Action"))
             node = SpawnInputActionNode();
         if (ImGui::MenuItem("Output Action"))

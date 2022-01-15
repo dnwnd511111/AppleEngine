@@ -968,6 +968,106 @@ namespace ap::imgui
 
 	}
 
+	bool DrawImage(ap::Resource& texture_input, ImVec2 size)
+	{
+		bool changed = false;
+
+		ap::graphics::Texture* texture = nullptr;
+		if (texture_input.IsValid())
+			texture = const_cast<ap::graphics::Texture*>(&texture_input.GetTexture());
+
+		bool textureIsValid = texture;
+		if (!textureIsValid)
+		{
+			texture = const_cast<ap::graphics::Texture*>(ap::texturehelper::getWhite());
+		}
+
+
+		uint64_t textureID = ap::graphics::GetDevice()->CopyDescriptorToImGui(texture);;
+		ImGui::Image((void*)textureID, size);
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted("Image");
+			ImGui::PopTextWrapPos();
+			ImGui::Image((void*)textureID, ImVec2(384.f, 384.0f));
+			ImGui::EndTooltip();
+
+
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			{
+				if (textureIsValid)
+				{
+					texture_input = {};
+					changed = true;
+
+				}
+				else
+				{
+					ap::helper::FileDialogParams params;
+					params.type = ap::helper::FileDialogParams::OPEN;
+					params.description = "Texture";
+					params.extensions.push_back("dds");
+					params.extensions.push_back("png");
+					params.extensions.push_back("jpg");
+					params.extensions.push_back("jpeg");
+					params.extensions.push_back("tga");
+					params.extensions.push_back("bmp");
+
+
+					ap::helper::FileDialog(params, [&texture_input,&changed](std::string fileName) {
+						ap::eventhandler::Subscribe_Once(ap::eventhandler::EVENT_THREAD_SAFE_POINT, [fileName, &texture_input, &changed](uint64_t userdata) {
+							//light.lightMask = fileName;
+							texture_input = ap::resourcemanager::Load(fileName, ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+							changed = true;
+							});
+
+						});
+				}
+
+			}
+
+			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+
+
+			}
+
+		}
+
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			auto data = ImGui::AcceptDragDropPayload("Asset");
+			if (data)
+			{
+				std::filesystem::path assetPath = *((std::filesystem::path*)data->Data);
+				if (assetPath.extension() == ".png" || assetPath.extension() == ".dds" || assetPath.extension() == ".jpg")
+				{
+
+					texture_input = ap::resourcemanager::Load(assetPath.string().c_str(), ap::resourcemanager::Flags::IMPORT_RETAIN_FILEDATA);
+					changed = true;
+
+				}
+
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+
+
+		if (!IsItemDisabled())
+			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);
+
+		ImGui::PopItemWidth();
+		//ImGui::NextColumn();
+
+		return changed;
+
+	}
+
 
 	bool DrawImage(const char* label, ImTextureID texture, const  XMFLOAT2& size )
 	{

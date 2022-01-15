@@ -66,9 +66,12 @@ namespace ap::imgui
 	//gonna be deleted
 	bool ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0, 0, 0, 0), const ImVec4& tint_col = ImVec4(1, 1, 1, 1));
 
-	bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex);
-	bool DrawImage(const char* label, ImTextureID texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
+	
+    bool DrawImage(const char* label, ap::ecs::Entity materialEntity, int textureIndex);
+    bool DrawImage(ap::Resource& texture, ImVec2 size = ImVec2(70.f, 70.0f));  // use for loading image
+    bool DrawImage(const char* label, ImTextureID texture, const  DirectX::XMFLOAT2& size = DirectX::XMFLOAT2(70.0f, 70.0f));
 	void DrawImage(ImTextureID image, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& tint_col = ImVec4(1, 1, 1, 1), const ImVec4& border_col = ImVec4(0, 0, 0, 0));
+
 
 	void DrawButtonImage(ImTextureID image, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImRect rectangle);
 	void DrawButtonImage(ImTextureID imageNormal, ImTextureID imageHovered, ImTextureID imagePressed, ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed, ImVec2 rectMin, ImVec2 rectMax);

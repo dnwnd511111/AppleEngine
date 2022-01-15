@@ -594,6 +594,7 @@ bool ed::Node::EndDrag()
 
 void ed::Node::Draw(ImDrawList* drawList, DrawFlags flags)
 {
+
     if (flags == Detail::Object::None)
     {
         drawList->ChannelsSetCurrent(m_Channel + c_NodeBackgroundChannel);
@@ -1086,6 +1087,7 @@ void ed::EditorContext::Begin(const char* id, const ImVec2& size)
         canvasSize.y = ImMax(4.0f, availableContentSize.y);
 
     m_IsCanvasVisible = m_Canvas.Begin(id, canvasSize);
+    
 
     //ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
     //ImGui::BeginChild(id, size, false,
@@ -5243,7 +5245,7 @@ std::string ed::Config::Load()
             LoadSettings(const_cast<char*>(data.data()), UserPointer);
         }
     }
-    else if (SettingsFile)
+    else if (SettingsFile && 0)
     {
         std::ifstream file(SettingsFile);
         if (file)
@@ -5289,7 +5291,7 @@ bool ed::Config::Save(const std::string& data, SaveReasonFlags flags)
     {
         return SaveSettings(data.c_str(), data.size(), flags, UserPointer);
     }
-    else if (SettingsFile)
+    else if (SettingsFile && 0)
     {
         std::ofstream settingsFile(SettingsFile);
         if (settingsFile)
