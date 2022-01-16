@@ -9,6 +9,24 @@ Vulkan, DX12, Metal 같은 low level api에 적합한 구조로 설계
 
 ## 로직과 겪은 문제
 
+### RHI
+
+Command Queue를 3개로 나눠서 작업 (Graphics, Compute, Copy)
+멀티스레딩을 위해 대부분의 자원들은 (지연 프레임 * Commandlist * Queue ) 또는 (지연 프레임 * Commandlist) 개수로 준비, 삭제되는 자원들은 지연 프레임 이후에 삭제
+C++쪽 Root Signature 생성 코드를 줄이고, 보기 쉽게 하기 위해 HLSL Root Signature를 사용
+Ring Buffer 방식의 Descriptor Heap을 사용
+중복적인 Bind를 막기위해 현재 Bind 상태를 기록
+PSO를 중복해서 생성할 수 있기 때문에 해시 값을 이용해 Global로 관리
+
+
+### Shader
+PBR (Isotropy, Anisotropy, Sheen, Clear Coat)
+폭발적인 셰이더의 증가 때문에 Uber Shader 사용
+Bind를 쉽게 하기 위해서 Bindless Descriptor와 RootConstant를 사용
+Bindless 덕분에 정점 버퍼 바인드와 Input Layout을 생성할 필요가 없어짐
+라이트 연산을 줄이기 위해 Tiled Shading 사용 (scalization)
+
+
 ### 오브젝트 저장방식
 
 Cache Hit를 늘리려고 DOD방식인 ECS를 사용했지만 상속구조로 된 데이터들은 크기가 일정하지 않아 사용할 수가 없는 문제가 생김
@@ -48,17 +66,5 @@ gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 - occupancy와 helper lane 등등의 이유로 인해 deferred로 교체해야 함
 - software occlusion culling 추가
 - nvidia의 waveworks가 DLL로 제공되서 수정이 불가능함
-
-
-## 게임 보면서 어떻게 구현했을까? 상상한 것들
-- 
-
-
-
-## 미래에 배울 기술들
-- 레이트레이싱
-- Mesh shader
-- 네비게이션
-- 
 
 
