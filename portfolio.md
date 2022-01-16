@@ -27,6 +27,7 @@ gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 4. Object의 Component들을 의존 관계에 따라 업데이트(여기에 Physics Simulation포함)
 5. Visibility 처리(Frustum Culling , Occlusion Query 결과 사용)
 
+
 ### GPU 업데이트, 랜더링
 
 1. 프레임에 쓰일 GPU 자원들 업데이트 및 Copy to GPU (Frame, Entity, Skining ...)
@@ -46,7 +47,7 @@ gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 - 정확도를 위해서 tiled를 clustered 교체 해야함
 - occupancy와 helper lane 등등의 이유로 인해 deferred로 교체해야 함
 - software occlusion culling 추가
-
+- nvidia의 waveworks가 DLL로 제공되서 수정이 불가능함
 
 
 ## 게임 보면서 어떻게 구현했을까? 상상한 것들
