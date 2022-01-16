@@ -7,7 +7,7 @@
 Vulkan, DX12, Metal 같은 low level api에 적합한 구조로 설계
 
 
-## 로직과 마주한 문제들
+## 로직과 겪은 문제
 
 ### 오브젝트 저장방식
 
@@ -17,15 +17,47 @@ Cache Hit를 늘리려고 DOD방식인 ECS를 사용했지만 상속구조로 �
 처음에는 ECS 라이브러리인 ENTT를 사용했지만 멀티스레드에서 어떻게 작동하는지 확실하지 않아 제거 후 간단한 ECS 제작
 
 
-### CPU 업데이트
+### CPU 업데이트 
 gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 
-scene의 오브젝트들의 스크립팅 업데이트와 network로 온 데이터들을 
+
+1. 네트워크 처리
+2. 스크립팅 처리
+3. Input 처리
+4. Object의 Component들을 의존 관계에 따라 업데이트(여기에 Physics Simulation포함)
+5. Visibility 처리(Frustum Culling , Occlusion Query 결과 사용)
+
+### GPU 업데이트, 랜더링
+
+1. 프레임에 쓰일 GPU 자원들 업데이트 및 Copy to GPU (Frame, Entity, Skining ...)
+2. Depth prepass(depth, primitive) 및 Occlusion Culling
+3. 랜더링된 Depth Buffer와 Primitive Buffer를 가지고 여러 버퍼들을 생성(velocity, linear depth, MSAA를 썼다면 resolve)
+4. Entity Culling(light, decal, env probe을 타일에 나눠담음)
+5. 위의 생성된 데이터를 이용해 랜더링에 쓰일 데이터를 생성(AO, SSR, Shadow Map, Planar Reflection ...)
+6. 이제 만들어진 데이터를 이용해서 Opaque 랜더링
+7. Transparent 랜더링
+8. Postprocess Chain (TAA, DOF, Motion Blur ...)
+9. 2D 랜더링
+
+#### 개선이 필요한 부분
+- 언리얼은 postprocess chain이 없고 postprocess volume을 써서 chain을 구성하기 때문에 훨씬 유연함
+문제는 언리얼 같이 유연한 postprocess volume을 구현하려면 material editor를 구현해야 한다. 이는 blueprint같은 비주얼 스크립팅과 이 스크립팅 노드들을 셰이더로 변환하는 부분을 구현하는 것을 의미해서 쉽지 않다.
+
+- 정확도를 위해서 tiled를 clustered 교체 해야함
+- occupancy와 helper lane 등등의 이유로 인해 deferred로 교체해야 함
+- software occlusion culling 추가
 
 
 
-### GPU 업데이트
+## 게임 보면서 어떻게 구현했을까? 상상한 것들
+- 
 
 
+
+## 미래에 배울 기술들
+- 레이트레이싱
+- Mesh shader
+- 네비게이션
+- 
 
 
