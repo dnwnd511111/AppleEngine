@@ -559,40 +559,13 @@ void Application_Initialize()
     m_Editor = ed::CreateEditor(&config);
     ed::SetCurrentEditor(m_Editor);
 
-    Node* node;
-    node = SpawnInputActionNode();      ed::SetNodePosition(node->ID, ImVec2(-252, 220));
-    node = SpawnBranchNode();           ed::SetNodePosition(node->ID, ImVec2(-300, 351));
-    node = SpawnDoNNode();              ed::SetNodePosition(node->ID, ImVec2(-238, 504));
-    node = SpawnOutputActionNode();     ed::SetNodePosition(node->ID, ImVec2(71, 80));
-    node = SpawnSetTimerNode();         ed::SetNodePosition(node->ID, ImVec2(168, 316));
-
-    node = SpawnTreeSequenceNode();     ed::SetNodePosition(node->ID, ImVec2(1028, 329));
-    node = SpawnTreeTaskNode();         ed::SetNodePosition(node->ID, ImVec2(1204, 458));
-    node = SpawnTreeTask2Node();        ed::SetNodePosition(node->ID, ImVec2(868, 538));
-
-    node = SpawnComment();              ed::SetNodePosition(node->ID, ImVec2(112, 576));
-    node = SpawnComment();              ed::SetNodePosition(node->ID, ImVec2(800, 224));
-
-    node = SpawnLessNode();             ed::SetNodePosition(node->ID, ImVec2(366, 652));
-    node = SpawnWeirdNode();            ed::SetNodePosition(node->ID, ImVec2(144, 652));
-    node = SpawnMessageNode();          ed::SetNodePosition(node->ID, ImVec2(-348, 698));
-    node = SpawnPrintStringNode();      ed::SetNodePosition(node->ID, ImVec2(-69, 652));
-
-    node = SpawnHoudiniTransformNode(); ed::SetNodePosition(node->ID, ImVec2(500, -70));
-    node = SpawnHoudiniGroupNode();     ed::SetNodePosition(node->ID, ImVec2(500, 42));
-
+  
     ed::NavigateToContent();
 
     BuildNodes();
 
-    s_Links.push_back(Link(GetNextLinkId(), s_Nodes[5].Outputs[0].ID, s_Nodes[6].Inputs[0].ID));
-    s_Links.push_back(Link(GetNextLinkId(), s_Nodes[5].Outputs[0].ID, s_Nodes[7].Inputs[0].ID));
-
-    s_Links.push_back(Link(GetNextLinkId(), s_Nodes[14].Outputs[0].ID, s_Nodes[15].Inputs[0].ID));
-
-    
-
-
+ 
+ 
     //auto& io = ImGui::GetIO();
 }
 
