@@ -1,13 +1,21 @@
 ![image](https://user-images.githubusercontent.com/67462119/149637632-53672d4f-d56a-4be2-8f03-926a2a832d7f.png)
 ![image2](https://user-images.githubusercontent.com/67462119/149637752-5ca3322f-6ea2-45d7-acd9-e301be933a7b.png)
-(nvidia waveworks)
 
+
+
+<br>
+<br>
+
+# 
+<br>
+
+- <a href="https://www.youtube.com/channel/UCXFu2PFC0sFkW04UkozFj4Q/">유튜브 비디오</a>
+- [포트폴리오 설명](portfolio.md)
+
+<br>
 
 # AppleEngine
 This engine is based on Wicked, Hazel, Unreal Engine
-
-YouTube Videos
-https://www.youtube.com/channel/UCXFu2PFC0sFkW04UkozFj4Q
 
 **Graphics API**
 
