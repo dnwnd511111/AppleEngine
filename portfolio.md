@@ -11,20 +11,23 @@ Vulkan, DX12, Metal 같은 low level api에 적합한 구조로 설계
 
 ### RHI
 
-Command Queue를 3개로 나눠서 작업 (Graphics, Compute, Copy)
-멀티스레딩을 위해 대부분의 자원들은 (지연 프레임 * Commandlist * Queue ) 또는 (지연 프레임 * Commandlist) 개수로 준비, 삭제되는 자원들은 지연 프레임 이후에 삭제
-C++쪽 Root Signature 생성 코드를 줄이고, 보기 쉽게 하기 위해 HLSL Root Signature를 사용
-Ring Buffer 방식의 Descriptor Heap을 사용
-중복적인 Bind를 막기위해 현재 Bind 상태를 기록
-PSO를 중복해서 생성할 수 있기 때문에 해시 값을 이용해 Global로 관리
+- Command Queue를 3개로 나눠서 작업 (Graphics, Compute, Copy)
+- 멀티스레딩을 위해 대부분의 자원들은 (지연 프레임 * Commandlist * Queue ) 또는 (지연 프레임 * Commandlist) 개수로 준비, 삭제되는 자원들은 지연 프레임 이후에 삭제
+- C++쪽 Root Signature 생성 코드를 줄이고, 보기 쉽게 하기 위해 HLSL Root Signature를 사용
+- Ring Buffer 방식의 Descriptor Heap을 사용
+- 중복적인 Bind를 막기위해 현재 Bind 상태를 기록
+- PSO를 중복해서 생성할 수 있기 때문에 해시 값을 이용해 Global로 관리
+
 
 
 ### Shader
-PBR (Isotropy, Anisotropy, Sheen, Clear Coat)
-폭발적인 셰이더의 증가 때문에 Uber Shader 사용
-Bind를 쉽게 하기 위해서 Bindless Descriptor와 RootConstant를 사용
-Bindless 덕분에 정점 버퍼 바인드와 Input Layout을 생성할 필요가 없어짐
-라이트 연산을 줄이기 위해 Tiled Shading 사용 (scalization)
+
+- PBR (Isotropy, Anisotropy, Sheen, Clear Coat)
+- 폭발적인 셰이더의 증가 때문에 Uber Shader 사용
+- Bind를 쉽게 하기 위해서 Bindless Descriptor와 RootConstant를 사용
+- Bindless 덕분에 정점 버퍼 바인드와 Input Layout을 생성할 필요가 없어짐
+- 라이트 연산을 줄이기 위해 Tiled Shading 사용 (scalization)
+
 
 
 ### 오브젝트 저장방식
@@ -39,24 +42,24 @@ Cache Hit를 늘리려고 DOD방식인 ECS를 사용했지만 상속구조로 �
 gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 
 
-1. 네트워크 처리
-2. 스크립팅 처리
-3. Input 처리
-4. Object의 Component들을 의존 관계에 따라 업데이트(여기에 Physics Simulation포함)
-5. Visibility 처리(Frustum Culling , Occlusion Query 결과 사용)
+ 1. 네트워크 처리
+ 2. 스크립팅 처리
+ 3. Input 처리
+ 4. Object의 Component들을 의존 관계에 따라 업데이트(여기에 Physics Simulation포함)
+ 5. Visibility 처리(Frustum Culling , Occlusion Query 결과 사용)
 
 
 ### GPU 업데이트, 랜더링
 
-1. 프레임에 쓰일 GPU 자원들 업데이트 및 Copy to GPU (Frame, Entity, Skining ...)
-2. Depth prepass(depth, primitive) 및 Occlusion Culling
-3. 랜더링된 Depth Buffer와 Primitive Buffer를 가지고 여러 버퍼들을 생성(velocity, linear depth, MSAA를 썼다면 resolve)
-4. Entity Culling(light, decal, env probe을 타일에 나눠담음)
-5. 위의 생성된 데이터를 이용해 랜더링에 쓰일 데이터를 생성(AO, SSR, Shadow Map, Planar Reflection ...)
-6. 이제 만들어진 데이터를 이용해서 Opaque 랜더링
-7. Transparent 랜더링
-8. Postprocess Chain (TAA, DOF, Motion Blur ...)
-9. 2D 랜더링
+ 1. 프레임에 쓰일 GPU 자원들 업데이트 및 Copy to GPU (Frame, Entity, Skining ...)
+ 2. Depth prepass(depth, primitive) 및 Occlusion Culling
+ 3. 랜더링된 Depth Buffer와 Primitive Buffer를 가지고 여러 버퍼들을 생성(velocity, linear depth, MSAA를 썼다면 resolve)
+ 4. Entity Culling(light, decal, env probe을 타일에 나눠담음)
+ 5. 위의 생성된 데이터를 이용해 랜더링에 쓰일 데이터를 생성(AO, SSR, Shadow Map, Planar Reflection ...)
+ 6. 이제 만들어진 데이터를 이용해서 Opaque 랜더링
+ 7. Transparent 랜더링
+ 8. Postprocess Chain (TAA, DOF, Motion Blur ...)
+ 9. 2D 랜더링
 
 #### 개선이 필요한 부분
 - 언리얼은 postprocess chain이 없고 postprocess volume을 써서 chain을 구성하기 때문에 훨씬 유연함
