@@ -44,7 +44,7 @@ namespace ap::imgui
 	void DrawInputText(const char* label, const std::string& value);
 	void DrawInputText(const char* label, const char* value);
 	bool DrawCombo(const char* label, const std::vector<std::string>& options, int32_t optionCount, int32_t* selected);
-	bool DrawCheckbox(const char* label, bool& value);
+	bool DrawCheckbox(const char* label, bool& value, bool disable =false);
 	bool DrawDragFloat(const char* label, float& value, float delta = 0.1f, float min = 0.0f, float max = 0.0f, bool readOnly = false);
 	bool DrawDragFloat2(const char* label, DirectX::XMFLOAT2& value, float delta = 0.1f);
 	bool DrawDragFloat3(const char* label, DirectX::XMFLOAT3& value, float delta = 0.1f);

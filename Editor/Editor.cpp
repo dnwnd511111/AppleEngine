@@ -863,8 +863,10 @@ void Editor::ImGuiRender_PostProcess()
 	PropertyGridSpacing();
 	ImGui::Separator();
 
+	bool disabledFSR = !((renderComponent.renderPath->resolutionScale < 1.0f) && (ap::renderer::GetTemporalAAEnabled() || renderComponent.renderPath->getMSAASampleCount() > 1 ) );
+
 	bool FSREnabled = renderComponent.renderPath->getFSREnabled();
-	if (DrawCheckbox("FSR", FSREnabled))
+	if (DrawCheckbox("FSR", FSREnabled, disabledFSR))
 		renderComponent.renderPath->setFSREnabled(FSREnabled);
 
 	float FSRSharpness = renderComponent.renderPath->getFSRSharpness();

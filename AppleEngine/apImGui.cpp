@@ -336,7 +336,7 @@ namespace ap::imgui
 	}
 
 
-	bool DrawCheckbox(const char* label, bool& value)
+	bool DrawCheckbox(const char* label, bool& value, bool disable)
 	{
 		bool modified = false;
 
@@ -344,9 +344,21 @@ namespace ap::imgui
 		ImGui::NextColumn();
 
 		ImGui::PushItemWidth(-1);
-		
+
+		if (disable)
+		{
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+		}
+
 		if (ImGui::Checkbox(GenerateID(), &value))
 			modified = true;
+
+		if (disable)
+		{
+			ImGui::PopItemFlag();
+			ImGui::PopStyleVar();
+		}
 
 		if (!IsItemDisabled())
 			DrawItemActivityOutline(2.0f, true, ap::imguicolor::accent);

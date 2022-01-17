@@ -1537,7 +1537,7 @@ void RenderPath3D::RenderPostprocessChain(CommandList cmd) const
 			ap::profiler::EndRange(range);
 		}
 
-		if (rtFSR[0].IsValid() && getFSREnabled())
+		if (rtFSR[0].IsValid() && getFSREnabled() && resolutionScale < 1.0f)
 		{
 			ap::renderer::Postprocess_FSR(*rt_read, rtFSR[1], rtFSR[0], cmd, getFSRSharpness());
 			lastPostprocessRT = &rtFSR[0];
