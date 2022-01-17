@@ -30,7 +30,8 @@ Vulkan, DX12, Metal 같은 low level api에 적합한 구조로 설계
 - Bind를 쉽게 하기 위해서 Bindless Descriptor와 RootConstant를 사용
 - Bindless 덕분에 정점 버퍼 바인드와 Input Layout을 생성할 필요가 없어짐
 - 라이트 연산을 줄이기 위해 Tiled Shading 사용 (scalization)
-
+- 모든 데이터는 압축 (Color, Normal같은 데이터는 8bit, UV는 16bit)
+- Reversed z를 사용해 z fighting을 방지 
 
 
 ### 오브젝트 저장방식
