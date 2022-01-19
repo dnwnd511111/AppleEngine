@@ -52,11 +52,12 @@ This engine is based on Wicked, Hazel, Unreal Engine
   * Particle
   * Sound
   * Terrain
-  * PostProcessing(SSAO, LensFlare, DOF, MotionBlur, EyeAdaption, Bloom, ColorGrading, ToneMapping(ACES))
+  * PostProcessing(SSAO, LensFlare, DOF, MotionBlur, EyeAdaption, Bloom, ColorGrading, ToneMapping(ACES), FSR)
  
  
   **ThirdParty**
   * Nvidia Waveworks
+  * AMD FSR
   * ImGui
   * Bullet
 
