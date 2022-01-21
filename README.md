@@ -12,6 +12,7 @@
 
 - <a href="https://www.youtube.com/channel/UCXFu2PFC0sFkW04UkozFj4Q/videos">유튜브 비디오</a>
 - [포트폴리오 설명](portfolio.md)
+- <a href="https://graphics12.tistory.com/">블로그</a>
 
 <br>
 
@@ -52,11 +53,12 @@ This engine is based on Wicked, Hazel, Unreal Engine
   * Particle
   * Sound
   * Terrain
-  * PostProcessing(SSAO, LensFlare, DOF, MotionBlur, EyeAdaption, Bloom, ColorGrading, ToneMapping(ACES))
+  * PostProcessing(SSAO, LensFlare, DOF, MotionBlur, EyeAdaption, Bloom, ColorGrading, ToneMapping(ACES), FSR)
  
  
   **ThirdParty**
   * Nvidia Waveworks
+  * AMD FSR
   * ImGui
   * Bullet
 
