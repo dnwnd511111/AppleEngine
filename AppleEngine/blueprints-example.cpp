@@ -10,9 +10,14 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stack>
+#include <queue>
 #include <algorithm>
 #include <utility>
+#include <fstream>
+
 #include "apImGui.h"
+#include "apHelper.h"
 
 
 #include "apResourceManager.h"
@@ -113,6 +118,7 @@ struct Node
     std::vector<Pin> Outputs;
     ImColor Color;
     NodeType Type;
+    PinType DataType = PinType::Float4;
     ImVec2 Size;
 
     XMFLOAT4 data;   //
@@ -220,6 +226,17 @@ static Link* FindLink(ed::LinkId id)
     return nullptr;
 }
 
+// Note! only EndPin connected
+static Link* FindLink(const Pin& pin)
+{
+
+    for (auto& link : s_Links)
+        if ( link.EndPinID == pin.ID)
+            return &link;
+
+    return nullptr;
+}
+
 static Pin* FindPin(ed::PinId id)
 {
     if (!id)
@@ -277,9 +294,15 @@ static void BuildNode(Node* node)
 }
 
 
+const char* OutputNodeName = "Material Result";
+const char* OutputNodeBaseColor = "Base Color";
+const char* OutputNodeOpacity = "Opacity";
+
+const char* TextureNodeName = "Texture Sample";
+
 static Node* SpawnTextureSampleNode()
 {
-    s_Nodes.emplace_back(GetNextId(), "Texture Sample", ImColor(128, 195, 248));
+    s_Nodes.emplace_back(GetNextId(), TextureNodeName , ImColor(128, 195, 248));
 
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "RGB", PinType::Float3);
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "R", PinType::Float);
@@ -297,6 +320,29 @@ static Node* SpawnTextureSampleNode()
 
     return &s_Nodes.back();
 }
+
+
+
+
+static Node* SpawnMaterialResultNode()
+{
+    s_Nodes.emplace_back(GetNextId(), OutputNodeName,ImColor(222, 184, 135));
+
+
+    s_Nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeBaseColor, PinType::Float3);
+    s_Nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeOpacity, PinType::Float);
+
+
+    for(auto& e : s_Nodes.back().Inputs)
+        e.Color= ImColor(150, 150, 150);
+
+
+    BuildNode(&s_Nodes.back());
+
+    return &s_Nodes.back();
+}
+
+
 
 static Node* SpawnInputActionNode()
 {
@@ -520,6 +566,7 @@ ap::Resource  g_tex2;
 ap::Resource  g_tex3;
 
 
+
 void Application_Initialize()
 {
     g_tex1 = ap::resourcemanager::Load("resources\\images\\BlueprintBackground.png");
@@ -561,6 +608,8 @@ void Application_Initialize()
 
   
     ed::NavigateToContent();
+
+    SpawnMaterialResultNode();
 
     BuildNodes();
 
@@ -635,11 +684,165 @@ void DrawPinIcon(const Pin& pin, bool connected, int alpha)
 };
 
 
+std::unordered_map<unsigned long long, bool> s_nodeMap;
+std::queue<std::string> s_translatedNodes;
+
+const std::string baseTranslatedNodeName = "materialExpression";
+
+
+void TranslateNode(const Node& node)
+{
+    if (s_nodeMap.count(node.ID.Get()) != 0)
+        return;
+
+    std::string translatedNode;
+
+    switch (node.DataType)
+    {
+        /*case PinType::Bool:
+            translatedNode += "bool ";
+            break;*/
+    case PinType::Float:
+        translatedNode += "float ";
+        break;
+    case PinType::Float2:
+        translatedNode += "float2 ";
+        break;
+    case PinType::Float3:
+        translatedNode += "float3 ";
+        break;
+    case PinType::Float4:
+        translatedNode += "float4 ";
+        break;
+    default:
+        break;
+    }
+
+    translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = ";
+
+    if (node.Name == TextureNodeName)
+    {
+        translatedNode += "texture.sample(uv)";
+    }
+
+    translatedNode += ";\n";
+
+    s_translatedNodes.push(translatedNode);
+
+    for (int i = 0; i < node.Inputs.size(); i++)
+    {
+        Link* link = FindLink(node.Inputs[i]);
+        if (link)
+            TranslateNode(*(FindPin(link->StartPinID)->Node));
+
+    }
+
+    s_nodeMap.insert({ node.ID.Get(),true });
+
+}
+
+void TranslateResultNode(const Pin& pin)
+{
+   
+    Link* link = FindLink(pin);
+    
+    std::string translatedNode;
+
+    if (pin.Name == OutputNodeBaseColor)
+    {
+        translatedNode = "BaseColor";
+    }
+    else if (pin.Name == OutputNodeOpacity)
+    {
+        translatedNode = "Opacity";
+    }
+
+    translatedNode += " = ";
+
+
+    Pin* startPin = nullptr;
+    if (link)
+    {
+        startPin = FindPin(link->StartPinID);
+        translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
+
+        switch (startPin->Type)
+        {
+        case PinType::Float:
+        {
+            if (startPin->Name == "R")
+                translatedNode += ".r";
+            else if(startPin->Name == "G")
+                translatedNode += ".g";
+            else if (startPin->Name == "B")
+                translatedNode += ".b";
+            else if (startPin->Name == "A")
+                translatedNode += ".a";
+            else
+                translatedNode += ".r";
+
+            break;
+        }
+        case PinType::Float2:
+            translatedNode += ".rg";
+            break;
+        case PinType::Float3:
+            translatedNode += ".rgb";
+            break;
+        case PinType::Float4:
+            translatedNode += ".rgba";
+            break;
+        default:
+            break;
+        }
+
+        translatedNode += ";\n";
+    }
+    else
+    {
+        translatedNode += "0;\n";
+    }
+    
+
+    if (link)
+        TranslateNode(*startPin->Node);
+        
+    s_translatedNodes.push(translatedNode);
+    
+      
+    
+   
+}
+
+
+
+void TranslateNodes(std::vector<Node>& nodes, std::vector<Link>& links)
+{
+
+    Node* outputNode =nullptr;
+    for (auto& node : nodes)
+    {
+        if (node.Name == OutputNodeName)
+            outputNode = &node;
+       
+    }
+
+    for (int i = 0; i < outputNode->Inputs.size(); i++)
+    {
+        TranslateResultNode(outputNode->Inputs[i]);
+    }
+   
+    
+
+}
+
+
+
 
 void Application_Frame()
 {
     
-    
+
     int mipmap = -1;
     uint64_t textureID1 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex1.GetTexture(), mipmap);
     uint64_t textureID2 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex2.GetTexture(), mipmap);
@@ -650,8 +853,62 @@ void Application_Frame()
     s_SaveIcon = (ImTextureID)textureID2;
     s_RestoreIcon = (ImTextureID)textureID3;
 
+   
+   
+    ImGui::Begin("Material Editor");
 
-    ImGui::Begin("Material");
+  
+    ImGui::BeginChild("Selection", ImVec2(200, 0));
+
+
+    
+
+    if (ImGui::Button("Save", ImVec2(100, 20)))
+    {
+        s_nodeMap = {};
+        s_translatedNodes = {};
+        TranslateNodes(s_Nodes, s_Links);
+
+        std::string shaderTemplate =
+
+R"(
+
+float4  main()
+{
+
+%s
+
+}      
+
+)";
+
+        char shaderOutput[3000];
+
+        std::string str;
+        while (!s_translatedNodes.empty())
+        {
+            str += s_translatedNodes.front();
+            s_translatedNodes.pop();
+        }
+
+        sprintf_s(shaderOutput, sizeof(shaderOutput),shaderTemplate.c_str(), str.c_str());
+
+        std::ofstream file("shaderfile.txt", std::ios::binary | std::ios::trunc);
+        if (file.is_open())
+        {
+            file.write(const_cast<const char*>(shaderOutput), strlen(shaderOutput));
+            file.close();
+        }
+
+       
+    }
+        
+
+
+    ImGui::EndChild();
+    ImGui::SameLine(0.0f, 12.0f);
+
+
 
    /* if (ImGui::IsWindowDocked() && !ImGui::IsWindowFocused())
     {
@@ -934,16 +1191,6 @@ void Application_Frame()
 
             auto drawList = ed::GetNodeBackgroundDrawList(node.ID);
 
-            //const auto fringeScale = ImGui::GetStyle().AntiAliasFringeScale;
-            //const auto unitSize    = 1.0f / fringeScale;
-
-            //const auto ImDrawList_AddRect = [](ImDrawList* drawList, const ImVec2& a, const ImVec2& b, ImU32 col, float rounding, int rounding_corners, float thickness)
-            //{
-            //    if ((col >> 24) == 0)
-            //        return;
-            //    drawList->PathRect(a, b, rounding, rounding_corners);
-            //    drawList->PathStroke(col, true, thickness);
-            //};
 
             drawList->AddRectFilled(inputsRect.GetTL() + ImVec2(0, 1), inputsRect.GetBR(),
                 IM_COL32((int)(255 * pinBackground.x), (int)(255 * pinBackground.y), (int)(255 * pinBackground.z), inputAlpha), 4.0f, 12);
@@ -1369,6 +1616,7 @@ void Application_Frame()
         Node* node = nullptr;
         if (ImGui::MenuItem("Texture Sample"))
             node = SpawnTextureSampleNode();
+        ImGui::Separator();
         if (ImGui::MenuItem("Input Action"))
             node = SpawnInputActionNode();
         if (ImGui::MenuItem("Output Action"))

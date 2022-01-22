@@ -1,0 +1,13 @@
+
+
+float4  main()
+{
+
+float4 materialExpression10003 = texture.sample(uv);
+BaseColor = materialExpression10003.rgb;
+float4 materialExpression10011 = texture.sample(uv);
+Opacity = materialExpression10011.r;
+
+
+}      
+
