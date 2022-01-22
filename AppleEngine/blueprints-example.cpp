@@ -51,17 +51,6 @@ using ax::Widgets::IconType;
 
 static ed::EditorContext* m_Editor = nullptr;
 
-//extern "C" __declspec(dllimport) short __stdcall GetAsyncKeyState(int vkey);
-//extern "C" bool Debug_KeyPress(int vkey)
-//{
-//    static std::map<int, bool> state;
-//    auto lastState = state[vkey];
-//    state[vkey] = (GetAsyncKeyState(vkey) & 0x8000) != 0;
-//    if (state[vkey] && !lastState)
-//        return true;
-//    else
-//        return false;
-//}
 
 enum class PinType
 {
@@ -103,6 +92,7 @@ struct Pin
     PinType     Type;
     PinKind     Kind;
     ImColor     Color = {0,0,0,0};  //temp
+    XMFLOAT4    data = {0,0,0,0};
 
     Pin(int id, const char* name, PinType type):
         ID(id), Node(nullptr), Name(name), Type(type), Kind(PinKind::Input)
@@ -143,7 +133,7 @@ struct Link
     ImColor Color;
 
     Link(ed::LinkId id, ed::PinId startPinId, ed::PinId endPinId):
-        ID(id), StartPinID(startPinId), EndPinID(endPinId), Color(255, 255, 255)
+        ID(id), StartPinID(startPinId), EndPinID(endPinId), Color(220, 220, 220)
     {
     }
 };
@@ -276,8 +266,6 @@ static bool CanCreateLink(Pin* a, Pin* b)
     return true;
 }
 
-
-
 static void BuildNode(Node* node)
 {
     for (auto& input : node->Inputs)
@@ -300,6 +288,22 @@ const char* OutputNodeOpacity = "Opacity";
 
 const char* TextureNodeName = "Texture Sample";
 
+const char* FloatAddNodeName = "Float Add";
+const char* Float2AddNodeName = "Float2 Add";
+const char* Float3AddNodeName = "Float3 Add";
+const char* Float4AddNodeName = "Float4 Add";
+
+const char* FloatMulNodeName = "Float Mul";
+const char* Float2MulNodeName = "Float2 Mul";
+const char* Float3MulNodeName = "Float3 Mul";
+const char* Float4MulNodeName = "Float4 Mul";
+
+const char* FloatSubtractNodeName = "Float Subtract";
+const char* Float2SubtractNodeName = "Float2 Subtract";
+const char* Float3SubtractNodeName = "Float3 Subtract";
+const char* Float4SubtractNodeName = "Float4 Subtract";
+
+
 static Node* SpawnTextureSampleNode()
 {
     s_Nodes.emplace_back(GetNextId(), TextureNodeName , ImColor(128, 195, 248));
@@ -312,7 +316,7 @@ static Node* SpawnTextureSampleNode()
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "B", PinType::Float);
     s_Nodes.back().Outputs.back().Color = ImColor(0, 0, 255);
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "A", PinType::Float);
-    s_Nodes.back().Outputs.back().Color = ImColor(150, 150, 150);
+    s_Nodes.back().Outputs.back().Color = ImColor(180, 180, 180);
 
 
 
@@ -320,8 +324,6 @@ static Node* SpawnTextureSampleNode()
 
     return &s_Nodes.back();
 }
-
-
 
 
 static Node* SpawnMaterialResultNode()
@@ -334,7 +336,29 @@ static Node* SpawnMaterialResultNode()
 
 
     for(auto& e : s_Nodes.back().Inputs)
-        e.Color= ImColor(150, 150, 150);
+        e.Color= ImColor(220, 220, 220);
+
+
+    BuildNode(&s_Nodes.back());
+
+    return &s_Nodes.back();
+}
+
+static Node* SpawnFloat3AddNode()
+{
+    s_Nodes.emplace_back(GetNextId(), Float3AddNodeName, ImColor(46, 139, 87));
+    s_Nodes.back().DataType = PinType::Float3;
+
+    s_Nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float3);
+    s_Nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float3);
+
+    for (auto& e : s_Nodes.back().Inputs)
+        e.Color = ImColor(220, 220, 220);
+
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float3);
+
+    for (auto& e : s_Nodes.back().Outputs)
+        e.Color = ImColor(220, 220, 220);
 
 
     BuildNode(&s_Nodes.back());
@@ -343,211 +367,214 @@ static Node* SpawnMaterialResultNode()
 }
 
 
+#pragma region SpawnETC
 
-static Node* SpawnInputActionNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "InputAction Fire", ImColor(255, 128, 128));
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Delegate);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Pressed", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Released", PinType::Flow);
+    static Node* SpawnInputActionNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "InputAction Fire", ImColor(255, 128, 128));
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Delegate);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Pressed", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Released", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
 
 
-static Node* SpawnBranchNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Branch");
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Condition", PinType::Bool);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "True", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "False", PinType::Flow);
+    static Node* SpawnBranchNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Branch");
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Condition", PinType::Bool);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "True", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "False", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnDoNNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Do N");
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Enter", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "N", PinType::Int);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Reset", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Exit", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Counter", PinType::Int);
+    static Node* SpawnDoNNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Do N");
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Enter", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "N", PinType::Int);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Reset", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Exit", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Counter", PinType::Int);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnOutputActionNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "OutputAction");
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Sample", PinType::Float);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Condition", PinType::Bool);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Event", PinType::Delegate);
+    static Node* SpawnOutputActionNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "OutputAction");
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Sample", PinType::Float);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Condition", PinType::Bool);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Event", PinType::Delegate);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnPrintStringNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Print String");
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "In String", PinType::String);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnPrintStringNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Print String");
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "In String", PinType::String);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnMessageNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "", ImColor(128, 195, 248));
-    s_Nodes.back().Type = NodeType::Simple;
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Message", PinType::String);
+    static Node* SpawnMessageNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "", ImColor(128, 195, 248));
+        s_Nodes.back().Type = NodeType::Simple;
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Message", PinType::String);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnSetTimerNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Set Timer", ImColor(128, 195, 248));
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Object", PinType::Object);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Function Name", PinType::Function);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Time", PinType::Float);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Looping", PinType::Bool);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnSetTimerNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Set Timer", ImColor(128, 195, 248));
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Object", PinType::Object);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Function Name", PinType::Function);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Time", PinType::Float);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Looping", PinType::Bool);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnLessNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "<", ImColor(128, 195, 248));
-    s_Nodes.back().Type = NodeType::Simple;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+    static Node* SpawnLessNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "<", ImColor(128, 195, 248));
+        s_Nodes.back().Type = NodeType::Simple;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnWeirdNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "o.O", ImColor(128, 195, 248));
-    s_Nodes.back().Type = NodeType::Simple;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+    static Node* SpawnWeirdNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "o.O", ImColor(128, 195, 248));
+        s_Nodes.back().Type = NodeType::Simple;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Float);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Float);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnTraceByChannelNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Single Line Trace by Channel", ImColor(255, 128, 64));
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Start", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "End", PinType::Int);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Trace Channel", PinType::Float);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Trace Complex", PinType::Bool);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Actors to Ignore", PinType::Int);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Draw Debug Type", PinType::Bool);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "Ignore Self", PinType::Bool);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Out Hit", PinType::Float);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "Return Value", PinType::Bool);
+    static Node* SpawnTraceByChannelNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Single Line Trace by Channel", ImColor(255, 128, 64));
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Start", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "End", PinType::Int);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Trace Channel", PinType::Float);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Trace Complex", PinType::Bool);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Actors to Ignore", PinType::Int);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Draw Debug Type", PinType::Bool);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "Ignore Self", PinType::Bool);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Out Hit", PinType::Float);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "Return Value", PinType::Bool);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnTreeSequenceNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Sequence");
-    s_Nodes.back().Type = NodeType::Tree;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnTreeSequenceNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Sequence");
+        s_Nodes.back().Type = NodeType::Tree;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnTreeTaskNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Move To");
-    s_Nodes.back().Type = NodeType::Tree;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnTreeTaskNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Move To");
+        s_Nodes.back().Type = NodeType::Tree;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnTreeTask2Node()
-{
-    s_Nodes.emplace_back(GetNextId(), "Random Wait");
-    s_Nodes.back().Type = NodeType::Tree;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnTreeTask2Node()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Random Wait");
+        s_Nodes.back().Type = NodeType::Tree;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnComment()
-{
-    s_Nodes.emplace_back(GetNextId(), "Test Comment");
-    s_Nodes.back().Type = NodeType::Comment;
-    s_Nodes.back().Size = ImVec2(300, 200);
+    static Node* SpawnComment()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Test Comment");
+        s_Nodes.back().Type = NodeType::Comment;
+        s_Nodes.back().Size = ImVec2(300, 200);
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnHoudiniTransformNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Transform");
-    s_Nodes.back().Type = NodeType::Houdini;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnHoudiniTransformNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Transform");
+        s_Nodes.back().Type = NodeType::Houdini;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
 
-static Node* SpawnHoudiniGroupNode()
-{
-    s_Nodes.emplace_back(GetNextId(), "Group");
-    s_Nodes.back().Type = NodeType::Houdini;
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
-    s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
+    static Node* SpawnHoudiniGroupNode()
+    {
+        s_Nodes.emplace_back(GetNextId(), "Group");
+        s_Nodes.back().Type = NodeType::Houdini;
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Inputs.emplace_back(GetNextId(), "", PinType::Flow);
+        s_Nodes.back().Outputs.emplace_back(GetNextId(), "", PinType::Flow);
 
-    BuildNode(&s_Nodes.back());
+        BuildNode(&s_Nodes.back());
 
-    return &s_Nodes.back();
-}
+        return &s_Nodes.back();
+    }
+
+#pragma endregion
 
 void BuildNodes()
 {
@@ -619,6 +646,33 @@ void Application_Initialize()
 }
 
 
+std::string XMFLOAT4ToString(const XMFLOAT4& data ,PinType type)
+{
+    std::string str;
+    switch (type)
+    {
+    case PinType::Bool:
+        str += data.x > 0 ? "true": "false";
+        break;
+    case PinType::Float:
+        str += "float(" + std::to_string(data.x) + ")";
+        break;
+    case PinType::Float2:
+        str += "float2(" + std::to_string(data.x) + "," + std::to_string(data.y) + ")";
+        break;
+    case PinType::Float3:
+        str += "float3(" + std::to_string(data.x) + "," + std::to_string(data.y) + "," + std::to_string(data.z) + ")";
+        break;
+    case PinType::Float4:
+        str += "float4(" + std::to_string(data.x) + "," + std::to_string(data.y) + "," + std::to_string(data.z) + "," + std::to_string(data.w) +")";
+        break;
+    default:
+        break;
+    }
+
+    return str;
+
+}
 
 static bool Splitter(bool split_vertically, float thickness, float* size1, float* size2, float min_size1, float min_size2, float splitter_long_axis_size = -1.0f)
 {
@@ -642,9 +696,9 @@ ImColor GetIconColor(PinType type)
         case PinType::Int:      return ImColor( 68, 201, 156);
   
         case PinType::Float:    return ImColor(147, 226, 74);
-        case PinType::Float2:     return ImColor(200, 200, 200);
-        case PinType::Float3:     return ImColor(200, 200, 200);
-        case PinType::Float4:     return ImColor(200, 200, 200);
+        case PinType::Float2:     return ImColor(220, 220, 220);
+        case PinType::Float3:     return ImColor(220, 220, 220);
+        case PinType::Float4:     return ImColor(220, 220, 220);
 
         case PinType::String:   return ImColor(124,  21, 153);
         case PinType::Object:   return ImColor( 51, 150, 215);
@@ -684,7 +738,7 @@ void DrawPinIcon(const Pin& pin, bool connected, int alpha)
 };
 
 
-std::unordered_map<unsigned long long, bool> s_nodeMap;
+std::unordered_map<unsigned long long, std::string> s_nodeMap;
 std::queue<std::string> s_translatedNodes;
 
 const std::string baseTranslatedNodeName = "materialExpression";
@@ -721,13 +775,28 @@ void TranslateNode(const Node& node)
     translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = ";
 
     if (node.Name == TextureNodeName)
-    {
         translatedNode += "texture.sample(uv)";
+    else if (node.Name == Float3AddNodeName)
+    {
+        std::string a;
+        std::string b;
+        Link* linkA = FindLink(node.Inputs[0]);
+        Link* linkB = FindLink(node.Inputs[1]);
+        if (linkA)
+            a = baseTranslatedNodeName + std::to_string(FindPin(linkA->StartPinID)->Node->ID.Get()) + ".rgb";
+        else
+            a = XMFLOAT4ToString(node.Inputs[0].data, node.Inputs[0].Type);
+        if (linkB)
+            b = baseTranslatedNodeName + std::to_string(FindPin(linkB->StartPinID)->Node->ID.Get()) + ".rgb";
+        else
+            b = XMFLOAT4ToString(node.Inputs[1].data, node.Inputs[1].Type);
+        
+        translatedNode += (a + " + " +b);
     }
 
     translatedNode += ";\n";
 
-    s_translatedNodes.push(translatedNode);
+    s_nodeMap.insert({ node.ID.Get(),baseTranslatedNodeName + std::to_string(node.ID.Get()) });
 
     for (int i = 0; i < node.Inputs.size(); i++)
     {
@@ -737,7 +806,9 @@ void TranslateNode(const Node& node)
 
     }
 
-    s_nodeMap.insert({ node.ID.Get(),true });
+    s_translatedNodes.push(translatedNode);
+
+    
 
 }
 
@@ -854,14 +925,52 @@ void Application_Frame()
     s_RestoreIcon = (ImTextureID)textureID3;
 
    
+    static ed::NodeId contextNodeId = 0;
+    static ed::LinkId contextLinkId = 0;
+    static ed::PinId  contextPinId = 0;
+    static bool createNewNode = false;
+    static Pin* newNodeLinkPin = nullptr;
+    static Pin* newLinkPin = nullptr;
+
    
     ImGui::Begin("Material Editor");
 
   
     ImGui::BeginChild("Selection", ImVec2(200, 0));
 
+    Node* contextNode = FindNode(contextNodeId);
+    if (contextNode && (contextNode->Name.find("Float") != std::string::npos))
+    {
+       
+        for (int i = 0; i < contextNode->Inputs.size(); i++)
+        {
+            Pin& pin = contextNode->Inputs[i];
+            switch (pin.Type)
+            {
+            case PinType::Float:
+                ImGui::DragFloat(pin.Name.c_str(), (float*)&pin.data);
+                break;
+            case PinType::Float2:
+                ImGui::DragFloat2(pin.Name.c_str(), (float*)&pin.data);
+                break;
+            case PinType::Float3:
+                ImGui::DragFloat3(pin.Name.c_str(), (float*)&pin.data);
+                break;
+            case PinType::Float4:
+                ImGui::DragFloat4(pin.Name.c_str(), (float*)&pin.data);
+                break;
+            default:
+                break;
+            }
+           
+        }
 
-    
+            
+    }
+ 
+
+
+    ImGui::Separator();
 
     if (ImGui::Button("Save", ImVec2(100, 20)))
     {
@@ -922,17 +1031,8 @@ float4  main()
 
     ed::SetCurrentEditor(m_Editor);
 
-    static ed::NodeId contextNodeId      = 0;
-    static ed::LinkId contextLinkId      = 0;
-    static ed::PinId  contextPinId       = 0;
-    static bool createNewNode  = false;
-    static Pin* newNodeLinkPin = nullptr;
-    static Pin* newLinkPin     = nullptr;
+   
 
-  
-    
-    
-    
 
     ed::Begin("Node editor");
     {
@@ -1467,7 +1567,7 @@ float4  main()
                             if (ed::AcceptNewItem(ImColor(128, 255, 128), 4.0f))
                             {
                                 s_Links.emplace_back(Link(GetNextId(), startPinId, endPinId));
-                                s_Links.back().Color = GetIconColor(startPin->Type);
+                               // s_Links.back().Color = GetIconColor(startPin->Type);
                             }
                         }
                     }
@@ -1616,6 +1716,13 @@ float4  main()
         Node* node = nullptr;
         if (ImGui::MenuItem("Texture Sample"))
             node = SpawnTextureSampleNode();
+        if (ImGui::MenuItem("Float3 Add"))
+            node = SpawnFloat3AddNode();
+
+        
+
+        if(0)
+        {
         ImGui::Separator();
         if (ImGui::MenuItem("Input Action"))
             node = SpawnInputActionNode();
@@ -1653,6 +1760,7 @@ float4  main()
             node = SpawnHoudiniTransformNode();
         if (ImGui::MenuItem("Group"))
             node = SpawnHoudiniGroupNode();
+        }
 
         if (node)
         {
