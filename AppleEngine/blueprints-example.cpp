@@ -7,6 +7,8 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
 
+
+
 #include <string>
 #include <vector>
 #include <map>
@@ -15,6 +17,7 @@
 #include <algorithm>
 #include <utility>
 #include <fstream>
+
 
 #include "apImGui.h"
 #include "apHelper.h"
@@ -75,11 +78,14 @@ enum class PinKind
 
 enum class NodeType
 {
-    Blueprint,
-    Simple,
-    Tree,
-    Comment,
-    Houdini
+    Blueprint   = 1 << 0,
+    Simple      = 1 << 1,
+    Tree        = 1 << 2,
+    Comment     = 1 << 3,
+    Houdini     = 1 << 4,
+
+    Constant    = 1 << 5,
+
 };
 
 struct Node;
@@ -288,6 +294,11 @@ const char* OutputNodeOpacity = "Opacity";
 
 const char* TextureNodeName = "Texture Sample";
 
+const char* ConstantFloatNodeName = "Float";
+const char* ConstantFloat2NodeName = "Float2";
+const char* ConstantFloat3NodeName = "Float3";
+const char* ConstantFloat4NodeName = "Float4";
+
 const char* FloatAddNodeName = "Float Add";
 const char* Float2AddNodeName = "Float2 Add";
 const char* Float3AddNodeName = "Float3 Add";
@@ -343,6 +354,25 @@ static Node* SpawnMaterialResultNode()
 
     return &s_Nodes.back();
 }
+
+static Node* SpawnConstantFloat3Node()
+{
+    s_Nodes.emplace_back(GetNextId(), ConstantFloat3NodeName, ImColor(46, 190, 87));
+    s_Nodes.back().DataType = PinType::Float3;
+    s_Nodes.back().Type = NodeType::Constant;
+
+
+    s_Nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float3);
+
+    for (auto& e : s_Nodes.back().Outputs)
+        e.Color = ImColor(220, 220, 220);
+
+
+    BuildNode(&s_Nodes.back());
+
+    return &s_Nodes.back();
+}
+
 
 static Node* SpawnFloat3AddNode()
 {
@@ -740,22 +770,29 @@ void DrawPinIcon(const Pin& pin, bool connected, int alpha)
 
 std::unordered_map<unsigned long long, std::string> s_nodeMap;
 std::queue<std::string> s_translatedNodes;
+std::queue<std::string> s_translatedParams;
 
 const std::string baseTranslatedNodeName = "materialExpression";
 
 
 void TranslateNode(const Node& node)
 {
+
+    if (node.Type == NodeType::Constant)
+        return;
+
     if (s_nodeMap.count(node.ID.Get()) != 0)
         return;
 
     std::string translatedNode;
 
+ 
+
     switch (node.DataType)
     {
-        /*case PinType::Bool:
-            translatedNode += "bool ";
-            break;*/
+    case PinType::Bool:
+        translatedNode += "bool ";
+        break;
     case PinType::Float:
         translatedNode += "float ";
         break;
@@ -774,8 +811,12 @@ void TranslateNode(const Node& node)
 
     translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = ";
 
+
     if (node.Name == TextureNodeName)
-        translatedNode += "texture.sample(uv)";
+    {
+        translatedNode += "bindless_textures[g_xMaterialParams.texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader, uv) \n";
+        translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) +")";
+    }
     else if (node.Name == Float3AddNodeName)
     {
         std::string a;
@@ -821,7 +862,7 @@ void TranslateResultNode(const Pin& pin)
 
     if (pin.Name == OutputNodeBaseColor)
     {
-        translatedNode = "BaseColor";
+        translatedNode = "\nBaseColor";
     }
     else if (pin.Name == OutputNodeOpacity)
     {
@@ -835,7 +876,13 @@ void TranslateResultNode(const Pin& pin)
     if (link)
     {
         startPin = FindPin(link->StartPinID);
-        translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
+
+        if (startPin->Node->Type == NodeType::Constant)
+        {
+            translatedNode += "constant" + std::to_string(startPin->Node->ID.Get());
+        }
+        else 
+            translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
 
         switch (startPin->Type)
         {
@@ -894,9 +941,37 @@ void TranslateNodes(std::vector<Node>& nodes, std::vector<Link>& links)
     for (auto& node : nodes)
     {
         if (node.Name == OutputNodeName)
+        {
             outputNode = &node;
+            break;
+        }
        
     }
+
+    
+
+    for (int i = 0; i < s_Nodes.size(); i++)
+    {
+        Node& node = s_Nodes[i];
+        if (node.Name == TextureNodeName)
+        {
+            //str += node.texture.IsValid() ? std::to_string(ap::graphics::GetDevice()->CopyDescriptorToImGui(&node.texture.GetTexture())) : "-1";
+            std::string str = "int texture" + std::to_string(node.ID.Get()) + ";\n";
+            s_translatedParams.push(str);
+        }
+        else if (node.Name == ConstantFloat3NodeName)
+        {
+            std::string str = "float3 constant" + std::to_string(node.ID.Get()) + ";\n";
+            str += "float pad" + std::to_string(node.ID.Get())+ ";\n";
+            s_translatedParams.push(str);
+        }
+
+  
+    }
+
+
+    
+
 
     for (int i = 0; i < outputNode->Inputs.size(); i++)
     {
@@ -936,7 +1011,11 @@ void Application_Frame()
     ImGui::Begin("Material Editor");
 
   
-    ImGui::BeginChild("Selection", ImVec2(200, 0));
+    ImVec2 childSize = ImVec2(400, 0);
+
+    ImGui::BeginChild("Selection", childSize);
+
+    static std::string savedShader;
 
     Node* contextNode = FindNode(contextNodeId);
     if (contextNode && (contextNode->Name.find("Float") != std::string::npos))
@@ -981,6 +1060,20 @@ void Application_Frame()
         std::string shaderTemplate =
 
 R"(
+#pragma once
+#include "globals.hlsli"
+
+//test
+
+struct MaterialParams
+{
+
+%s
+
+}
+
+
+CONSTANTBUFFER(g_xMaterialParams, MaterialParams, 2);
 
 float4  main()
 {
@@ -993,14 +1086,24 @@ float4  main()
 
         char shaderOutput[3000];
 
-        std::string str;
+        std::string param1;
+        while (!s_translatedParams.empty())
+        {
+            param1 += s_translatedParams.front();
+            s_translatedParams.pop();
+        }
+
+        std::string param2;
         while (!s_translatedNodes.empty())
         {
-            str += s_translatedNodes.front();
+            param2 += s_translatedNodes.front();
             s_translatedNodes.pop();
         }
 
-        sprintf_s(shaderOutput, sizeof(shaderOutput),shaderTemplate.c_str(), str.c_str());
+
+        sprintf_s(shaderOutput, sizeof(shaderOutput),shaderTemplate.c_str(), param1.c_str(), param2.c_str());
+
+        savedShader = shaderOutput;
 
         std::ofstream file("shaderfile.txt", std::ios::binary | std::ios::trunc);
         if (file.is_open())
@@ -1011,7 +1114,9 @@ float4  main()
 
        
     }
-        
+
+    ImGui::InputTextMultiline(GenerateID(), (char*)savedShader.c_str(), savedShader.size(), ImVec2(childSize.x, childSize.y- 100), ImGuiInputTextFlags_ReadOnly);
+
 
 
     ImGui::EndChild();
@@ -1043,7 +1148,7 @@ float4  main()
 
         for (auto& node : s_Nodes)
         {
-            if (node.Type != NodeType::Blueprint && node.Type != NodeType::Simple)
+            if (node.Type != NodeType::Blueprint && node.Type != NodeType::Constant && node.Type != NodeType::Simple)
                 continue;
 
             const auto isSimple = node.Type == NodeType::Simple;
@@ -1716,10 +1821,17 @@ float4  main()
         Node* node = nullptr;
         if (ImGui::MenuItem("Texture Sample"))
             node = SpawnTextureSampleNode();
+
+        ImGui::Separator();
+        if (ImGui::MenuItem("Constant Float3"))
+            node = SpawnConstantFloat3Node();
+
+        ImGui::Separator();
         if (ImGui::MenuItem("Float3 Add"))
             node = SpawnFloat3AddNode();
-
-        
+        ImGui::Separator();
+        if (ImGui::MenuItem("Comment"))
+            node = SpawnComment();
 
         if(0)
         {
@@ -1760,6 +1872,7 @@ float4  main()
             node = SpawnHoudiniTransformNode();
         if (ImGui::MenuItem("Group"))
             node = SpawnHoudiniGroupNode();
+
         }
 
         if (node)

@@ -1,11 +1,24 @@
 
+#pragma once
+#include "globals.hlsli"
+
+//Å×½ºÆ®
+
+struct MaterialParams
+{
+
+
+
+}
+
+
+CONSTANTBUFFER(g_xMaterialParams, MaterialParams, 2);
 
 float4  main()
 {
 
-float4 materialExpression10008 = texture.sample(uv);
-float3 materialExpression10003 = materialExpression10008.rgb + float3(20.000000,9.000000,15.000000);
-BaseColor = materialExpression10003.rgb;
+
+BaseColor = 0;
 Opacity = 0;
 
 
