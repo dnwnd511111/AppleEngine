@@ -139,15 +139,16 @@ namespace ap::imgui::material
 
 
 	public:
-        std::vector<Node>    s_Nodes;
-        std::vector<Link>    s_Links;
+        std::vector<Node>    nodes;
+        std::vector<Link>    links;
 
 	private:
-        ax::NodeEditor::EditorContext* m_Editor;
+        ax::NodeEditor::EditorContext* editor;
         std::string settingFilePath;
 
-        bool initialized = false;
 
+        bool initialized = false;
+        bool opened = false;
 
         //
         ed::NodeId contextNodeId = 0;
