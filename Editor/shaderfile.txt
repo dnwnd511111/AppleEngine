@@ -1,8 +1,10 @@
 
 #pragma once
-#include "globals.hlsli"
+#define OBJECTSHADER_LAYOUT_COMMON
+#include "objectHF.hlsli"
+//#include "globals.hlsli"
 
-//Å×½ºÆ®
+//test
 
 struct MaterialParams
 {
@@ -12,14 +14,18 @@ struct MaterialParams
 }
 
 
-CONSTANTBUFFER(g_xMaterialParams, MaterialParams, 2);
+CONSTANTBUFFER(g_xMaterialParams, MaterialParams, CBSLOT_MATERIALPARAMS);
 
-float4  main()
+float4 main(PixelInput input) : SV_TARGET
 {
 
+float3 materialExpression10003 = float3(13.000000,25.000000,21.000000) + float3(0.000000,0.000000,0.000000);
 
-BaseColor = 0;
-Opacity = 0;
+float3 BaseColor = materialExpression10003.rgb;
+float Opacity = 0;
+
+
+return float4(BaseColor,Opacity);
 
 
 }      

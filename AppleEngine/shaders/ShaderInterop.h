@@ -95,6 +95,7 @@ struct IndirectDispatchArgs
 #define CBSLOT_OTHER_GPUSORTLIB					4
 #define CBSLOT_MSAO								4
 #define CBSLOT_FSR								4
+#define CBSLOT_MATERIALPARAMS					5
 
 
 #endif // AP_SHADERINTEROP_H

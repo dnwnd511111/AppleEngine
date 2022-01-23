@@ -21,8 +21,10 @@
 
 #include "apImGui.h"
 #include "apHelper.h"
+#include "apImGuiMaterialEditor.h"
 
 
+#include "apRenderer.h"
 #include "apResourceManager.h"
 #include "apGraphicsDevice_DX12.h"
 #include "apGraphics.h"
@@ -161,8 +163,6 @@ struct NodeIdLess
     }
 };
 
-static const float          s_TouchTime = 1.0f;
-static std::map<ed::NodeId, float, NodeIdLess> s_NodeTouchTime;
 
 static int s_NextId = 10000;
 static int GetNextId()
@@ -180,29 +180,7 @@ static ed::LinkId GetNextLinkId()
     return ed::LinkId(GetNextId());
 }
 
-static void TouchNode(ed::NodeId id)
-{
-    s_NodeTouchTime[id] = s_TouchTime;
-}
 
-static float GetTouchProgress(ed::NodeId id)
-{
-    auto it = s_NodeTouchTime.find(id);
-    if (it != s_NodeTouchTime.end() && it->second > 0.0f)
-        return (s_TouchTime - it->second) / s_TouchTime;
-    else
-        return 0.0f;
-}
-
-static void UpdateTouch()
-{
-    const auto deltaTime = ImGui::GetIO().DeltaTime;
-    for (auto& entry : s_NodeTouchTime)
-    {
-        if (entry.second > 0.0f)
-            entry.second -= deltaTime;
-    }
-}
 
 static Node* FindNode(ed::NodeId id)
 {
@@ -318,6 +296,7 @@ const char* Float4SubtractNodeName = "Float4 Subtract";
 static Node* SpawnTextureSampleNode()
 {
     s_Nodes.emplace_back(GetNextId(), TextureNodeName , ImColor(128, 195, 248));
+    //s_Nodes.back().DataType = PinType::Float3;
 
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "RGB", PinType::Float3);
     s_Nodes.back().Outputs.emplace_back(GetNextId(), "R", PinType::Float);
@@ -655,8 +634,6 @@ void Application_Initialize()
 
         node->State.assign(data, size);
 
-        TouchNode(nodeId);
-
         return true;
     };
 
@@ -665,7 +642,7 @@ void Application_Initialize()
 
   
     ed::NavigateToContent();
-
+    
     SpawnMaterialResultNode();
 
     BuildNodes();
@@ -771,6 +748,8 @@ void DrawPinIcon(const Pin& pin, bool connected, int alpha)
 std::unordered_map<unsigned long long, std::string> s_nodeMap;
 std::queue<std::string> s_translatedNodes;
 std::queue<std::string> s_translatedParams;
+std::vector<std::pair<PinType, XMFLOAT4*>> s_translatedParamData;
+
 
 const std::string baseTranslatedNodeName = "materialExpression";
 
@@ -814,11 +793,12 @@ void TranslateNode(const Node& node)
 
     if (node.Name == TextureNodeName)
     {
-        translatedNode += "bindless_textures[g_xMaterialParams.texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader, uv) \n";
-        translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) +")";
+        translatedNode += "bindless_textures[g_xMaterialParams.texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
+        //translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get())+".rgb" + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ".rgb)";
     }
     else if (node.Name == Float3AddNodeName)
     {
+
         std::string a;
         std::string b;
         Link* linkA = FindLink(node.Inputs[0]);
@@ -832,10 +812,10 @@ void TranslateNode(const Node& node)
         else
             b = XMFLOAT4ToString(node.Inputs[1].data, node.Inputs[1].Type);
         
-        translatedNode += (a + " + " +b);
+        translatedNode += (a + " + " +b)+ ";\n";
     }
 
-    translatedNode += ";\n";
+   
 
     s_nodeMap.insert({ node.ID.Get(),baseTranslatedNodeName + std::to_string(node.ID.Get()) });
 
@@ -862,11 +842,11 @@ void TranslateResultNode(const Pin& pin)
 
     if (pin.Name == OutputNodeBaseColor)
     {
-        translatedNode = "\nBaseColor";
+        translatedNode = "\nfloat3 BaseColor";
     }
     else if (pin.Name == OutputNodeOpacity)
     {
-        translatedNode = "Opacity";
+        translatedNode = "float Opacity";
     }
 
     translatedNode += " = ";
@@ -879,7 +859,7 @@ void TranslateResultNode(const Pin& pin)
 
         if (startPin->Node->Type == NodeType::Constant)
         {
-            translatedNode += "constant" + std::to_string(startPin->Node->ID.Get());
+            translatedNode += "g_xMaterialParams.constant" + std::to_string(startPin->Node->ID.Get());
         }
         else 
             translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
@@ -918,7 +898,7 @@ void TranslateResultNode(const Pin& pin)
     }
     else
     {
-        translatedNode += "0;\n";
+        translatedNode += "1;\n";
     }
     
 
@@ -933,6 +913,45 @@ void TranslateResultNode(const Pin& pin)
 }
 
 
+std::vector<char> FillMaterialConstantBuffer()
+{
+    std::vector<char> ret(300);
+
+    uint32_t index = 0;
+
+    
+    for(auto& e: s_translatedParamData)
+    {
+        switch (e.first)
+        {
+        case PinType::Int:
+        {
+            ap::Resource& res = *((ap::Resource*)&e.second->x);
+
+            int textureIdx = -1;
+            if (res.IsValid())
+                textureIdx = ap::graphics::GetDevice()->GetDescriptorIndex(&res.GetTexture(), ap::graphics::SubresourceType::SRV);  
+
+            *(int*)&ret.data()[index] = textureIdx;
+            index = index + 4;
+            break;
+        }
+        case PinType::Float3:
+            *(XMFLOAT3*)&ret.data()[index] = *((XMFLOAT3*)&(e.second->x));
+            index = index + 16;
+            break;
+        default:
+            break;
+        }
+        
+
+    }
+
+    ret.resize(index);
+
+    return std::move(ret);
+
+}
 
 void TranslateNodes(std::vector<Node>& nodes, std::vector<Link>& links)
 {
@@ -948,7 +967,7 @@ void TranslateNodes(std::vector<Node>& nodes, std::vector<Link>& links)
        
     }
 
-    
+    s_translatedParamData = {};
 
     for (int i = 0; i < s_Nodes.size(); i++)
     {
@@ -958,12 +977,15 @@ void TranslateNodes(std::vector<Node>& nodes, std::vector<Link>& links)
             //str += node.texture.IsValid() ? std::to_string(ap::graphics::GetDevice()->CopyDescriptorToImGui(&node.texture.GetTexture())) : "-1";
             std::string str = "int texture" + std::to_string(node.ID.Get()) + ";\n";
             s_translatedParams.push(str);
+            s_translatedParamData.push_back({ PinType::Int, (XMFLOAT4*)&node.texture});
         }
         else if (node.Name == ConstantFloat3NodeName)
         {
             std::string str = "float3 constant" + std::to_string(node.ID.Get()) + ";\n";
             str += "float pad" + std::to_string(node.ID.Get())+ ";\n";
             s_translatedParams.push(str);
+            s_translatedParamData.push_back({ PinType::Float3, &node.Outputs[0].data });
+            
         }
 
   
@@ -993,7 +1015,7 @@ void Application_Frame()
     uint64_t textureID1 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex1.GetTexture(), mipmap);
     uint64_t textureID2 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex2.GetTexture(), mipmap);
     uint64_t textureID3 = ap::graphics::GetDevice()->CopyDescriptorToImGui(&g_tex3.GetTexture(), mipmap);
-
+    
 
     s_HeaderBackground = (ImTextureID)textureID1;
     s_SaveIcon = (ImTextureID)textureID2;
@@ -1011,9 +1033,11 @@ void Application_Frame()
     ImGui::Begin("Material Editor");
 
   
+    ImGui::Columns(2);
+
     ImVec2 childSize = ImVec2(400, 0);
 
-    ImGui::BeginChild("Selection", childSize);
+    //ImGui::BeginChild("Selection", childSize);
 
     static std::string savedShader;
 
@@ -1021,22 +1045,47 @@ void Application_Frame()
     if (contextNode && (contextNode->Name.find("Float") != std::string::npos))
     {
        
+        if (contextNode->Type == NodeType::Constant)
+        {
+            for (int i = 0; i < contextNode->Outputs.size(); i++)
+            {
+                Pin& pin = contextNode->Outputs[i];
+                switch (pin.Type)
+                {
+                case PinType::Float:
+                    ImGui::DragFloat(pin.Name.c_str(), (float*)&pin.data, 0.05f);
+                    break;
+                case PinType::Float2:
+                    ImGui::DragFloat2(pin.Name.c_str(), (float*)&pin.data, 0.05f);
+                    break;
+                case PinType::Float3:
+                    ImGui::DragFloat3(pin.Name.c_str(), (float*)&pin.data, 0.05f);
+                    break;
+                case PinType::Float4:
+                    ImGui::DragFloat4(pin.Name.c_str(), (float*)&pin.data, 0.05f);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+
         for (int i = 0; i < contextNode->Inputs.size(); i++)
         {
             Pin& pin = contextNode->Inputs[i];
             switch (pin.Type)
             {
             case PinType::Float:
-                ImGui::DragFloat(pin.Name.c_str(), (float*)&pin.data);
+                ImGui::DragFloat(pin.Name.c_str(), (float*)&pin.data,0.05f);
                 break;
             case PinType::Float2:
-                ImGui::DragFloat2(pin.Name.c_str(), (float*)&pin.data);
+                ImGui::DragFloat2(pin.Name.c_str(), (float*)&pin.data, 0.05f);
                 break;
             case PinType::Float3:
-                ImGui::DragFloat3(pin.Name.c_str(), (float*)&pin.data);
+                ImGui::DragFloat3(pin.Name.c_str(), (float*)&pin.data, 0.05f);
                 break;
             case PinType::Float4:
-                ImGui::DragFloat4(pin.Name.c_str(), (float*)&pin.data);
+                ImGui::DragFloat4(pin.Name.c_str(), (float*)&pin.data, 0.05f);
                 break;
             default:
                 break;
@@ -1053,6 +1102,8 @@ void Application_Frame()
 
     if (ImGui::Button("Save", ImVec2(100, 20)))
     {
+
+
         s_nodeMap = {};
         s_translatedNodes = {};
         TranslateNodes(s_Nodes, s_Links);
@@ -1061,7 +1112,9 @@ void Application_Frame()
 
 R"(
 #pragma once
-#include "globals.hlsli"
+#define OBJECTSHADER_LAYOUT_COMMON
+#include "objectHF.hlsli"
+//#include "globals.hlsli"
 
 //test
 
@@ -1070,15 +1123,18 @@ struct MaterialParams
 
 %s
 
-}
+};
 
 
-CONSTANTBUFFER(g_xMaterialParams, MaterialParams, 2);
+CONSTANTBUFFER(g_xMaterialParams, MaterialParams, CBSLOT_MATERIALPARAMS);
 
-float4  main()
+float4 main(PixelInput input) : SV_TARGET
 {
 
 %s
+
+return float4(BaseColor,Opacity);
+
 
 }      
 
@@ -1105,7 +1161,7 @@ float4  main()
 
         savedShader = shaderOutput;
 
-        std::ofstream file("shaderfile.txt", std::ios::binary | std::ios::trunc);
+        std::ofstream file("../AppleEngine/shaders/objectPS_test.hlsl", std::ios::binary | std::ios::trunc);
         if (file.is_open())
         {
             file.write(const_cast<const char*>(shaderOutput), strlen(shaderOutput));
@@ -1113,15 +1169,18 @@ float4  main()
         }
 
        
+        ap::renderer::ReloadShaders();
+
     }
+    ImVec2 size =ImGui::GetContentRegionAvail();
 
-    ImGui::InputTextMultiline(GenerateID(), (char*)savedShader.c_str(), savedShader.size(), ImVec2(childSize.x, childSize.y- 100), ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputTextMultiline(GenerateID(), (char*)savedShader.c_str(), savedShader.size(), ImVec2(size.x, size.y- 100), ImGuiInputTextFlags_ReadOnly);
 
 
 
-    ImGui::EndChild();
-    ImGui::SameLine(0.0f, 12.0f);
-
+    //ImGui::EndChild();
+    //ImGui::SameLine(0.0f, 12.0f);
+    ImGui::NextColumn();
 
 
    /* if (ImGui::IsWindowDocked() && !ImGui::IsWindowFocused())
@@ -1130,7 +1189,7 @@ float4  main()
         return;
     }*/
 
-    UpdateTouch();
+    
 
     auto& io = ImGui::GetIO();
 
@@ -1611,6 +1670,7 @@ float4  main()
 
         if (!createNewNode)
         {
+
             if (ed::BeginCreate(ImColor(255, 255, 255), 2.0f))
             {
                 auto showLabel = [](const char* label, ImColor color)

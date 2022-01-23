@@ -8,6 +8,7 @@
 #include "Utility/stb_image.h"
 
 #include "apImGui.h"
+#include "apImGuiMaterialEditor.h"
 
 #include <string>
 #include <cassert>
@@ -494,7 +495,10 @@ void Editor::ImGuiRender()
 		ImGuiRender_Renderer();
 
 
-		DrawBlueprint();
+		static ap::imgui::material::MaterialNodes a("Blueprints.json");
+		a.Frame();
+
+		//DrawBlueprint();
 
 	}
 	

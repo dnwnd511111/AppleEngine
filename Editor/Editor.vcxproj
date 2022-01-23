@@ -59,7 +59,7 @@
       <PreprocessorDefinitions>_WINDOWS;__NODEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)AppleEngine;$(SolutionDir)AppleEngine\vendor\imgui;$(SolutionDir)AppleEngine\vendor\waveworks;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)AppleEngine;$(SolutionDir)AppleEngine\vendor\imgui;$(SolutionDir)AppleEngine\vendor\waveworks;$(SolutionDir)AppleEngine\vendor\ImGui\imguieditor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -80,7 +80,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)AppleEngine;$(SolutionDir)AppleEngine\vendor\imgui;$(SolutionDir)AppleEngine\vendor\waveworks;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)AppleEngine;$(SolutionDir)AppleEngine\vendor\imgui;$(SolutionDir)AppleEngine\vendor\waveworks;$(SolutionDir)AppleEngine\vendor\ImGui\imguieditor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>

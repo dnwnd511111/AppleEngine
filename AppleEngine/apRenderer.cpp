@@ -30,6 +30,8 @@
 #include <algorithm>
 #include <array>
 
+#include "apImGuiMaterialEditor.h"
+
 using namespace ap::primitive;
 using namespace ap::graphics;
 using namespace ap::enums;
@@ -844,6 +846,8 @@ void LoadShaders()
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { LoadShader(ShaderStage::PS, shaders[PSTYPE_IMPOSTOR], "impostorPS.cso"); });
 
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { LoadShader(ShaderStage::PS, shaders[PSTYPE_OBJECT_HOLOGRAM], "objectPS_hologram.cso"); });
+	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { LoadShader(ShaderStage::PS, shaders[PSTYPE_OBJECT_TEST], "objectPS_test.cso"); });
+
 
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { LoadShader(ShaderStage::PS, shaders[PSTYPE_OBJECT_DEBUG], "objectPS_debug.cso"); });
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { LoadShader(ShaderStage::PS, shaders[PSTYPE_OBJECT_PAINTRADIUS], "objectPS_paintradius.cso"); });
@@ -1248,25 +1252,57 @@ void LoadShaders()
 
 	// Hologram sample shader will be registered as custom shader:
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) {
-		SHADERTYPE realVS = GetVSTYPE(RENDERPASS_MAIN, false, false, true);
+		{
+			SHADERTYPE realVS = GetVSTYPE(RENDERPASS_MAIN, false, false, true);
 
-		PipelineStateDesc desc;
-		desc.vs = &shaders[realVS];
-		desc.ps = &shaders[PSTYPE_OBJECT_HOLOGRAM];
+			PipelineStateDesc desc;
+			desc.vs = &shaders[realVS];
+			desc.ps = &shaders[PSTYPE_OBJECT_HOLOGRAM];
 
-		desc.bs = &blendStates[BSTYPE_ADDITIVE];
-		desc.rs = &rasterizers[RSTYPE_FRONT];
-		desc.dss = &depthStencils[DSSTYPE_HOLOGRAM];
-		desc.pt = PrimitiveTopology::TRIANGLELIST;
+			desc.bs = &blendStates[BSTYPE_ADDITIVE];
+			desc.rs = &rasterizers[RSTYPE_FRONT];
+			desc.dss = &depthStencils[DSSTYPE_HOLOGRAM];
+			desc.pt = PrimitiveTopology::TRIANGLELIST;
 
-		PipelineState pso;
-		device->CreatePipelineState(&desc, &pso);
+			PipelineState pso;
+			device->CreatePipelineState(&desc, &pso);
 
-		CustomShader customShader;
-		customShader.name = "Hologram";
-		customShader.renderTypeFlags = RENDERTYPE_TRANSPARENT;
-		customShader.pso[RENDERPASS_MAIN] = pso;
-		RegisterCustomShader(customShader);
+			CustomShader customShader;
+			customShader.name = "Hologram";
+			customShader.renderTypeFlags = RENDERTYPE_TRANSPARENT;
+			customShader.pso[RENDERPASS_MAIN] = pso;
+			RegisterCustomShader(customShader);
+		}
+		{
+			SHADERTYPE realVS = GetVSTYPE(RENDERPASS_MAIN, false, false, true);
+
+			PipelineStateDesc desc;
+			desc.vs = &shaders[realVS];
+			desc.ps = &shaders[PSTYPE_OBJECT_TEST];
+
+			desc.bs = &blendStates[BSTYPE_OPAQUE];
+			desc.rs = &rasterizers[RSTYPE_FRONT];
+			desc.dss = &depthStencils[DSSTYPE_DEFAULT];
+			desc.pt = PrimitiveTopology::TRIANGLELIST;
+
+			PipelineState pso;
+			device->CreatePipelineState(&desc, &pso);
+
+			CustomShader customShader;
+			customShader.name = "Test";
+			customShader.renderTypeFlags = RENDERTYPE_OPAQUE;
+			//customShader.renderTypeFlags = RENDERTYPE_TRANSPARENT;
+
+			customShader.pso[RENDERPASS_MAIN] = pso;
+			RegisterCustomShader(customShader);
+		}
+
+		});
+
+	//
+	//
+	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) {
+		
 		});
 
 
@@ -2474,6 +2510,15 @@ void RenderMeshes(
 					{
 						pso = &customShader.pso[renderPass];
 					}
+
+
+					if (customShader.name == "Test")
+					{
+						std::vector<char> data = FillMaterialConstantBuffer();
+						device->BindDynamicConstantBuffer_Array(data.data(), data.size(), 5, cmd);
+					}
+
+
 				}
 				else
 				{

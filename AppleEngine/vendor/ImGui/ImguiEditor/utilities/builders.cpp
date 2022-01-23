@@ -49,6 +49,7 @@ void util::BlueprintNodeBuilder::End()
 
     if (ImGui::IsItemVisible())
     {
+        
         auto alpha = static_cast<int>(255 * ImGui::GetStyle().Alpha);
 
         auto drawList = ed::GetNodeBackgroundDrawList(CurrentNodeId);

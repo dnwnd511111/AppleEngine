@@ -53,8 +53,8 @@ namespace ap::initializer
 		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::physics::Initialize(); systems[INITIALIZED_SYSTEM_PHYSICS].store(true); });
 		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::audio::Initialize(); systems[INITIALIZED_SYSTEM_AUDIO].store(true); });
 		ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { ap::Ocean2::Initialize(); systems[INITIALIZED_SYSTEM_OCEAN2].store(true); });
-
-
+		
+		
 		std::thread([] {
 			ap::jobsystem::Wait(ctx);
 			ap::backlog::post("\n[ap::initializer] Apple Engine Initialized (" + std::to_string((int)std::round(timer.elapsed())) + " ms)");

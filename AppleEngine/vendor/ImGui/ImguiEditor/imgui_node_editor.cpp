@@ -1129,6 +1129,7 @@ void ed::EditorContext::Begin(const char* id, const ImVec2& size)
 
 void ed::EditorContext::End()
 {
+    
     //auto& io          = ImGui::GetIO();
     auto  control     = BuildControl(m_CurrentAction && m_CurrentAction->IsDragging()); // NavigateAction.IsMovingOverEdge()
     auto  drawList    = ImGui::GetWindowDrawList();
@@ -1241,7 +1242,7 @@ void ed::EditorContext::End()
     m_SelectAction.Draw(drawList);
 
     bool sortGroups = false;
-    if (control.ActiveNode)
+    if (control.ActiveNode )
     {
         if (!IsGroup(control.ActiveNode))
         {

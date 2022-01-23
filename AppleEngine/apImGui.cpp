@@ -6,6 +6,7 @@
 #include "apTextureHelper.h"
 #include "apHelper.h"
 #include "AppleEngine.h"
+#include "apImGuiMaterialEditor.h"
 #pragma warning(disable : 4996)
 
 void Application_Initialize();
@@ -37,6 +38,7 @@ namespace ap::imgui
 		s_GearIcon = ap::resourcemanager::Load("Resources/images/gear_icon.png");
 
 		Application_Initialize();
+		ap::imgui::material::Initialize();
 	}
 
 	void DrawBlueprint()

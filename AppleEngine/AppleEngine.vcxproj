@@ -128,6 +128,7 @@
     <ClInclude Include="apImage.h" />
     <ClInclude Include="apImGui.h" />
     <ClInclude Include="apImGuiColor.h" />
+    <ClInclude Include="apImGuiMaterialEditor.h" />
     <ClInclude Include="apInitializer.h" />
     <ClInclude Include="apInput.h" />
     <ClInclude Include="apJobSystem.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="apHelper.cpp" />
     <ClCompile Include="apImage.cpp" />
     <ClCompile Include="apImGui.cpp" />
+    <ClCompile Include="apImGuiMaterialEditor.cpp" />
     <ClCompile Include="apInitializer.cpp" />
     <ClCompile Include="apInput.cpp" />
     <ClCompile Include="apJobSystem.cpp" />

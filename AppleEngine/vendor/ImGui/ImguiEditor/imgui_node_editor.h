@@ -16,7 +16,7 @@
 # include <imgui.h>
 # include <cstdint> // std::uintXX_t
 # include <utility> // std::move
-
+#include <functional>
 
 //------------------------------------------------------------------------------
 namespace ax {
@@ -58,8 +58,11 @@ struct Config
     ConfigSession           EndSaveSession;
     ConfigSaveSettings      SaveSettings;
     ConfigLoadSettings      LoadSettings;
-    ConfigSaveNodeSettings  SaveNodeSettings;
-    ConfigLoadNodeSettings  LoadNodeSettings;
+
+    std::function<bool(NodeId, const char*, size_t, SaveReasonFlags, void*)>  SaveNodeSettings;
+    std::function<size_t(NodeId, char*, void*)> LoadNodeSettings;
+    //ConfigSaveNodeSettings  SaveNodeSettings;
+    //ConfigLoadNodeSettings  LoadNodeSettings;
     void*                   UserPointer;
 
     Config()
@@ -68,8 +71,8 @@ struct Config
         , EndSaveSession(nullptr)
         , SaveSettings(nullptr)
         , LoadSettings(nullptr)
-        , SaveNodeSettings(nullptr)
-        , LoadNodeSettings(nullptr)
+        //, SaveNodeSettings(nullptr)
+        //, LoadNodeSettings(nullptr)
         , UserPointer(nullptr)
     {
     }

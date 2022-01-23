@@ -196,6 +196,9 @@
     <ClCompile Include="blueprints-example.cpp">
       <Filter>Engine\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="apImGuiMaterialEditor.cpp">
+      <Filter>Engine\ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utility\arial.h">
@@ -440,6 +443,9 @@
     </ClInclude>
     <ClInclude Include="apOcean_waveworks.h">
       <Filter>Engine\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="apImGuiMaterialEditor.h">
+      <Filter>Engine\ImGui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
