@@ -235,6 +235,7 @@ namespace Panel
 		InverseKinematicsComponent* kinematic = scene.inverse_kinematics.GetComponent(entity);
 		SpringComponent* spring = scene.springs.GetComponent(entity);
 		MaterialComponent* material = scene.materials.GetComponent(entity);
+		NameComponent* materialName = nullptr;
 		MeshComponent* mesh = nullptr;
 
 		Entity materialEntity = entity;
@@ -1502,7 +1503,7 @@ namespace Panel
 				static float restitution = 1;
 
 
-				DrawComponent("Mesh", mesh, [&subsetIdx,entity, object,name, &softbody, &scene](MeshComponent& mesh)
+				DrawComponent("Mesh", mesh, [&subsetIdx,entity, object,name, &softbody, &scene,meshNames](MeshComponent& mesh)
 					{
 						BeginPropertyGrid();
 						PropertyGridSpacing();
@@ -1766,6 +1767,7 @@ namespace Panel
 
 
 				material = scene.materials.GetComponent(mesh->subsets[subsetIdx].materialID);
+				materialName =scene.names.GetComponent(mesh->subsets[subsetIdx].materialID);
 				materialEntity = mesh->subsets[subsetIdx].materialID;
 
 
@@ -1831,10 +1833,21 @@ namespace Panel
 			DrawComponent("Material", material, [=](MaterialComponent& material)
 				{
 
+					
 
 					BeginPropertyGrid();
 					PropertyGridSpacing();
 
+					std::string matName = materialName->name;
+					if (DrawInputText("Name", matName))
+						materialName->name = matName;
+					
+					ImGui::Separator();
+
+					if (DrawButton2("Open Material Editor", true))
+						material.materialNodes.opened = true;
+
+					ImGui::Separator();
 
 					{
 						bool isCastingShadow = material.IsCastingShadow();

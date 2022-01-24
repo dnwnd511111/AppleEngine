@@ -100,6 +100,9 @@ namespace ap::scene
 
 		if (archive.IsReadMode())
 		{
+			archive >> materialNodes.materialName;
+		
+
 			archive >> _flags;
 			archive >> (uint8_t&)engineStencilRef;
 			archive >> userStencilRef;
@@ -245,6 +248,9 @@ namespace ap::scene
 		}
 		else
 		{
+			archive << materialNodes.materialName;
+
+
 			archive << _flags;
 			archive << (uint8_t)engineStencilRef;
 			archive << userStencilRef;

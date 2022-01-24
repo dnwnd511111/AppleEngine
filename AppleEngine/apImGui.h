@@ -22,6 +22,10 @@ namespace ap::imgui
 	void Initialize();
     void DrawBlueprint();
 
+
+    void PushID();
+    void PopID();
+
     const char* GenerateID();
 	void ShiftCursorX(float distance);
 	void ShiftCursorY(float distance);

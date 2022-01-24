@@ -455,6 +455,7 @@ void Editor::ImGuiRender()
 	}
 
 
+
 	float dt = ap::scene::GetScene().dt;
 
 	bool isLoadingModel = activePath != &renderComponent;
@@ -494,9 +495,18 @@ void Editor::ImGuiRender()
 		ImGuiRender_ToolBar();
 		ImGuiRender_Renderer();
 
-
-		static ap::imgui::material::MaterialNodes a("Blueprints.json");
-		a.Frame();
+		auto& scene = GetScene();
+		if (!isLoadingModel )
+		{
+			for (int i = 0; i < scene.materials.GetCount(); i++)
+			{
+				auto& materialName = *scene.names.GetComponent(scene.materials.GetEntity(i));
+				auto& material = scene.materials[i];
+				material.materialNodes.materialName = materialName.name;
+				material.materialNodes.Frame();
+			}
+		}
+		
 
 		//DrawBlueprint();
 

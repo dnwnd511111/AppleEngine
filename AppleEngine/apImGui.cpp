@@ -37,14 +37,11 @@ namespace ap::imgui
 		s_ClearIcon = ap::resourcemanager::Load("Resources/images/close.png");
 		s_GearIcon = ap::resourcemanager::Load("Resources/images/gear_icon.png");
 
-		Application_Initialize();
+		
 		ap::imgui::material::Initialize();
 	}
 
-	void DrawBlueprint()
-	{
-		Application_Frame();
-	}
+	
 
 	const char* GenerateID()
 	{
@@ -73,12 +70,12 @@ namespace ap::imgui
 		ImGui::SetCursorPos(ImVec2(cursor.x + x, cursor.y + y));
 	}
 
-	inline void PushID()
+	void PushID()
 	{
 		ImGui::PushID(s_UIContextID++);
 		s_Counter = 0;
 	}
-	inline void PopID()
+	void PopID()
 	{
 		ImGui::PopID();
 		s_UIContextID--;

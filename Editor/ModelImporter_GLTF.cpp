@@ -1000,6 +1000,7 @@ void ImportModel_GLTF(const std::string& fileName, Scene& scene)
 		}
 
 		mesh.CreateRenderData();
+		
 	}
 
 	// Create armatures:

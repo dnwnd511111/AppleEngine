@@ -146,6 +146,7 @@ void ImportModel_OBJ(const std::string& fileName, Scene& scene)
 			}
 
 			material.CreateRenderData();
+			
 
 			materialLibrary.push_back(materialEntity); // for subset-indexing...
 		}

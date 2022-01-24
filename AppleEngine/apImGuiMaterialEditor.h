@@ -8,7 +8,12 @@
 #include <DirectXMath.h>
 #include <string>
 #include <vector>
-
+#include <queue>
+#include <map>
+#include <stack>
+#include <algorithm>
+#include <utility>
+#include <fstream>
 
 namespace ap::imgui::material
 {
@@ -112,20 +117,18 @@ namespace ap::imgui::material
 	class MaterialNodes
 	{
     public:
-        MaterialNodes(const std::string& settingFilePath);
+        MaterialNodes();
         void Initialize();
 
         void Frame();
 
+        std::vector<char> FillMaterialConstantBuffer();
+    private:
         Node* SpawnTextureSampleNode();
         Node* SpawnMaterialResultNode();
         Node* SpawnConstantFloat3Node();
         Node* SpawnFloat3AddNode();
-
-
         Node* SpawnComment();
-
-    private:
 
         Node* FindNode(ed::NodeId id);
         Link* FindLink(ed::LinkId id);
@@ -136,19 +139,27 @@ namespace ap::imgui::material
         void BuildNode(Node* node);
         void BuildNodes();
 
-
+        void TranslateNodes();
+        void TranslateNode(const Node& node);
+        void TranslateResultNode(const Pin& pin);
 
 	public:
         std::vector<Node>    nodes;
         std::vector<Link>    links;
 
+        std::string materialName;
+        bool opened = false;
 	private:
         ax::NodeEditor::EditorContext* editor;
-        std::string settingFilePath;
+        
+        std::unordered_map<unsigned long long, std::string> nodeMap;
+        std::queue<std::string> translatedNodes;
+        std::queue<std::string> translatedParams;
+        std::vector<std::pair<PinType, XMFLOAT4*>> translatedParamData;
 
 
         bool initialized = false;
-        bool opened = false;
+        
 
         //
         ed::NodeId contextNodeId = 0;
@@ -164,6 +175,4 @@ namespace ap::imgui::material
 }
 
 
-
-std::vector<char> FillMaterialConstantBuffer();
 

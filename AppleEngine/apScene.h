@@ -16,6 +16,7 @@
 #include "apECS.h"
 #include "apVector.h"
 #include "apOcean_waveworks.h"
+#include "apImGuiMaterialEditor.h"
 
 #include <string>
 #include <memory>
@@ -230,6 +231,11 @@ namespace ap::scene
 
 		int customShaderID = -1;
 
+
+		ap::imgui::material::MaterialNodes materialNodes{};
+		
+
+
 		// Non-serialized attributes:
 		uint32_t layerMask = ~0u;
 
@@ -315,6 +321,10 @@ namespace ap::scene
 
 		// Create constant buffer and texture resources for GPU
 		void CreateRenderData();
+
+
+
+
 
 		void Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri);
 	};
