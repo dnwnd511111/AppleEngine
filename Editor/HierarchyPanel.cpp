@@ -1847,6 +1847,12 @@ namespace Panel
 					if (DrawButton2("Open Material Editor", true))
 						material.materialNodes.opened = true;
 
+					
+					DrawCheckbox("Use MaterialNode", material.materialNodes.used);
+						
+
+
+
 					ImGui::Separator();
 
 					{

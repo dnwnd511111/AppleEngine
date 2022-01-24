@@ -122,7 +122,7 @@ namespace ap::imgui::material
 
         void Frame();
 
-        std::vector<char> FillMaterialConstantBuffer();
+        std::vector<char> FillMaterialConstantBuffer() const;
     private:
         Node* SpawnTextureSampleNode();
         Node* SpawnMaterialResultNode();
@@ -148,6 +148,8 @@ namespace ap::imgui::material
         std::vector<Link>    links;
 
         std::string materialName;
+        
+        bool used = false;
         bool opened = false;
 	private:
         ax::NodeEditor::EditorContext* editor;

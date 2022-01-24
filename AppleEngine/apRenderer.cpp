@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <array>
+#include <filesystem>
 
 #include "apImGuiMaterialEditor.h"
 
@@ -52,6 +53,10 @@ BlendState			blendStates[BSTYPE_COUNT];
 GPUBuffer			constantBuffers[CBTYPE_COUNT];
 GPUBuffer			resourceBuffers[RBTYPE_COUNT];
 Sampler				samplers[SAMPLER_COUNT];
+
+std::unordered_map<std::string, Shader> shaderMap;
+std::unordered_map<std::string, CustomShader> psoMap;
+
 
 std::string SHADERPATH = "shaders/";
 std::string SHADERSOURCEPATH = "../AppleEngine/shaders/";
@@ -726,10 +731,116 @@ bool LoadShader(ShaderStage stage, Shader& shader, const std::string& filename, 
 	return false;
 }
 
+bool LoadMaterialNodeShaders()
+{
+
+	shaderMap = {};
+	psoMap = {};
+
+	const std::string NODESHADERPATH = "shaders/materialNodes/hlsl6/";
+	const std::string NODESHADERSOURCEPATH = "../AppleEngine/shaders/materialNodes/";
+
+	std::filesystem::directory_entry shaderDirectory(NODESHADERSOURCEPATH);
+
+	for (auto& directoryEntry : std::filesystem::directory_iterator(shaderDirectory))
+	{
+		const auto& path = directoryEntry.path();
+		std::string filename = path.stem().string();
+
+		std::string shaderbinaryfilename = NODESHADERPATH + filename +".cso";
+
+		ap::shadercompiler::RegisterShader(shaderbinaryfilename);
+
+		shaderMap[filename] = {};
+
+		if (ap::shadercompiler::IsShaderOutdated(shaderbinaryfilename))
+		{
+			ap::shadercompiler::CompilerInput input;
+			input.format = device->GetShaderFormat();
+			input.stage = ShaderStage::PS;
+			input.minshadermodel = ap::graphics::ShaderModel::SM_6_0;
+
+			std::string sourcedir = NODESHADERSOURCEPATH;
+			ap::helper::MakePathAbsolute(sourcedir);
+			input.include_directories.push_back(sourcedir);
+
+			input.shadersourcefilename = ap::helper::ReplaceExtension(sourcedir + filename, "hlsl");
+
+			ap::shadercompiler::CompilerOutput output;
+			ap::shadercompiler::Compile(input, output);
+
+			if (output.IsValid())
+			{
+				ap::shadercompiler::SaveShaderAndMetadata(shaderbinaryfilename, output);
+
+				if (!output.error_message.empty())
+				{
+					ap::backlog::post(output.error_message);
+				}
+				ap::backlog::post("shader compiled: " + shaderbinaryfilename);
+				device->CreateShader(ShaderStage::PS, output.shaderdata, output.shadersize, &shaderMap[filename]);
+			}
+			else
+			{
+				ap::backlog::post("shader compile FAILED: " + shaderbinaryfilename + "\n" + output.error_message);
+			}
+		}
+		else
+		{
+			ap::vector<uint8_t> buffer;
+			if (ap::helper::FileRead(shaderbinaryfilename, buffer))
+			{
+				device->CreateShader(ShaderStage::PS, buffer.data(), buffer.size(), &shaderMap[filename]);
+			}
+		}
+
+
+		SHADERTYPE realVS = GetVSTYPE(RENDERPASS_MAIN, false, false, true);
+
+		PipelineStateDesc desc;
+		desc.vs = &shaders[realVS];
+		desc.ps = &shaderMap[filename];
+
+		desc.bs = &blendStates[BSTYPE_OPAQUE];
+		desc.rs = &rasterizers[RSTYPE_FRONT];
+		desc.dss = &depthStencils[DSSTYPE_DEFAULT];
+		desc.pt = PrimitiveTopology::TRIANGLELIST;
+
+		PipelineState pso;
+		device->CreatePipelineState(&desc, &pso);
+
+		CustomShader customShader;
+		customShader.name = filename;
+		customShader.renderTypeFlags = RENDERTYPE_OPAQUE;
+		customShader.pso[RENDERPASS_MAIN] = pso;
+		psoMap[filename] = customShader;
+		
+		
+		
+
+
+
+
+	}
+
+
+
+
+	
+
+
+
+	
+
+	return false;
+}
+
 
 void LoadShaders()
 {
+
 	ap::jobsystem::context ctx;
+
 
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) {
 		inputLayouts[ILTYPE_OBJECT_DEBUG].elements =
@@ -1062,6 +1173,8 @@ void LoadShaders()
 	ap::jobsystem::Execute(ctx, [](ap::jobsystem::JobArgs args) { LoadShader(ShaderStage::DS, shaders[DSTYPE_OBJECT_SIMPLE], "objectDS_simple.cso"); });
 
 	ap::jobsystem::Wait(ctx);
+
+	LoadMaterialNodeShaders();
 
 	// default objectshaders:
 	ap::jobsystem::Dispatch(ctx, MaterialComponent::SHADERTYPE_COUNT, 1, [](ap::jobsystem::JobArgs args) {
@@ -2483,12 +2596,20 @@ void RenderMeshes(
 				}
 				else if (material.customShaderID >= 0 && material.customShaderID < (int)customShaders.size())
 				{
+
 					const CustomShader& customShader = customShaders[material.customShaderID];
 					if (renderTypeFlags & customShader.renderTypeFlags)
 					{
 						pso = &customShader.pso[renderPass];
 					}
 
+				}
+				else if (material.materialNodes.used)
+				{
+
+					pso = &psoMap[material.materialNodes.materialName].pso[renderPass];
+					std::vector<char> cBuffer = material.materialNodes.FillMaterialConstantBuffer();
+					device->BindDynamicConstantBuffer_Array(cBuffer.data(), cBuffer.size(),5,cmd);
 				}
 				else
 				{

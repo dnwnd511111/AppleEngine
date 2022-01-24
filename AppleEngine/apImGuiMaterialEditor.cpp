@@ -331,15 +331,15 @@ namespace ap::imgui::material
 
 //test
 
-struct MaterialParams
+
+
+
+CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
 {
 
 %s
 
 };
-
-
-CONSTANTBUFFER(g_xMaterialParams, MaterialParams, CBSLOT_MATERIALPARAMS);
 
 float4 main(PixelInput input) : SV_TARGET
 {
@@ -383,7 +383,7 @@ return float4(BaseColor,Opacity);
                 }
 
 
-                //ap::renderer::ReloadShaders();
+                ap::renderer::ReloadShaders();
 
             }
             ImVec2 size = ImGui::GetContentRegionAvail();
@@ -931,7 +931,7 @@ return float4(BaseColor,Opacity);
 
     }
 
-    std::vector<char> MaterialNodes::FillMaterialConstantBuffer()
+    std::vector<char> MaterialNodes::FillMaterialConstantBuffer() const
     {
         std::vector<char> ret(300);
 
@@ -1208,7 +1208,7 @@ return float4(BaseColor,Opacity);
             }
             else if (node.Name == ConstantFloat3NodeName)
             {
-                std::string str = "float3 constant" + std::to_string(node.ID.Get()) + ";\n";
+                std::string str = "float3 " + baseTranslatedNodeName+  std::to_string(node.ID.Get()) + ";\n";
                 str += "float pad" + std::to_string(node.ID.Get()) + ";\n";
                 translatedParams.push(str);
                 translatedParamData.push_back({ PinType::Float3, &node.Outputs[0].data });
@@ -1268,7 +1268,7 @@ return float4(BaseColor,Opacity);
 
         if (node.Name == TextureNodeName)
         {
-            translatedNode += "bindless_textures[g_xMaterialParams.texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
+            translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
             //translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get())+".rgb" + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ".rgb)";
         }
         else if (node.Name == Float3AddNodeName)
@@ -1331,7 +1331,7 @@ return float4(BaseColor,Opacity);
 
             if (startPin->Node->Type == NodeType::Constant)
             {
-                translatedNode += "g_xMaterialParams.constant" + std::to_string(startPin->Node->ID.Get());
+                translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
             }
             else
                 translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());

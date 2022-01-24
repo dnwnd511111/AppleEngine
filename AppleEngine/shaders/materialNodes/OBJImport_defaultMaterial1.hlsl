@@ -12,7 +12,8 @@
 CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
 {
 
-int texture10003;
+float3 materialExpression10013;
+float pad10013;
 
 
 };
@@ -20,9 +21,8 @@ int texture10003;
 float4 main(PixelInput input) : SV_TARGET
 {
 
-float4 materialExpression10003 = bindless_textures[texture10003].Sample(sampler_objectshader,  input.uvsets.xy); 
 
-float3 BaseColor = materialExpression10003.rgb;
+float3 BaseColor = materialExpression10013.rgb;
 float Opacity = 1;
 
 

@@ -74,6 +74,8 @@ namespace ap::renderer
 		ap::graphics::ShaderModel minshadermodel = ap::graphics::ShaderModel::SM_6_0
 	);
 
+	bool LoadMaterialNodeShader();
+
 
 	struct Visibility
 	{
