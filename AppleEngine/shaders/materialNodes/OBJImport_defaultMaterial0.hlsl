@@ -43,9 +43,9 @@ PUSHCONSTANT(push, ObjectPushConstants);
 CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
 {
 
-float3 materialExpression10016;
-float pad10016;
-int texture10005;
+float materialExpression10039;
+float materialExpression10042;
+int texture10024;
 
 
 };
@@ -892,16 +892,15 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
     
 #ifdef OBJECTSHADER_USE_UVSETS
     
+float4 materialExpression10024 = bindless_textures[texture10024].Sample(sampler_objectshader,  input.uvsets.xy); 
+float3 materialExpression10017 = materialExpression10024.rgb * materialExpression10039.r;
 
-float3 BaseColor = 1;
+float3 BaseColor = materialExpression10017.rgb;
 
 EmissiveColor = 0;
-float4 materialExpression10005 = bindless_textures[texture10005].Sample(sampler_objectshader,  input.uvsets.xy); 
-float3 materialExpression10012 = materialExpression10005.rgb * materialExpression10016.rgb;
 
- useNormal = true;
-float3 Normal = materialExpression10012.rgb;
-float Opacity = 1;
+float3 Normal = 1;
+float Opacity = materialExpression10042.r;
 
 
     color.rgb = BaseColor.rgb;

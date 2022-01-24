@@ -53,6 +53,9 @@ namespace ap::imgui::material
         Houdini = 1 << 4,
 
         Constant = 1 << 5,
+        PixelInput = 1 << 6,
+
+
 
     };
 
@@ -124,6 +127,8 @@ namespace ap::imgui::material
 
         std::vector<char> FillMaterialConstantBuffer() const;
     private:
+
+        Node* SpawnTexCoordNode();
         Node* SpawnTextureSampleNode();
         Node* SpawnMaterialResultNode();
 

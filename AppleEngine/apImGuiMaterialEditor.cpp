@@ -60,6 +60,7 @@ namespace ap::imgui::material
     static const char* OutputNodeNormal = "Normal";
     static const char* OutputNodeOpacity = "Opacity";
 
+    static const char* TexCoordNodeName = "TexCoord";
     static const char* TextureNodeName = "Texture Sample";
 
     static const char* ConstantFloatNodeName = "Float";
@@ -427,7 +428,7 @@ R"(
 
                 for (auto& node : nodes)
                 {
-                    if (node.Type != NodeType::Blueprint && node.Type != NodeType::Constant && node.Type != NodeType::Simple)
+                    if (node.Type != NodeType::Blueprint && node.Type != NodeType::Constant  && node.Type != NodeType::PixelInput && node.Type != NodeType::Simple)
                         continue;
 
                     const auto isSimple = node.Type == NodeType::Simple;
@@ -485,10 +486,7 @@ R"(
                         builder.EndHeader();
                     }
 
-                    if (node.Name == "Texture Sample")
-                    {
-                        DrawImage(node.texture, ImVec2(85.f, 85.0f), false);
-                    }
+                  
 
 
                     for (auto& input : node.Inputs)
@@ -513,6 +511,12 @@ R"(
                         }
                         ImGui::PopStyleVar();
                         builder.EndInput();
+                    }
+
+
+                    if (node.Name == "Texture Sample")
+                    {
+                        DrawImage(node.texture, ImVec2(85.f, 85.0f), false);
                     }
 
                     if (isSimple)
@@ -688,7 +692,7 @@ R"(
                                 //    showLabel("x Cannot connect to self", ImColor(45, 32, 32, 180));
                                 //    ed::RejectNewItem(ImColor(255, 0, 0), 1.0f);
                                 //}
-                                else if (endPin->Type != startPin->Type)
+                                else if (endPin->Type != startPin->Type && startPin->Type != PinType::Float && endPin->Type != PinType::Float)
                                 {
                                     showLabel("x Incompatible Pin Type", ImColor(45, 32, 32, 180));
                                     ed::RejectNewItem(ImColor(255, 128, 128), 1.0f);
@@ -846,6 +850,10 @@ R"(
                 //drawList->AddCircleFilled(ImGui::GetMousePosOnOpeningCurrentPopup(), 10.0f, 0xFFFF00FF);
 
                 Node* node = nullptr;
+
+                
+                if (ImGui::MenuItem("TexCoord"))
+                    node = SpawnTexCoordNode();
                 if (ImGui::MenuItem("Texture Sample"))
                     node = SpawnTextureSampleNode();
 
@@ -1032,11 +1040,31 @@ R"(
 
 
 
+    Node* MaterialNodes::SpawnTexCoordNode()
+    {
+        nodes.emplace_back(GetNextId(), TexCoordNodeName, ImColor(200, 50, 87));
+        nodes.back().DataType = PinType::Float2;
+        nodes.back().Type = NodeType::PixelInput;
 
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float2);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
     Node* MaterialNodes::SpawnTextureSampleNode()
     {
         nodes.emplace_back(GetNextId(), TextureNodeName, ImColor(128, 195, 248));
         //nodes.back().DataType = PinType::Float3;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "UVs", PinType::Float2);
+        nodes.back().Inputs.back().Color = ImColor(100, 100, 100);
+
 
         nodes.back().Outputs.emplace_back(GetNextId(), "RGB", PinType::Float3);
         nodes.back().Outputs.emplace_back(GetNextId(), "R", PinType::Float);
@@ -1386,7 +1414,10 @@ R"(
 
     bool MaterialNodes::CanCreateLink(Pin* a, Pin* b)
     {
-        if (!a || !b || a == b || a->Kind == b->Kind || a->Type != b->Type || a->Node == b->Node)
+
+        if (!a || !b || a == b || a->Kind == b->Kind || a->Node == b->Node )
+            return false;
+        if (a->Type != PinType::Float && b->Type != PinType::Float && a->Type != b->Type)
             return false;
 
         return true;
@@ -1524,10 +1555,7 @@ R"(
         }
 
 
-      
-
-
-
+  
 
         for (int i = 0; i < outputNode->Inputs.size(); i++)
         {
@@ -1539,13 +1567,37 @@ R"(
 
     void MaterialNodes::TranslateNode(const Node& node)
     {
-
-        if (node.Type == NodeType::Constant)
-            return;
-
         if (nodeMap.count(node.ID.Get()) != 0)
             return;
 
+        if (node.Type == NodeType::PixelInput)
+        {
+            if(node.Name == TexCoordNodeName)
+                nodeMap.insert({ node.ID.Get(), "input.uvsets"});
+        }
+        else
+        {
+            nodeMap.insert({ node.ID.Get(),baseTranslatedNodeName + std::to_string(node.ID.Get()) });
+        }
+
+
+
+        if (node.Type == NodeType::Constant || node.Type == NodeType::PixelInput)
+            return;
+
+       
+
+        for (int i = 0; i < node.Inputs.size(); i++)
+        {
+            Link* link = FindLink(node.Inputs[i]);
+            if (link)
+                TranslateNode(*(FindPin(link->StartPinID)->Node));
+
+        }
+
+
+        
+        
         std::string translatedNode;
 
 
@@ -1571,14 +1623,27 @@ R"(
             break;
         }
 
-        translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = ";
+        translatedNode += nodeMap[node.ID.Get()] + " = ";
+         
 
 
         
 
         if (node.Name == TextureNodeName)
         {
-            translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
+            Link* linkA = FindLink(node.Inputs[0]);
+
+
+            if (linkA)
+            {
+                translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,"  + nodeMap[FindPin(linkA->StartPinID)->Node->ID.Get()] + ".xy" + "); \n";
+            }
+            else
+            {
+                translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
+            }
+
+
             //translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get())+".rgb" + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ".rgb)";
         }
         else if (node.Name == FloatAddNodeName || node.Name == Float2AddNodeName || node.Name == Float3AddNodeName || node.Name == Float4AddNodeName ||
@@ -1588,17 +1653,48 @@ R"(
             std::string b;
             Link* linkA = FindLink(node.Inputs[0]);
             Link* linkB = FindLink(node.Inputs[1]);
+           
 
-            std::string lastChar;
+            std::string lastCharA;
+            std::string lastCharB;
 
-            if (node.Name == FloatAddNodeName || node.Name == FloatMulNodeName)
-                lastChar = ".r";
-            else if(node.Name == Float2AddNodeName || node.Name == Float2MulNodeName)
-                lastChar = ".rg";
-            else if (node.Name == Float3AddNodeName || node.Name == Float3MulNodeName)
-                lastChar = ".rgb";
-            else if (node.Name == Float4AddNodeName || node.Name == Float4MulNodeName)
-                lastChar = ".rgba";
+            
+            switch (FindPin(linkA->StartPinID)->Type)
+            {
+            case PinType::Float:
+                lastCharA = ".r";
+                break;
+            case PinType::Float2:
+                lastCharA = ".rg";
+                break;
+            case PinType::Float3:
+                lastCharA = ".rgb";
+                break;
+            case PinType::Float4:
+                lastCharA = ".rgba";
+                break;
+            default:
+                break;
+            }
+
+            switch (FindPin(linkB->StartPinID)->Type)
+            {
+            case PinType::Float:
+                lastCharB = ".r";
+                break;
+            case PinType::Float2:
+                lastCharB = ".rg";
+                break;
+            case PinType::Float3:
+                lastCharB = ".rgb";
+                break;
+            case PinType::Float4:
+                lastCharB = ".rgba";
+                break;
+            default:
+                break;
+            }
+
 
             std::string operatorChar;
 
@@ -1610,11 +1706,11 @@ R"(
 
 
             if (linkA)
-                a = baseTranslatedNodeName + std::to_string(FindPin(linkA->StartPinID)->Node->ID.Get()) + lastChar;
+                a = nodeMap[FindPin(linkA->StartPinID)->Node->ID.Get()]  + lastCharA;
             else
                 a = XMFLOAT4ToString(node.Inputs[0].data, node.Inputs[0].Type);
             if (linkB)
-                b = baseTranslatedNodeName + std::to_string(FindPin(linkB->StartPinID)->Node->ID.Get()) + lastChar;
+                b = nodeMap[FindPin(linkB->StartPinID)->Node->ID.Get()] + lastCharB;
             else
                 b = XMFLOAT4ToString(node.Inputs[1].data, node.Inputs[1].Type);
 
@@ -1623,17 +1719,6 @@ R"(
       
 
 
-
-        nodeMap.insert({ node.ID.Get(),baseTranslatedNodeName + std::to_string(node.ID.Get()) });
-
-        for (int i = 0; i < node.Inputs.size(); i++)
-        {
-            Link* link = FindLink(node.Inputs[i]);
-            if (link)
-                TranslateNode(*(FindPin(link->StartPinID)->Node));
-
-        }
-
         translatedNodes.push(translatedNode);
     }
 
@@ -1641,6 +1726,17 @@ R"(
     {
 
         Link* link = FindLink(pin);
+        Pin* startPin = nullptr;
+
+        if (link)
+        {
+            startPin = FindPin(link->StartPinID);
+
+            TranslateNode(*startPin->Node);
+        }
+
+
+
 
         std::string translatedNode;
         
@@ -1670,17 +1766,19 @@ R"(
         translatedNode += " = ";
 
 
-        Pin* startPin = nullptr;
-        if (link)
+      
+        if (link )
         {
             startPin = FindPin(link->StartPinID);
 
-            if (startPin->Node->Type == NodeType::Constant)
+            translatedNode += nodeMap[startPin->Node->ID.Get()];
+
+           /* if (startPin->Node->Type == NodeType::Constant)
             {
                 translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
             }
             else
-                translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());
+                translatedNode += baseTranslatedNodeName + std::to_string(startPin->Node->ID.Get());*/
 
             switch (startPin->Type)
             {
@@ -1729,8 +1827,7 @@ R"(
         }
 
 
-        if (link)
-            TranslateNode(*startPin->Node);
+       
 
         translatedNodes.push(translatedNode);
 
