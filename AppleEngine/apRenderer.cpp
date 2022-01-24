@@ -54,9 +54,8 @@ GPUBuffer			constantBuffers[CBTYPE_COUNT];
 GPUBuffer			resourceBuffers[RBTYPE_COUNT];
 Sampler				samplers[SAMPLER_COUNT];
 
-std::unordered_map<std::string, Shader> shaderMap;
-std::unordered_map<std::string, CustomShader> psoMap;
 
+std::unordered_map<std::string, Shader> shaderMap;
 
 std::string SHADERPATH = "shaders/";
 std::string SHADERSOURCEPATH = "../AppleEngine/shaders/";
@@ -321,6 +320,9 @@ enum OBJECTRENDERING_ALPHATEST
 	OBJECTRENDERING_ALPHATEST_ENABLED,
 	OBJECTRENDERING_ALPHATEST_COUNT
 };
+
+
+
 PipelineState PSO_object
 	[MaterialComponent::SHADERTYPE_COUNT]
 	[RENDERPASS_COUNT]
@@ -331,6 +333,15 @@ PipelineState PSO_object
 PipelineState PSO_object_terrain[RENDERPASS_COUNT];
 PipelineState PSO_object_wire;
 PipelineState PSO_object_wire_tessellation;
+
+
+struct MaterialNodeShader
+{
+	std::string name;
+	ap::graphics::PipelineState pso[ap::enums::RENDERPASS_COUNT][ap::enums::BLENDMODE_COUNT][OBJECTRENDERING_DOUBLESIDED_COUNT][OBJECTRENDERING_TESSELLATION_COUNT][OBJECTRENDERING_ALPHATEST_COUNT];
+};
+std::unordered_map<std::string, MaterialNodeShader> psoMap;
+
 
 ap::vector<CustomShader> customShaders;
 int RegisterCustomShader(const CustomShader& customShader)
@@ -343,6 +354,7 @@ const ap::vector<CustomShader>& GetCustomShaders()
 {
 	return customShaders;
 }
+
 
 
 SHADERTYPE GetVSTYPE(RENDERPASS renderPass, bool tessellation, bool alphatest, bool transparent)
@@ -731,6 +743,54 @@ bool LoadShader(ShaderStage stage, Shader& shader, const std::string& filename, 
 	return false;
 }
 
+
+
+Shader* GetNodePSShader(std::string mainName,RENDERPASS renderPass, bool alphatest, bool transparent)
+{
+
+	std::string prepass = mainName + "_prepass";
+	//std::string prepass_alphatest = mainName + "_prepass_alphatest";
+	std::string object_transprent = mainName + "_transparent";
+
+	assert(shaderMap.count(prepass) != 0);
+	assert(shaderMap.count(object_transprent) != 0);
+
+
+
+	Shader* ps = nullptr;
+
+	switch (renderPass)
+	{
+	case RENDERPASS_MAIN:
+		ps = transparent ? &shaderMap[object_transprent] : &shaderMap[mainName];
+		break;
+	case RENDERPASS_PREPASS:
+		//if (alphatest)
+		//{
+		//	ps = &shaderMap[prepass_alphatest];
+		//}
+		//else
+		{
+			ps = &shaderMap[prepass];
+		}
+		break;
+	case RENDERPASS_ENVMAPCAPTURE:
+		//일단 패스
+		break;
+	case RENDERPASS_SHADOW:
+	case RENDERPASS_SHADOWCUBE:
+		//일단 패스
+		break;
+	case RENDERPASS_VOXELIZE:
+		//일단 패스
+		break;
+	default:
+		break;
+	}
+
+	return ps;
+}
+
 bool LoadMaterialNodeShaders()
 {
 
@@ -747,7 +807,7 @@ bool LoadMaterialNodeShaders()
 		const auto& path = directoryEntry.path();
 		std::string filename = path.stem().string();
 
-		std::string shaderbinaryfilename = NODESHADERPATH + filename +".cso";
+		std::string shaderbinaryfilename = NODESHADERPATH + filename + ".cso";
 
 		ap::shadercompiler::RegisterShader(shaderbinaryfilename);
 
@@ -794,43 +854,182 @@ bool LoadMaterialNodeShaders()
 			}
 		}
 
-
-		SHADERTYPE realVS = GetVSTYPE(RENDERPASS_MAIN, false, false, true);
-
-		PipelineStateDesc desc;
-		desc.vs = &shaders[realVS];
-		desc.ps = &shaderMap[filename];
-
-		desc.bs = &blendStates[BSTYPE_OPAQUE];
-		desc.rs = &rasterizers[RSTYPE_FRONT];
-		desc.dss = &depthStencils[DSSTYPE_DEFAULT];
-		desc.pt = PrimitiveTopology::TRIANGLELIST;
-
-		PipelineState pso;
-		device->CreatePipelineState(&desc, &pso);
-
-		CustomShader customShader;
-		customShader.name = filename;
-		customShader.renderTypeFlags = RENDERTYPE_OPAQUE;
-		customShader.pso[RENDERPASS_MAIN] = pso;
-		psoMap[filename] = customShader;
-		
-		
-		
-
-
-
-
 	}
 
 
 
+	std::vector<std::string> psoList;
 
+	Scene& scene = ap::scene::GetScene();
+
+	for (int i = 0; i < scene.materials.GetCount(); i++)
+	{
+		if (scene.materials[i].materialNodes.initialized)
+		{
+			psoList.push_back(scene.materials[i].materialNodes.materialName);
+		}
+
+	}
+
+#if 1
+	for (int i = 0; i < psoList.size(); i++)
+	{
+		std::string main = psoList[i];
 	
 
+		MaterialNodeShader materialNodeShader;
+		materialNodeShader.name = main;
+		
+
+		
+		for (int renderPass = 0; renderPass < RENDERPASS_COUNT ; ++renderPass)
+		{
+			for (int blendMode = 0; blendMode < BLENDMODE_COUNT; ++blendMode)
+			{
+				for (int doublesided = 0; doublesided < OBJECTRENDERING_DOUBLESIDED_COUNT; ++doublesided)
+				{
+					for (int tessellation = 0; tessellation < OBJECTRENDERING_TESSELLATION_COUNT; ++tessellation)
+					{
+						for (int alphatest = 0; alphatest < OBJECTRENDERING_ALPHATEST_COUNT; ++alphatest)
+						{
+
+							if (renderPass == RENDERPASS_VOXELIZE || renderPass == RENDERPASS_ENVMAPCAPTURE) //나중에 추가
+								continue;
+
+							const bool transparency = blendMode != BLENDMODE_OPAQUE;
+							SHADERTYPE realVS = GetVSTYPE((RENDERPASS)renderPass, tessellation, alphatest, transparency);
+							SHADERTYPE realHS = GetHSTYPE((RENDERPASS)renderPass, tessellation, alphatest);
+							SHADERTYPE realDS = GetDSTYPE((RENDERPASS)renderPass, tessellation, alphatest);
+							SHADERTYPE realGS = GetGSTYPE((RENDERPASS)renderPass, alphatest, transparency);
+
+							if (tessellation && (realHS == SHADERTYPE_COUNT || realDS == SHADERTYPE_COUNT))
+							{
+								continue;
+							}
+
+							PipelineStateDesc desc;
+							desc.vs = realVS < SHADERTYPE_COUNT ? &shaders[realVS] : nullptr;
+							desc.hs = realHS < SHADERTYPE_COUNT ? &shaders[realHS] : nullptr;
+							desc.ds = realDS < SHADERTYPE_COUNT ? &shaders[realDS] : nullptr;
+							desc.gs = realGS < SHADERTYPE_COUNT ? &shaders[realGS] : nullptr;
+							desc.ps = GetNodePSShader(main, (RENDERPASS)renderPass, alphatest, transparency);
+
+							switch (blendMode)
+							{
+							case BLENDMODE_OPAQUE:
+								desc.bs = &blendStates[BSTYPE_OPAQUE];
+								break;
+							case BLENDMODE_ALPHA:
+								desc.bs = &blendStates[BSTYPE_TRANSPARENT];
+								break;
+							case BLENDMODE_ADDITIVE:
+								desc.bs = &blendStates[BSTYPE_ADDITIVE];
+								break;
+							case BLENDMODE_PREMULTIPLIED:
+								desc.bs = &blendStates[BSTYPE_PREMULTIPLIED];
+								break;
+							case BLENDMODE_MULTIPLY:
+								desc.bs = &blendStates[BSTYPE_MULTIPLY];
+								break;
+							default:
+								assert(0);
+								break;
+							}
+
+							switch (renderPass)
+							{
+							case RENDERPASS_SHADOW:
+							case RENDERPASS_SHADOWCUBE:
+								desc.bs = &blendStates[transparency ? BSTYPE_TRANSPARENTSHADOW : BSTYPE_COLORWRITEDISABLE];
+								break;
+							default:
+								break;
+							}
+
+							switch (renderPass)
+							{
+							case RENDERPASS_SHADOW:
+							case RENDERPASS_SHADOWCUBE:
+								desc.dss = &depthStencils[transparency ? DSSTYPE_DEPTHREAD : DSSTYPE_SHADOW];
+								break;
+							case RENDERPASS_MAIN:
+								if (blendMode == BLENDMODE_ADDITIVE)
+								{
+									desc.dss = &depthStencils[DSSTYPE_DEPTHREAD];
+								}
+								else
+								{
+									desc.dss = &depthStencils[transparency ? DSSTYPE_DEFAULT : DSSTYPE_DEPTHREADEQUAL];
+								}
+								break;
+							case RENDERPASS_ENVMAPCAPTURE:
+								desc.dss = &depthStencils[DSSTYPE_ENVMAP];
+								break;
+							case RENDERPASS_VOXELIZE:
+								desc.dss = &depthStencils[DSSTYPE_DEPTHDISABLED];
+								break;
+							default:
+								if (blendMode == BLENDMODE_ADDITIVE)
+								{
+									desc.dss = &depthStencils[DSSTYPE_DEPTHREAD];
+								}
+								else
+								{
+									desc.dss = &depthStencils[DSSTYPE_DEFAULT];
+								}
+								break;
+							}
+
+							switch (renderPass)
+							{
+							case RENDERPASS_SHADOW:
+							case RENDERPASS_SHADOWCUBE:
+								desc.rs = &rasterizers[doublesided ? RSTYPE_SHADOW_DOUBLESIDED : RSTYPE_SHADOW];
+								break;
+							case RENDERPASS_VOXELIZE:
+								desc.rs = &rasterizers[RSTYPE_VOXELIZE];
+								break;
+							default:
+								switch (doublesided)
+								{
+								default:
+								case OBJECTRENDERING_DOUBLESIDED_DISABLED:
+									desc.rs = &rasterizers[RSTYPE_FRONT];
+									break;
+								case OBJECTRENDERING_DOUBLESIDED_ENABLED:
+									desc.rs = &rasterizers[RSTYPE_DOUBLESIDED];
+									break;
+								case OBJECTRENDERING_DOUBLESIDED_BACKSIDE:
+									desc.rs = &rasterizers[RSTYPE_BACK];
+									break;
+								}
+								break;
+							}
+
+							if (tessellation)
+							{
+								desc.pt = PrimitiveTopology::PATCHLIST;
+							}
+							else
+							{
+								desc.pt = PrimitiveTopology::TRIANGLELIST;
+							}
 
 
-	
+							device->CreatePipelineState(&desc, &materialNodeShader.pso[renderPass][blendMode][doublesided][tessellation][alphatest]);
+						}
+					}
+				}
+			}
+		}
+
+
+		psoMap[main] = materialNodeShader;
+
+	}
+#endif
+
+
 
 	return false;
 }
@@ -2607,9 +2806,28 @@ void RenderMeshes(
 				else if (material.materialNodes.used)
 				{
 
-					pso = &psoMap[material.materialNodes.materialName].pso[renderPass];
+				
 					std::vector<char> cBuffer = material.materialNodes.FillMaterialConstantBuffer();
 					device->BindDynamicConstantBuffer_Array(cBuffer.data(), cBuffer.size(),5,cmd);
+
+
+					const BLENDMODE blendMode = material.GetBlendMode();
+					const bool alphatest = material.IsAlphaTestEnabled() || forceAlphaTestForDithering;
+					OBJECTRENDERING_DOUBLESIDED doublesided = (mesh.IsDoubleSided() || material.IsDoubleSided()) ? OBJECTRENDERING_DOUBLESIDED_ENABLED : OBJECTRENDERING_DOUBLESIDED_DISABLED;
+
+
+					//pso = &psoMap[material.materialNodes.materialName].pso[renderPass];
+
+					pso = &psoMap[material.materialNodes.materialName].pso[renderPass][blendMode][doublesided][tessellatorRequested][alphatest];
+					
+
+					if ((renderTypeFlags & RENDERTYPE_TRANSPARENT) && doublesided == OBJECTRENDERING_DOUBLESIDED_ENABLED)
+					{
+						doublesided = OBJECTRENDERING_DOUBLESIDED_BACKSIDE;
+						pso_backside = &psoMap[material.materialNodes.materialName].pso[renderPass][blendMode][doublesided][tessellatorRequested][alphatest];
+					}
+
+
 				}
 				else
 				{

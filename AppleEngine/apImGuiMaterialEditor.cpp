@@ -214,6 +214,8 @@ namespace ap::imgui::material
 
     void MaterialNodes::Frame()
     {
+
+       
         if(opened)
         {
             
@@ -250,7 +252,6 @@ namespace ap::imgui::material
             //ImGui::BeginChild("Selection", childSize);
 
             
-
             Node* contextNode = FindNode(contextNodeId);
             if (contextNode && (contextNode->Name.find("Float") != std::string::npos))
             {
@@ -321,69 +322,82 @@ namespace ap::imgui::material
                 translatedNodes = {};
                 TranslateNodes();
 
-                std::string shaderTemplate =
+                std::vector<uint8_t> shaderData;
+                ap::helper::FileRead("../AppleEngine/shaders/materialNodeHF.hlsli", shaderData);
 
-                    R"(
-#pragma once
+               
+                std::string shaderTemplate(shaderData.begin(), shaderData.end());
+               
+
+                constexpr uint32_t permutationSize = 3;
+                std::string shaderOutputName[permutationSize] = {materialName, materialName +"_prepass", materialName +"_transparent"};
+                std::string param0[permutationSize] = 
+                { 
+
+                    
+R"(
+#define OBJECTSHADER_COMPILE_PS
 #define OBJECTSHADER_LAYOUT_COMMON
-#include "../objectHF.hlsli"
-//#include "../globals.hlsli"
+#define SHADOW_MASK_ENABLED
+#define OUTPUT_GBUFFER
+#define TILEDFORWARD
+#define DISABLE_ALPHATEST
+)",
 
-//test
-
-
-
-
-CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
-{
-
-%s
-
-};
-
-float4 main(PixelInput input) : SV_TARGET
-{
-
-%s
-
-return float4(BaseColor,Opacity);
-
-
-}      
-
-)";
-
-                char shaderOutput[3000];
-
-                std::string param1;
-                while (!translatedParams.empty())
-                {
-                    param1 += translatedParams.front();
-                    translatedParams.pop();
-                }
-
-                std::string param2;
-                while (!translatedNodes.empty())
-                {
-                    param2 += translatedNodes.front();
-                    translatedNodes.pop();
-                }
-
+ R"(
+#define OBJECTSHADER_COMPILE_PS
+#define OBJECTSHADER_LAYOUT_PREPASS
+#define PREPASS
+#define DISABLE_ALPHATEST
+ )",
                 
+R"(
+#define OBJECTSHADER_COMPILE_PS
+#define OBJECTSHADER_LAYOUT_COMMON
+#define TILEDFORWARD
+#define TRANSPARENT
+ )",
 
-                sprintf_s(shaderOutput, sizeof(shaderOutput), shaderTemplate.c_str(), param1.c_str(), param2.c_str());
+                };
 
-                savedShader = shaderOutput;
-
-                std::ofstream file("../AppleEngine/shaders/materialNodes/"+ materialName+".hlsl", std::ios::binary | std::ios::trunc);
-                if (file.is_open())
+                for (int i = 0; i < permutationSize; i++)
                 {
-                    file.write(const_cast<const char*>(shaderOutput), strlen(shaderOutput));
-                    file.close();
+
+                    
+
+                    std::string param1;
+                    while (!translatedParams.empty())
+                    {
+                        param1 += translatedParams.front();
+                        translatedParams.pop();
+                    }
+
+                    std::string param2;
+                    while (!translatedNodes.empty())
+                    {
+                        param2 += translatedNodes.front();
+                        translatedNodes.pop();
+                    }
+
+                    uint64_t shaderSize = shaderTemplate.size() + param0[i].size() + param1.size(); //+ param2.size();
+
+                    std::vector<char> shaderOutput(shaderSize);
+                   
+                    sprintf_s(shaderOutput.data(), shaderOutput.size(), shaderTemplate.c_str(), param0[i].c_str() ,param1.c_str()); //, param2.c_str());
+
+                  
+                    savedShader = shaderOutput.data();
+
+                    std::ofstream file("../AppleEngine/shaders/materialNodes/" + shaderOutputName[i] + ".hlsl", std::ios::binary | std::ios::trunc);
+                    if (file.is_open())
+                    {
+                        file.write(const_cast<const char*>(shaderOutput.data()), shaderSize);
+                        file.close();
+                    }
+
                 }
 
-
-                ap::renderer::ReloadShaders();
+                //ap::renderer::ReloadShaders();
 
             }
             ImVec2 size = ImGui::GetContentRegionAvail();

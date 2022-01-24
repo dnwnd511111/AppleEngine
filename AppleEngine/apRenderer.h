@@ -844,6 +844,9 @@ namespace ap::renderer
 		uint32_t renderTypeFlags = ap::enums::RENDERTYPE_OPAQUE;
 		ap::graphics::PipelineState pso[ap::enums::RENDERPASS_COUNT] = {};
 	};
+
+
+
 	// Registers a custom shader that can be set to materials. 
 	//	Returns the ID of the custom shader that can be used with MaterialComponent::SetCustomShaderID()
 	int RegisterCustomShader(const CustomShader& customShader);

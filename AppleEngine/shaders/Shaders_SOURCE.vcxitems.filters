@@ -138,6 +138,10 @@
     <None Include="$(MSBuildThisFileDirectory)ocean2HF.hlsli">
       <Filter>Ocean</Filter>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)materilNodeHF.hlsli" />
+    <None Include="$(MSBuildThisFileDirectory)materialNodeHF.hlsli">
+      <Filter>HF</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)ShaderInterop.h">

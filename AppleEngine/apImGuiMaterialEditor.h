@@ -149,6 +149,7 @@ namespace ap::imgui::material
 
         std::string materialName;
         
+        bool initialized = false;
         bool used = false;
         bool opened = false;
 	private:
@@ -160,7 +161,6 @@ namespace ap::imgui::material
         std::vector<std::pair<PinType, XMFLOAT4*>> translatedParamData;
 
 
-        bool initialized = false;
         
 
         //
