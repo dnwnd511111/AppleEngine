@@ -360,30 +360,34 @@ R"(
 
                 };
 
+
+                std::string param1;
+                while (!translatedParams.empty())
+                {
+                    param1 += translatedParams.front();
+                    translatedParams.pop();
+                }
+
+                std::string param2;
+                while (!translatedNodes.empty())
+                {
+                    param2 += translatedNodes.front();
+                    translatedNodes.pop();
+                }
+
+
                 for (int i = 0; i < permutationSize; i++)
                 {
 
                     
 
-                    std::string param1;
-                    while (!translatedParams.empty())
-                    {
-                        param1 += translatedParams.front();
-                        translatedParams.pop();
-                    }
+                    
 
-                    std::string param2;
-                    while (!translatedNodes.empty())
-                    {
-                        param2 += translatedNodes.front();
-                        translatedNodes.pop();
-                    }
-
-                    uint64_t shaderSize = shaderTemplate.size() + param0[i].size() + param1.size(); //+ param2.size();
+                    uint64_t shaderSize = shaderTemplate.size() + param0[i].size() + param1.size()+ param2.size();
 
                     std::vector<char> shaderOutput(shaderSize);
                    
-                    sprintf_s(shaderOutput.data(), shaderOutput.size(), shaderTemplate.c_str(), param0[i].c_str() ,param1.c_str()); //, param2.c_str());
+                    sprintf_s(shaderOutput.data(), shaderOutput.size(), shaderTemplate.c_str(), param0[i].c_str() ,param1.c_str(), param2.c_str());
 
                   
                     savedShader = shaderOutput.data();
@@ -397,7 +401,7 @@ R"(
 
                 }
 
-                //ap::renderer::ReloadShaders();
+                ap::renderer::ReloadShaders();
 
             }
             ImVec2 size = ImGui::GetContentRegionAvail();

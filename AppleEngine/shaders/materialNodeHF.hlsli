@@ -888,24 +888,18 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
 
 #endif // OBJECTSHADER_USE_TANGENT
 
-
-
-	float4 color = 1;
-
+    
+    float4 color = 1;
+    
 #ifdef OBJECTSHADER_USE_UVSETS
-	[branch]
-#ifdef PREPASS
-	if (GetMaterial().uvset_baseColorMap >= 0)
-#else
-	if (GetMaterial().uvset_baseColorMap >= 0 && (GetFrame().options & OPTION_BIT_DISABLE_ALBEDO_MAPS) == 0)
-#endif // PREPASS
-	{
-		const float2 UV_baseColorMap = GetMaterial().uvset_baseColorMap == 0 ? input.uvsets.xy : input.uvsets.zw;
-		float4 baseColorMap = texture_basecolormap.Sample(sampler_objectshader, UV_baseColorMap);
-		baseColorMap.rgb = DEGAMMA(baseColorMap.rgb);
-		color *= baseColorMap;
-	}
-#endif // OBJECTSHADER_USE_UVSETS
+    
+%s
+
+    color.rgb = BaseColor.rgb;
+    color.a = Opacity;
+#endif   // OBJECTSHADER_USE_UVSETS
+    
+    
 
 
 #ifdef OBJECTSHADER_USE_COLOR

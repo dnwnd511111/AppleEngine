@@ -40,8 +40,9 @@ PUSHCONSTANT(push, ObjectPushConstants);
 CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
 {
 
-int texture10013;
-int texture10020;
+int texture10003;
+int texture10033;
+int texture10055;
 
 
 };
@@ -900,11 +901,13 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
     
 #ifdef OBJECTSHADER_USE_UVSETS
     
-float4 materialExpression10013 = bindless_textures[texture10013].Sample(sampler_objectshader,  input.uvsets.xy); 
-float4 materialExpression10020 = bindless_textures[texture10020].Sample(sampler_objectshader,  input.uvsets.xy); 
-float3 materialExpression10026 = materialExpression10013.rgb + materialExpression10020.rgb;
+float4 materialExpression10003 = bindless_textures[texture10003].Sample(sampler_objectshader,  input.uvsets.xy); 
+float4 materialExpression10033 = bindless_textures[texture10033].Sample(sampler_objectshader,  input.uvsets.xy); 
+float3 materialExpression10041 = materialExpression10003.rgb + materialExpression10033.rgb;
+float4 materialExpression10055 = bindless_textures[texture10055].Sample(sampler_objectshader,  input.uvsets.xy); 
+float3 materialExpression10050 = materialExpression10041.rgb + materialExpression10055.rgb;
 
-float3 BaseColor = materialExpression10026.rgb;
+float3 BaseColor = materialExpression10050.rgb;
 float Opacity = 1;
 
 
