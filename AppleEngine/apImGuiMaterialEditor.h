@@ -126,8 +126,22 @@ namespace ap::imgui::material
     private:
         Node* SpawnTextureSampleNode();
         Node* SpawnMaterialResultNode();
+
+        Node* SpawnConstantFloatNode();
+        Node* SpawnConstantFloat2Node();
         Node* SpawnConstantFloat3Node();
+        Node* SpawnConstantFloat4Node();
+
+        Node* SpawnFloatMulNode();
+        Node* SpawnFloat2MulNode();
+        Node* SpawnFloat3MulNode();
+        Node* SpawnFloat4MulNode();
+
+        Node* SpawnFloatAddNode();
+        Node* SpawnFloat2AddNode();
         Node* SpawnFloat3AddNode();
+        Node* SpawnFloat4AddNode();
+
         Node* SpawnComment();
 
         Node* FindNode(ed::NodeId id);

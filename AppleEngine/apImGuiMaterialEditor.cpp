@@ -56,6 +56,8 @@ namespace ap::imgui::material
 
     static const char* OutputNodeName = "Material Result";
     static const char* OutputNodeBaseColor = "Base Color";
+    static const char* OutputNodeEmissiveColor = "Emissive Color";
+    static const char* OutputNodeNormal = "Normal";
     static const char* OutputNodeOpacity = "Opacity";
 
     static const char* TextureNodeName = "Texture Sample";
@@ -220,7 +222,7 @@ namespace ap::imgui::material
         {
             
 
-            PushID();
+  
 
             if (!initialized)
             {
@@ -242,10 +244,13 @@ namespace ap::imgui::material
             s_RestoreIcon = (ImTextureID)textureID3;
         
             ImGui::Begin("Material Editor", &opened, ImGuiWindowFlags_NoCollapse);
+            
+            BeginPropertyGrid();
+           
             //ImGui::SetWindowCollapsed(false);
 
 
-            ImGui::Columns(2);
+            
 
             ImVec2 childSize = ImVec2(400, 0);
 
@@ -270,9 +275,11 @@ namespace ap::imgui::material
                             ImGui::DragFloat2(pin.Name.c_str(), (float*)&pin.data, 0.05f);
                             break;
                         case PinType::Float3:
+                            ImGui::ColorEdit3(pin.Name.c_str(), (float*)&pin.data);
                             ImGui::DragFloat3(pin.Name.c_str(), (float*)&pin.data, 0.05f);
                             break;
                         case PinType::Float4:
+                            ImGui::ColorEdit4(pin.Name.c_str(), (float*)&pin.data);
                             ImGui::DragFloat4(pin.Name.c_str(), (float*)&pin.data, 0.05f);
                             break;
                         default:
@@ -307,9 +314,7 @@ namespace ap::imgui::material
 
             }
 
-
-
-            ImGui::Separator();
+           // ImGui::Separator();
 
             static std::string savedShader;
 
@@ -845,12 +850,38 @@ R"(
                     node = SpawnTextureSampleNode();
 
                 ImGui::Separator();
+                if (ImGui::MenuItem("Constant Float"))
+                    node = SpawnConstantFloatNode();
+                if (ImGui::MenuItem("Constant Float2"))
+                    node = SpawnConstantFloat2Node();
                 if (ImGui::MenuItem("Constant Float3"))
                     node = SpawnConstantFloat3Node();
+                if (ImGui::MenuItem("Constant Float4"))
+                    node = SpawnConstantFloat4Node();
 
                 ImGui::Separator();
+                if (ImGui::MenuItem("Float Mul"))
+                    node = SpawnFloatMulNode();
+                if (ImGui::MenuItem("Float2 Mul"))
+                    node = SpawnFloat2MulNode();
+                if (ImGui::MenuItem("Float3 Mul"))
+                    node = SpawnFloat3MulNode();
+                if (ImGui::MenuItem("Float4 Mul"))
+                    node = SpawnFloat4MulNode();
+
+
+
+                ImGui::Separator();
+                if (ImGui::MenuItem("Float Add"))
+                    node = SpawnFloatAddNode();
+                if (ImGui::MenuItem("Float2 Add"))
+                    node = SpawnFloat2AddNode();
                 if (ImGui::MenuItem("Float3 Add"))
                     node = SpawnFloat3AddNode();
+                if (ImGui::MenuItem("Float4 Add"))
+                    node = SpawnFloat4AddNode();
+
+
                 ImGui::Separator();
                 if (ImGui::MenuItem("Comment"))
                     node = SpawnComment();
@@ -939,11 +970,10 @@ R"(
 
             ed::End();
 
-            ImGui::Columns(1);
+            EndPropertyGrid();
 
             ImGui::End();
 
-            PopID();
 
         }
 
@@ -972,8 +1002,20 @@ R"(
                 index = index + 4;
                 break;
             }
+            case PinType::Float:
+                *(float*)&ret.data()[index] = *((float*)&(e.second->x));
+                index = index + 4;
+                break;
+            case PinType::Float2:
+                *(XMFLOAT2*)&ret.data()[index] = *((XMFLOAT2*)&(e.second->x));
+                index = index + 16;
+                break;
             case PinType::Float3:
                 *(XMFLOAT3*)&ret.data()[index] = *((XMFLOAT3*)&(e.second->x));
+                index = index + 16;
+                break;
+            case PinType::Float4:
+                *(XMFLOAT4*)&ret.data()[index] = *((XMFLOAT4*)&(e.second->x));
                 index = index + 16;
                 break;
             default:
@@ -1017,8 +1059,10 @@ R"(
     {
         nodes.emplace_back(GetNextId(), OutputNodeName, ImColor(222, 184, 135));
 
-
+        
         nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeBaseColor, PinType::Float3);
+        nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeEmissiveColor, PinType::Float3);
+        nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeNormal, PinType::Float3);
         nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeOpacity, PinType::Float);
 
 
@@ -1031,6 +1075,40 @@ R"(
         return &nodes.back();
     }
 
+    Node* MaterialNodes::SpawnConstantFloatNode()
+    {
+        nodes.emplace_back(GetNextId(), ConstantFloatNodeName, ImColor(46, 190, 87));
+        nodes.back().DataType = PinType::Float;
+        nodes.back().Type = NodeType::Constant;
+
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+    Node* MaterialNodes::SpawnConstantFloat2Node()
+    {
+        nodes.emplace_back(GetNextId(), ConstantFloat2NodeName, ImColor(46, 190, 87));
+        nodes.back().DataType = PinType::Float2;
+        nodes.back().Type = NodeType::Constant;
+
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float2);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
     Node* MaterialNodes::SpawnConstantFloat3Node()
     {
         nodes.emplace_back(GetNextId(), ConstantFloat3NodeName, ImColor(46, 190, 87));
@@ -1048,7 +1126,153 @@ R"(
 
         return &nodes.back();
     }
+    Node* MaterialNodes::SpawnConstantFloat4Node()
+    {
+        nodes.emplace_back(GetNextId(), ConstantFloat4NodeName, ImColor(46, 190, 87));
+        nodes.back().DataType = PinType::Float4;
+        nodes.back().Type = NodeType::Constant;
 
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float4);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+
+
+    Node* MaterialNodes::SpawnFloatMulNode()
+    {
+        nodes.emplace_back(GetNextId(), FloatMulNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+    Node* MaterialNodes::SpawnFloat2MulNode()
+    {
+        nodes.emplace_back(GetNextId(), Float2MulNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float2;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float2);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float2);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float2);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+    Node* MaterialNodes::SpawnFloat3MulNode()
+    {
+        nodes.emplace_back(GetNextId(), Float3MulNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float3;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float3);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float3);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float3);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+    Node* MaterialNodes::SpawnFloat4MulNode()
+    {
+        nodes.emplace_back(GetNextId(), Float4MulNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float4;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float4);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float4);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float4);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+
+
+    Node* MaterialNodes::SpawnFloatAddNode()
+    {
+        nodes.emplace_back(GetNextId(), FloatAddNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+    Node* MaterialNodes::SpawnFloat2AddNode()
+    {
+        nodes.emplace_back(GetNextId(), Float2AddNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float2;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float2);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float2);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float2);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
     Node* MaterialNodes::SpawnFloat3AddNode()
     {
         nodes.emplace_back(GetNextId(), Float3AddNodeName, ImColor(46, 139, 87));
@@ -1061,6 +1285,27 @@ R"(
             e.Color = ImColor(220, 220, 220);
 
         nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float3);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+    Node* MaterialNodes::SpawnFloat4AddNode()
+    {
+        nodes.emplace_back(GetNextId(), Float4AddNodeName, ImColor(46, 139, 87));
+        nodes.back().DataType = PinType::Float4;
+
+        nodes.back().Inputs.emplace_back(GetNextId(), "A", PinType::Float4);
+        nodes.back().Inputs.emplace_back(GetNextId(), "B", PinType::Float4);
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float4);
 
         for (auto& e : nodes.back().Outputs)
             e.Color = ImColor(220, 220, 220);
@@ -1217,6 +1462,58 @@ R"(
         for (int i = 0; i < nodes.size(); i++)
         {
             Node& node = nodes[i];
+            if (node.Name == ConstantFloat4NodeName)
+            {
+                std::string str = "float4 " + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ";\n";
+                translatedParams.push(str);
+                translatedParamData.push_back({ PinType::Float4, &node.Outputs[0].data });
+
+            }
+        }
+
+        for (int i = 0; i < nodes.size(); i++)
+        {
+            Node& node = nodes[i];
+            if (node.Name == ConstantFloat3NodeName)
+            {
+            std::string str = "float3 " + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ";\n";
+            str += "float pad" + std::to_string(node.ID.Get()) + ";\n";
+            translatedParams.push(str);
+            translatedParamData.push_back({ PinType::Float3, &node.Outputs[0].data });
+
+            }
+        }
+
+        for (int i = 0; i < nodes.size(); i++)
+        {
+            Node& node = nodes[i];
+            if (node.Name == ConstantFloat2NodeName)
+            {
+                std::string str = "float2 " + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ";\n";
+                str += "float2 pad" + std::to_string(node.ID.Get()) + ";\n";
+                translatedParams.push(str);
+                translatedParamData.push_back({ PinType::Float2, &node.Outputs[0].data });
+
+            }
+        }
+
+
+        for (int i = 0; i < nodes.size(); i++)
+        {
+            Node& node = nodes[i];
+            if (node.Name == ConstantFloatNodeName)
+            {
+                std::string str = "float " + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ";\n";
+                translatedParams.push(str);
+                translatedParamData.push_back({ PinType::Float, &node.Outputs[0].data });
+
+            }
+        }
+
+
+        for (int i = 0; i < nodes.size(); i++)
+        {
+            Node& node = nodes[i];
             if (node.Name == TextureNodeName)
             {
                 //str += node.texture.IsValid() ? std::to_string(ap::graphics::GetDevice()->CopyDescriptorToImGui(&node.texture.GetTexture())) : "-1";
@@ -1224,17 +1521,10 @@ R"(
                 translatedParams.push(str);
                 translatedParamData.push_back({ PinType::Int, (XMFLOAT4*)&node.texture });
             }
-            else if (node.Name == ConstantFloat3NodeName)
-            {
-                std::string str = "float3 " + baseTranslatedNodeName+  std::to_string(node.ID.Get()) + ";\n";
-                str += "float pad" + std::to_string(node.ID.Get()) + ";\n";
-                translatedParams.push(str);
-                translatedParamData.push_back({ PinType::Float3, &node.Outputs[0].data });
-
-            }
-
-
         }
+
+
+      
 
 
 
@@ -1284,29 +1574,53 @@ R"(
         translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get()) + " = ";
 
 
+        
+
         if (node.Name == TextureNodeName)
         {
             translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
             //translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get())+".rgb" + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ".rgb)";
         }
-        else if (node.Name == Float3AddNodeName)
+        else if (node.Name == FloatAddNodeName || node.Name == Float2AddNodeName || node.Name == Float3AddNodeName || node.Name == Float4AddNodeName ||
+            node.Name == FloatMulNodeName || node.Name == Float2MulNodeName || node.Name == Float3MulNodeName || node.Name == Float4MulNodeName)
         {
-
             std::string a;
             std::string b;
             Link* linkA = FindLink(node.Inputs[0]);
             Link* linkB = FindLink(node.Inputs[1]);
+
+            std::string lastChar;
+
+            if (node.Name == FloatAddNodeName || node.Name == FloatMulNodeName)
+                lastChar = ".r";
+            else if(node.Name == Float2AddNodeName || node.Name == Float2MulNodeName)
+                lastChar = ".rg";
+            else if (node.Name == Float3AddNodeName || node.Name == Float3MulNodeName)
+                lastChar = ".rgb";
+            else if (node.Name == Float4AddNodeName || node.Name == Float4MulNodeName)
+                lastChar = ".rgba";
+
+            std::string operatorChar;
+
+            if (node.Name == FloatAddNodeName || node.Name == Float2AddNodeName || node.Name == Float3AddNodeName || node.Name == Float4AddNodeName)
+                operatorChar = " + ";
+            else if (node.Name == FloatMulNodeName || node.Name == Float2MulNodeName || node.Name == Float3MulNodeName || node.Name == Float4MulNodeName)
+                operatorChar = " * ";
+
+
+
             if (linkA)
-                a = baseTranslatedNodeName + std::to_string(FindPin(linkA->StartPinID)->Node->ID.Get()) + ".rgb";
+                a = baseTranslatedNodeName + std::to_string(FindPin(linkA->StartPinID)->Node->ID.Get()) + lastChar;
             else
                 a = XMFLOAT4ToString(node.Inputs[0].data, node.Inputs[0].Type);
             if (linkB)
-                b = baseTranslatedNodeName + std::to_string(FindPin(linkB->StartPinID)->Node->ID.Get()) + ".rgb";
+                b = baseTranslatedNodeName + std::to_string(FindPin(linkB->StartPinID)->Node->ID.Get()) + lastChar;
             else
                 b = XMFLOAT4ToString(node.Inputs[1].data, node.Inputs[1].Type);
 
-            translatedNode += (a + " + " + b) + ";\n";
+            translatedNode += (a + operatorChar + b) + ";\n";
         }
+      
 
 
 
@@ -1329,15 +1643,29 @@ R"(
         Link* link = FindLink(pin);
 
         std::string translatedNode;
-
+        
         if (pin.Name == OutputNodeBaseColor)
         {
             translatedNode = "\nfloat3 BaseColor";
+        }
+        else if (pin.Name == OutputNodeEmissiveColor)
+        {
+            translatedNode = "\nEmissiveColor";
+        }
+        else if (pin.Name == OutputNodeNormal)
+        {
+            if(link)
+                translatedNode += "\n useNormal = true;";
+           
+
+            translatedNode += "\nfloat3 Normal";
         }
         else if (pin.Name == OutputNodeOpacity)
         {
             translatedNode = "float Opacity";
         }
+
+        
 
         translatedNode += " = ";
 
@@ -1385,10 +1713,19 @@ R"(
             }
 
             translatedNode += ";\n";
+
+
+
         }
         else
         {
-            translatedNode += "1;\n";
+            if(pin.Name == OutputNodeEmissiveColor)
+                translatedNode += "0;\n";
+            else
+                translatedNode += "1;\n";
+
+
+            
         }
 
 

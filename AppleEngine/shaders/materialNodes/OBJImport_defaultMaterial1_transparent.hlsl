@@ -40,9 +40,7 @@ PUSHCONSTANT(push, ObjectPushConstants);
 CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
 {
 
-int texture10003;
-int texture10033;
-int texture10055;
+int texture10010;
 
 
 };
@@ -226,22 +224,7 @@ inline void LightMapping(in int lightmap, in float2 ATLAS, inout Lighting lighti
     }
 }
 
-inline void NormalMapping(in float4 uvsets, inout float3 N, in float3x3 TBN, out float3 bumpColor)
-{
-	[branch]
-    if (GetMaterial().normalMapStrength > 0 && GetMaterial().uvset_normalMap >= 0)
-    {
-        const float2 UV_normalMap = GetMaterial().uvset_normalMap == 0 ? uvsets.xy : uvsets.zw;
-        float3 normalMap = float3(texture_normalmap.Sample(sampler_objectshader, UV_normalMap).rg, 1);
-        bumpColor = normalMap.rgb * 2 - 1;
-        N = normalize(lerp(N, mul(bumpColor, TBN), GetMaterial().normalMapStrength));
-        bumpColor *= GetMaterial().normalMapStrength;
-    }
-    else
-    {
-        bumpColor = 0;
-    }
-}
+
 
 inline float3 PlanarReflection(in Surface surface, in float2 bumpColor)
 {
@@ -898,21 +881,38 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
 
     
     float4 color = 1;
+    float3 EmissiveColor = 0;
+    
+    bool useNormal = false;
     
 #ifdef OBJECTSHADER_USE_UVSETS
     
-float4 materialExpression10003 = bindless_textures[texture10003].Sample(sampler_objectshader,  input.uvsets.xy); 
-float4 materialExpression10033 = bindless_textures[texture10033].Sample(sampler_objectshader,  input.uvsets.xy); 
-float3 materialExpression10041 = materialExpression10003.rgb + materialExpression10033.rgb;
-float4 materialExpression10055 = bindless_textures[texture10055].Sample(sampler_objectshader,  input.uvsets.xy); 
-float3 materialExpression10050 = materialExpression10041.rgb + materialExpression10055.rgb;
+float4 materialExpression10010 = bindless_textures[texture10010].Sample(sampler_objectshader,  input.uvsets.xy); 
 
-float3 BaseColor = materialExpression10050.rgb;
+float3 BaseColor = materialExpression10010.rgb;
+
+EmissiveColor = 1;
+
+float3 Normal = 1;
 float Opacity = 1;
 
 
     color.rgb = BaseColor.rgb;
     color.a = Opacity;
+    
+    
+    
+#ifdef OBJECTSHADER_USE_TANGENT
+    
+    if(useNormal)
+    {
+        float3 normalMap = float3(Normal.rg,1);
+        bumpColor = normalMap.rgb * 2 - 1;
+        surface.N = mul(bumpColor, TBN);
+    
+    }
+ #endif // OBJECTSHADER_USE_TANGENT
+    
 #endif   // OBJECTSHADER_USE_UVSETS
     
     
@@ -932,13 +932,6 @@ float Opacity = 1;
 #endif // DISABLE_ALPHATEST
 #endif // TRANSPARENT
 
-
-
-#ifndef WATER
-#ifdef OBJECTSHADER_USE_TANGENT
-	NormalMapping(input.uvsets, surface.N, TBN, bumpColor);
-#endif // OBJECTSHADER_USE_TANGENT
-#endif // WATER
 
 
 	float4 surfaceMap = 1;
@@ -969,24 +962,10 @@ float Opacity = 1;
 
 	surface.create(GetMaterial(), color, surfaceMap, specularMap);
 
-
-	// Emissive map:
-	surface.emissiveColor = GetMaterial().GetEmissive();
-
-#ifdef OBJECTSHADER_USE_UVSETS
-	[branch]
-	if (any(surface.emissiveColor) && GetMaterial().uvset_emissiveMap >= 0)
-	{
-		const float2 UV_emissiveMap = GetMaterial().uvset_emissiveMap == 0 ? input.uvsets.xy : input.uvsets.zw;
-		float4 emissiveMap = texture_emissivemap.Sample(sampler_objectshader, UV_emissiveMap);
-		emissiveMap.rgb = DEGAMMA(emissiveMap.rgb);
-		surface.emissiveColor *= emissiveMap.rgb * emissiveMap.a;
-	}
-#endif // OBJECTSHADER_USE_UVSETS
-
-
-
-
+    
+    
+ surface.emissiveColor = EmissiveColor.rgb;
+    
 #ifdef OBJECTSHADER_USE_EMISSIVE
 	surface.emissiveColor *= Unpack_R11G11B10_FLOAT(input.emissiveColor);
 #endif // OBJECTSHADER_USE_EMISSIVE
