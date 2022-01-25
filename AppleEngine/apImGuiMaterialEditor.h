@@ -129,7 +129,11 @@ namespace ap::imgui::material
     private:
 
         Node* SpawnTexCoordNode();
+        Node* SpawnTimeNode();
+        Node* SpawnTimeDeltaNode();
+
         Node* SpawnTextureSampleNode();
+
         Node* SpawnMaterialResultNode();
 
         Node* SpawnConstantFloatNode();

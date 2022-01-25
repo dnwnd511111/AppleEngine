@@ -893,8 +893,7 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
     
     if(useNormal)
     {
-        float3 normalMap = float3(Normal.rg,1);
-        bumpColor = normalMap.rgb * 2 - 1;
+        bumpColor = Normal.rgb * 2 - 1;
         surface.N = mul(bumpColor, TBN);
     
     }

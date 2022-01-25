@@ -43,9 +43,9 @@ PUSHCONSTANT(push, ObjectPushConstants);
 CBUFFER(MaterialParams, CBSLOT_MATERIALPARAMS)
 {
 
-float materialExpression10039;
-float materialExpression10042;
-int texture10024;
+float materialExpression10028;
+int texture10005;
+int texture10013;
 
 
 };
@@ -892,15 +892,18 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
     
 #ifdef OBJECTSHADER_USE_UVSETS
     
-float4 materialExpression10024 = bindless_textures[texture10024].Sample(sampler_objectshader,  input.uvsets.xy); 
-float3 materialExpression10017 = materialExpression10024.rgb * materialExpression10039.r;
+float2 materialExpression10023 = input.uvsets.rg * materialExpression10028.r;
+float2 materialExpression10032 = materialExpression10023.rg + GetFrame().time.r;
+float4 materialExpression10005 = bindless_textures[texture10005].Sample(sampler_objectshader,materialExpression10032.xy); 
 
-float3 BaseColor = materialExpression10017.rgb;
+float3 BaseColor = materialExpression10005.rgb;
 
 EmissiveColor = 0;
+float4 materialExpression10013 = bindless_textures[texture10013].Sample(sampler_objectshader,materialExpression10032.xy); 
 
-float3 Normal = 1;
-float Opacity = materialExpression10042.r;
+ useNormal = true;
+float3 Normal = materialExpression10013.rgb;
+float Opacity = 1;
 
 
     color.rgb = BaseColor.rgb;
@@ -912,8 +915,7 @@ float Opacity = materialExpression10042.r;
     
     if(useNormal)
     {
-        float3 normalMap = float3(Normal.rg,1);
-        bumpColor = normalMap.rgb * 2 - 1;
+        bumpColor = Normal.rgb * 2 - 1;
         surface.N = mul(bumpColor, TBN);
     
     }

@@ -61,6 +61,10 @@ namespace ap::imgui::material
     static const char* OutputNodeOpacity = "Opacity";
 
     static const char* TexCoordNodeName = "TexCoord";
+    static const char* TimeNodeName = "Time";
+    static const char* TimeDeltaNodeName = "TimeDelta";
+
+
     static const char* TextureNodeName = "Texture Sample";
 
     static const char* ConstantFloatNodeName = "Float";
@@ -703,7 +707,7 @@ R"(
                                     if (ed::AcceptNewItem(ImColor(128, 255, 128), 4.0f))
                                     {
                                         links.emplace_back(Link(GetNextId(), startPinId, endPinId));
-                                        // links.back().Color = GetIconColor(startPin->Type);
+                                        links.back().Color = ImColor(220, 220, 220);
                                     }
                                 }
                             }
@@ -854,6 +858,12 @@ R"(
                 
                 if (ImGui::MenuItem("TexCoord"))
                     node = SpawnTexCoordNode();
+                if (ImGui::MenuItem("Time"))
+                    node = SpawnTimeNode();
+                if (ImGui::MenuItem("TimeDelta"))
+                    node = SpawnTimeDeltaNode();
+                ImGui::Separator();
+
                 if (ImGui::MenuItem("Texture Sample"))
                     node = SpawnTextureSampleNode();
 
@@ -1056,7 +1066,46 @@ R"(
         BuildNode(&nodes.back());
 
         return &nodes.back();
+    
     }
+    Node* MaterialNodes::SpawnTimeNode()
+    {
+        nodes.emplace_back(GetNextId(), TimeNodeName, ImColor(200, 50, 87));
+        nodes.back().DataType = PinType::Float;
+        nodes.back().Type = NodeType::PixelInput;
+
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+
+    }
+    Node* MaterialNodes::SpawnTimeDeltaNode()
+    {
+        nodes.emplace_back(GetNextId(), TimeDeltaNodeName, ImColor(200, 50, 87));
+        nodes.back().DataType = PinType::Float;
+        nodes.back().Type = NodeType::PixelInput;
+
+
+        nodes.back().Outputs.emplace_back(GetNextId(), " ", PinType::Float);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+
+    }
+
+
     Node* MaterialNodes::SpawnTextureSampleNode()
     {
         nodes.emplace_back(GetNextId(), TextureNodeName, ImColor(128, 195, 248));
@@ -1574,6 +1623,11 @@ R"(
         {
             if(node.Name == TexCoordNodeName)
                 nodeMap.insert({ node.ID.Get(), "input.uvsets"});
+            else if(node.Name == TimeNodeName)
+                nodeMap.insert({ node.ID.Get(), "GetFrame().time" });
+            else if (node.Name == TimeDeltaNodeName)
+                nodeMap.insert({ node.ID.Get(), "GetFrame().delta_time" });
+
         }
         else
         {
