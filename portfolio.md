@@ -32,6 +32,7 @@ Vulkan, DX12, Metal 같은 low level api에 적합한 구조로 설계
 - 라이트 연산을 줄이기 위해 Tiled Shading 사용 (scalization)
 - 모든 데이터는 압축 (Color, Normal같은 데이터는 8bit, UV는 16bit)
 - Reversed z를 사용해 z fighting을 방지 
+- 셰이더의 의존 헤더들(메타파일 생성)과 셰이더의 날짜를 비교해 셰이더 reload 
 
 
 ### 오브젝트 저장방식
