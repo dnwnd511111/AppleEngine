@@ -66,9 +66,8 @@ gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 
 
 ### 개선이 필요한 부분
-- 언리얼은 postprocess chain이 없고 postprocess volume을 써서 chain을 구성하기 때문에 훨씬 유연함
-문제는 언리얼 같이 유연한 postprocess volume을 구현하려면 material editor를 구현해야 한다. 이는 blueprint같은 비주얼 스크립팅과 이 스크립팅 노드들을 셰이더로 변환하는 부분을 구현하는 것을 의미해서 쉽지 않다.
-
+- material editor에서 비주얼 스크립팅 부분에 imgui node 라이브러리를 사용했는데 후에 제거해야함
+- 언리얼은 postprocess chain이 없고 postprocess volume을 써서 chain을 구성하기 때문에 훨씬 유연함 
 - 정확도를 위해서 tiled를 clustered 교체 해야함
 - occupancy와 helper lane 등등의 이유로 인해 deferred로 교체해야 함
 - software occlusion culling 추가
