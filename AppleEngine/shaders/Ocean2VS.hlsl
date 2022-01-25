@@ -9,7 +9,7 @@
 float3 GFSDK_WaveWorks_GetUndisplacedVertexWorldPosition(GFSDK_WAVEWORKS_VERTEX_INPUT In)
 {
     float2 vertexPos2D = In.vertexPos2D;
-    PerInstanceElement instanceData = g_perInstanceData[In.instanceID];
+    OCEAN_VS_CBUFFER_PERINSTANCE_ENTRY instanceData = g_perInstanceData[In.instanceID];
 
 	// Use geo-morphing in 2D on the plane to smooth away LOD boundaries.
     float geomorphConstant = abs(instanceData.patchMorphConstantAndSign);
