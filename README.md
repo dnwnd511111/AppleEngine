@@ -65,6 +65,5 @@ This engine is based on Wicked, Hazel, Unreal Engine
 
   **Test Features**
   * Blend space
-
-
+  * Material Editor
 
