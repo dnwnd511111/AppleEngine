@@ -116,7 +116,7 @@ namespace ap::imgui::material
     {
         ed::Config config;
 
-        config.SettingsFile = ("materialNodes/" + materialName + ".json").c_str();
+       /* config.SettingsFile = ("materialNodes/" + materialName + ".json").c_str();
 
         config.LoadNodeSettings = [this](ed::NodeId nodeId, char* data, void* userPointer) -> size_t
         {
@@ -138,8 +138,9 @@ namespace ap::imgui::material
             node->State.assign(data, size);
 
             return true;
-        };
+        };*/
 
+        //temp
         nodes.reserve(30);
         links.reserve(30);
 
@@ -248,7 +249,7 @@ namespace ap::imgui::material
             s_SaveIcon = (ImTextureID)textureID2;
             s_RestoreIcon = (ImTextureID)textureID3;
         
-            ImGui::Begin("Material Editor", &opened, ImGuiWindowFlags_NoCollapse);
+            ImGui::Begin( (materialName+ "Editor").c_str(), &opened, ImGuiWindowFlags_NoCollapse);
             
             BeginPropertyGrid();
            
