@@ -89,6 +89,8 @@ namespace ap
 		ap::graphics::Texture rtGUIBlurredBackground[3];	// downsampled, gaussian blurred scene for GUI
 		ap::graphics::Texture rtShadingRate; // UINT8 shading rate per tile
 		ap::graphics::Texture rtFSR[2]; // FSR upscaling result (full resolution LDR)
+		ap::graphics::Texture rtPostprocessVolume; 
+
 
 		ap::graphics::Texture rtPostprocess; // ping-pong with main scene RT in post-process chain
 
@@ -108,6 +110,8 @@ namespace ap
 		ap::graphics::RenderPass renderpass_volumetriclight;
 		ap::graphics::RenderPass renderpass_particledistortion;
 		ap::graphics::RenderPass renderpass_waterripples;
+		ap::graphics::RenderPass renderpass_PostprocessVolume;
+
 
 		ap::graphics::Texture debugUAV; // debug UAV can be used by some shaders...
 		ap::renderer::TiledLightResources tiledLightResources;
@@ -143,6 +147,7 @@ namespace ap
 		virtual void RenderTransparents(ap::graphics::CommandList cmd) const;
 		virtual void RenderPostprocessChain(ap::graphics::CommandList cmd) const;
 
+		
 		void ResizeBuffers() override;
 
 		ap::scene::CameraComponent* camera = &ap::scene::GetCamera();

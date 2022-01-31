@@ -702,6 +702,12 @@ struct LensFlarePush
 	float2 xLensFlare_padding;
 };
 
+struct PostprocessVolumePush
+{
+	int sceneTexture_index;
+	int3 pad;
+};
+
 struct CubemapRenderCam
 {
 	float4x4 view_projection;

@@ -32,12 +32,12 @@
     <None Include="$(MSBuildThisFileDirectory)impostorHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)lightingHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)materialNodeHF.hlsli" />
-    <None Include="$(MSBuildThisFileDirectory)materilNodeHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)objectHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)objectHF_tessellation.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)ocean2HF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)oceanSurfaceHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)PixelPacking_R11G11B10.hlsli" />
+    <None Include="$(MSBuildThisFileDirectory)PostProcessVolumeHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)quad.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)raytracingHF.hlsli" />
     <None Include="$(MSBuildThisFileDirectory)skyAtmosphere.hlsli" />

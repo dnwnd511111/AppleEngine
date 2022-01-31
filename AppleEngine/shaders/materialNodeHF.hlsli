@@ -893,8 +893,8 @@ float4 main(PixelInput input, in bool is_frontface : SV_IsFrontFace) : SV_Target
     
     if(useNormal)
     {
-        bumpColor = Normal.rgb * 2 - 1;
-        surface.N = mul(bumpColor, TBN);
+        bumpColor = float3(Normal.rg,1) * 2 - 1;
+        surface.N = normalize(mul(bumpColor, TBN));
     
     }
  #endif // OBJECTSHADER_USE_TANGENT

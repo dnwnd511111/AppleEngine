@@ -21,6 +21,7 @@ enum PICKTYPE
 	PICK_CAMERA = 512,
 	PICK_ARMATURE = 1024,
 	PICK_SOUND = 2048,
+	
 };
 
 class EditorLoadingScreen : public ap::LoadingScreen

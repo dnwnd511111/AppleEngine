@@ -88,7 +88,7 @@ namespace ap::imgui::material
         PinType DataType = PinType::Float4;
         ImVec2 Size;
 
-        DirectX::XMFLOAT4 data;   //
+        DirectX::XMFLOAT4 data = {};   //
         ap::Resource texture;
 
         std::string State;
@@ -131,10 +131,13 @@ namespace ap::imgui::material
         Node* SpawnTexCoordNode();
         Node* SpawnTimeNode();
         Node* SpawnTimeDeltaNode();
+        Node* SpawnSceneTextureNode();
 
         Node* SpawnTextureSampleNode();
 
         Node* SpawnMaterialResultNode();
+        Node* SpawnMaterialResultNode_PPV(); //postprocess volume
+
 
         Node* SpawnConstantFloatNode();
         Node* SpawnConstantFloat2Node();
@@ -172,6 +175,14 @@ namespace ap::imgui::material
 
         std::string materialName;
         
+        enum DOMAINTYPE
+        {
+            SURFACE,
+            POSTPROCESS,
+
+            DOMAINTYPE_COUNT
+        } domainType = SURFACE;
+
         bool initialized = false;
         bool used = false;
         bool opened = false;

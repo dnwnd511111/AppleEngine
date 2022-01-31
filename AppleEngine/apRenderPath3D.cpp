@@ -48,6 +48,23 @@ void RenderPath3D::ResizeBuffers()
 			rtMain_render = rtMain;
 		}
 	}
+
+	{
+		TextureDesc desc;
+		desc.format = Format::R11G11B10_FLOAT;
+		desc.bind_flags = BindFlag::RENDER_TARGET | BindFlag::SHADER_RESOURCE | BindFlag::UNORDERED_ACCESS;
+		desc.width = internalResolution.x;
+		desc.height = internalResolution.y;
+		desc.sample_count = 1;
+
+		device->CreateTexture(&desc, nullptr, &rtPostprocessVolume);
+		device->SetName(&rtPostprocessVolume, "rtPostprocessVolume");
+
+		
+		
+
+	}
+
 	{
 		TextureDesc desc;
 		desc.width = internalResolution.x;
@@ -367,6 +384,16 @@ void RenderPath3D::ResizeBuffers()
 		}
 		device->CreateRenderPass(&desc, &renderpass_transparent);
 	}
+
+	{
+		RenderPassDesc desc;
+		desc.attachments.push_back(RenderPassAttachment::RenderTarget(&rtPostprocessVolume, RenderPassAttachment::LoadOp::DONTCARE));
+		
+		device->CreateRenderPass(&desc, &renderpass_PostprocessVolume);
+
+		
+	}
+
 	{
 		RenderPassDesc desc;
 		desc.attachments.push_back(
@@ -1408,10 +1435,25 @@ void RenderPath3D::RenderPostprocessChain(CommandList cmd) const
 {
 	GraphicsDevice* device = ap::graphics::GetDevice();
 
+
+
 	const Texture* rt_first = nullptr; // not ping-ponged with read / write
 	const Texture* rt_read = &rtMain;
 	const Texture* rt_write = &rtPostprocess;
 
+	
+
+	if (visibility_main.visiblePostprocessVolumes.size() > 0)
+	{
+		device->EventBegin("RenderPostprocessVolume", cmd);
+		device->RenderPassBegin(&renderpass_PostprocessVolume, cmd);
+		ap::renderer::RenderPostprocessVolume(visibility_main, *rt_read, cmd);
+		device->RenderPassEnd(cmd);
+		rt_read = &rtPostprocessVolume;
+		device->EventEnd(cmd);
+	}
+
+	
 	// 1.) HDR post process chain
 	{
 		if (ap::renderer::GetTemporalAAEnabled() && !ap::renderer::GetTemporalAADebugEnabled())
@@ -1541,9 +1583,16 @@ void RenderPath3D::RenderPostprocessChain(CommandList cmd) const
 		{
 			ap::renderer::Postprocess_FSR(*rt_read, rtFSR[1], rtFSR[0], cmd, getFSRSharpness());
 			lastPostprocessRT = &rtFSR[0];
+			
 		}
+
+		
+
+
 	}
 }
+
+
 
 void RenderPath3D::setAO(AO value)
 {

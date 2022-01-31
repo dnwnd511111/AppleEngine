@@ -29,6 +29,7 @@
 #include "apImguiColor.h"
 #include "imgui.h"
 #include "ImGuizmo.h"
+#include "apImGuiMaterialEditor.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx12.h"
 #pragma comment(lib, "dxgi.lib")
@@ -2735,8 +2736,10 @@ using namespace dx12_internal;
 	}
 	GraphicsDevice_DX12::~GraphicsDevice_DX12()
 	{
+
 		WaitForGPU();
 		copyAllocator.destroy();
+		DestoryImGui();
 	}
 
 	bool GraphicsDevice_DX12::CreateSwapChain(const SwapChainDesc* pDesc, ap::platform::window_type window, SwapChain* swapChain) const
@@ -6212,6 +6215,7 @@ using namespace dx12_internal;
 
 	void GraphicsDevice_DX12::DestoryImGui()
 	{
+		return;
 		ImGui_ImplDX12_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();

@@ -232,6 +232,7 @@ namespace ap::scene
 		int customShaderID = -1;
 
 
+		
 		ap::imgui::material::MaterialNodes materialNodes{};
 		
 
@@ -327,6 +328,11 @@ namespace ap::scene
 
 
 		void Serialize(ap::Archive& archive, ap::ecs::EntitySerializer& seri);
+	};
+
+	struct PostProcessVolumeComponent
+	{
+
 	};
 
 	struct MeshComponent
@@ -1287,6 +1293,9 @@ namespace ap::scene
 		ap::ecs::ComponentManager<InverseKinematicsComponent> inverse_kinematics;
 		ap::ecs::ComponentManager<SpringComponent> springs;
 
+		ap::ecs::ComponentManager<PostProcessVolumeComponent> ppvolumes;
+		ap::ecs::ComponentManager<ap::primitive::AABB> aabb_ppvolumes;
+
 		// Non-serialized attributes:
 		float dt = 0;
 		enum FLAGS
@@ -1455,6 +1464,12 @@ namespace ap::scene
 			const XMFLOAT3& position = XMFLOAT3(0, 0, 0)
 		);
 
+		ap::ecs::Entity Entity_CreatePostprocessVolume(
+			const std::string& name,
+			const XMFLOAT3& position = XMFLOAT3(0, 0, 0)
+		);
+
+
 		// Attaches an entity to a parent:
 		//	child_already_in_local_space	:	child won't be transformed from world space to local space
 		void Component_Attach(ap::ecs::Entity entity, ap::ecs::Entity parent, bool child_already_in_local_space = false);
@@ -1479,6 +1494,7 @@ namespace ap::scene
 		void RunCameraUpdateSystem(ap::jobsystem::context& ctx);
 		void RunDecalUpdateSystem(ap::jobsystem::context& ctx);
 		void RunProbeUpdateSystem(ap::jobsystem::context& ctx);
+		void RunPostprocessVolumeUpdateSystem(ap::jobsystem::context& ctx);
 		void RunForceUpdateSystem(ap::jobsystem::context& ctx);
 		void RunLightUpdateSystem(ap::jobsystem::context& ctx);
 		void RunParticleUpdateSystem(ap::jobsystem::context& ctx);

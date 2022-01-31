@@ -53,6 +53,8 @@ namespace ap::imgui::material
     static ap::Resource  s_tex3;
 
  
+    
+
 
     static const char* OutputNodeName = "Material Result";
     static const char* OutputNodeBaseColor = "Base Color";
@@ -63,6 +65,7 @@ namespace ap::imgui::material
     static const char* TexCoordNodeName = "TexCoord";
     static const char* TimeNodeName = "Time";
     static const char* TimeDeltaNodeName = "TimeDelta";
+    static const char* SceneTextureNodeName = "SceneTexture";
 
 
     static const char* TextureNodeName = "Texture Sample";
@@ -114,11 +117,11 @@ namespace ap::imgui::material
 
     void MaterialNodes::Initialize()
     {
-        ed::Config config;
+        //ed::Config config;
 
-       /* config.SettingsFile = ("materialNodes/" + materialName + ".json").c_str();
+       //config.SettingsFile = ("materialNodes/" + materialName + ".json").c_str();
 
-        config.LoadNodeSettings = [this](ed::NodeId nodeId, char* data, void* userPointer) -> size_t
+       /* config.LoadNodeSettings = [this](ed::NodeId nodeId, char* data, void* userPointer) -> size_t
         {
             auto node = FindNode(nodeId);
             if (!node)
@@ -145,8 +148,21 @@ namespace ap::imgui::material
         links.reserve(30);
 
 
-        editor = ed::CreateEditor(&config);
-        SpawnMaterialResultNode();
+        editor = ed::CreateEditor();
+        
+        switch (domainType)
+        {
+        case DOMAINTYPE::SURFACE:
+            SpawnMaterialResultNode();
+            break;
+        case DOMAINTYPE::POSTPROCESS:
+            SpawnMaterialResultNode_PPV();
+            break;
+        default:
+            break;
+        }
+
+        
         BuildNodes();
 
         ed::SetCurrentEditor(editor);
@@ -249,7 +265,7 @@ namespace ap::imgui::material
             s_SaveIcon = (ImTextureID)textureID2;
             s_RestoreIcon = (ImTextureID)textureID3;
         
-            ImGui::Begin( (materialName+ "Editor").c_str(), &opened, ImGuiWindowFlags_NoCollapse);
+            ImGui::Begin( (materialName+ " Editor").c_str(), &opened, ImGuiWindowFlags_NoCollapse);
             
             BeginPropertyGrid();
            
@@ -333,20 +349,24 @@ namespace ap::imgui::material
                 translatedNodes = {};
                 TranslateNodes();
 
-                std::vector<uint8_t> shaderData;
-                ap::helper::FileRead("../AppleEngine/shaders/materialNodeHF.hlsli", shaderData);
+                switch (domainType)
+                {
+                case DOMAINTYPE::SURFACE:
+                {
 
-               
-                std::string shaderTemplate(shaderData.begin(), shaderData.end());
-               
 
-                constexpr uint32_t permutationSize = 3;
-                std::string shaderOutputName[permutationSize] = {materialName, materialName +"_prepass", materialName +"_transparent"};
-                std::string param0[permutationSize] = 
-                { 
+                    std::vector<uint8_t> shaderData;
+                    ap::helper::FileRead("../AppleEngine/shaders/materialNodeHF.hlsli", shaderData);
+                    std::string shaderTemplate(shaderData.begin(), shaderData.end());
 
-                    
-R"(
+
+                    constexpr uint32_t permutationSize = 3;
+                    std::string shaderOutputName[permutationSize] = { materialName, materialName + "_prepass", materialName + "_transparent" };
+                    std::string param0[permutationSize] =
+                    {
+
+
+    R"(
 #define OBJECTSHADER_COMPILE_PS
 #define OBJECTSHADER_LAYOUT_COMMON
 #define SHADOW_MASK_ENABLED
@@ -361,7 +381,7 @@ R"(
 #define PREPASS
 #define DISABLE_ALPHATEST
  )",
-                
+
 R"(
 #define OBJECTSHADER_COMPILE_PS
 #define OBJECTSHADER_LAYOUT_COMMON
@@ -369,41 +389,85 @@ R"(
 #define TRANSPARENT
  )",
 
-                };
+                    };
 
 
-                std::string param1;
-                while (!translatedParams.empty())
-                {
-                    param1 += translatedParams.front();
-                    translatedParams.pop();
+                    std::string param1;
+                    while (!translatedParams.empty())
+                    {
+                        param1 += translatedParams.front();
+                        translatedParams.pop();
+                    }
+
+                    std::string param2;
+                    while (!translatedNodes.empty())
+                    {
+                        param2 += translatedNodes.front();
+                        translatedNodes.pop();
+                    }
+
+
+                    for (int i = 0; i < permutationSize; i++)
+                    {
+
+
+
+
+                        uint64_t shaderSize = shaderTemplate.size() + param0[i].size() + param1.size() + param2.size();
+
+                        std::vector<char> shaderOutput(shaderSize);
+
+                        sprintf_s(shaderOutput.data(), shaderOutput.size(), shaderTemplate.c_str(), param0[i].c_str(), param1.c_str(), param2.c_str());
+
+
+                        savedShader = shaderOutput.data();
+
+                        std::ofstream file("../AppleEngine/shaders/materialNodes/" + shaderOutputName[i] + ".hlsl", std::ios::binary | std::ios::trunc);
+                        if (file.is_open())
+                        {
+                            file.write(const_cast<const char*>(shaderOutput.data()), shaderSize);
+                            file.close();
+                        }
+
+                    }
+
                 }
-
-                std::string param2;
-                while (!translatedNodes.empty())
-                {
-                    param2 += translatedNodes.front();
-                    translatedNodes.pop();
-                }
-
-
-                for (int i = 0; i < permutationSize; i++)
+                    break;
+                case DOMAINTYPE::POSTPROCESS:
                 {
 
-                    
+                    std::vector<uint8_t> shaderData;
+                    ap::helper::FileRead("../AppleEngine/shaders/PostProcessVolumeHF.hlsli", shaderData);
+                    std::string shaderTemplate(shaderData.begin(), shaderData.end());
 
-                    
+                    std::string param0 = {}; //macro
 
-                    uint64_t shaderSize = shaderTemplate.size() + param0[i].size() + param1.size()+ param2.size();
+                    std::string param1;
+                    while (!translatedParams.empty())
+                    {
+                        param1 += translatedParams.front();
+                        translatedParams.pop();
+                    }
+
+                    std::string param2;
+                    while (!translatedNodes.empty())
+                    {
+                        param2 += translatedNodes.front();
+                        translatedNodes.pop();
+                    }
+
+
+                    uint64_t shaderSize = shaderTemplate.size() + param0.size() + param1.size() + param2.size();
 
                     std::vector<char> shaderOutput(shaderSize);
-                   
-                    sprintf_s(shaderOutput.data(), shaderOutput.size(), shaderTemplate.c_str(), param0[i].c_str() ,param1.c_str(), param2.c_str());
 
-                  
+                    //shaderOutput.assign(shaderTemplate.begin(), shaderTemplate.end());
+                    sprintf_s(shaderOutput.data(), shaderOutput.size(), shaderTemplate.c_str(), param0.c_str(), param1.c_str(), param2.c_str());
+
+
                     savedShader = shaderOutput.data();
 
-                    std::ofstream file("../AppleEngine/shaders/materialNodes/" + shaderOutputName[i] + ".hlsl", std::ios::binary | std::ios::trunc);
+                    std::ofstream file("../AppleEngine/shaders/materialNodes/" + materialName + ".hlsl", std::ios::binary | std::ios::trunc);
                     if (file.is_open())
                     {
                         file.write(const_cast<const char*>(shaderOutput.data()), shaderSize);
@@ -411,6 +475,15 @@ R"(
                     }
 
                 }
+                break;
+
+                default:
+                    assert(false);
+                    break;
+                }
+
+
+
 
                 ap::renderer::ReloadShaders();
 
@@ -522,6 +595,7 @@ R"(
                     if (node.Name == "Texture Sample")
                     {
                         DrawImage(node.texture, ImVec2(85.f, 85.0f), false);
+                        ImGui::Checkbox("DEGAMMA", (bool*)(&node.data.x));
                     }
 
                     if (isSimple)
@@ -863,6 +937,8 @@ R"(
                     node = SpawnTimeNode();
                 if (ImGui::MenuItem("TimeDelta"))
                     node = SpawnTimeDeltaNode();
+                if (domainType == DOMAINTYPE::POSTPROCESS && ImGui::MenuItem("SceneTexture"))
+                    node = SpawnSceneTextureNode();
                 ImGui::Separator();
 
                 if (ImGui::MenuItem("Texture Sample"))
@@ -1106,6 +1182,24 @@ R"(
 
     }
 
+    Node* MaterialNodes::SpawnSceneTextureNode()
+    {
+        nodes.emplace_back(GetNextId(), SceneTextureNodeName, ImColor(200, 50, 87));
+        nodes.back().DataType = PinType::Float3;
+        nodes.back().Type = NodeType::PixelInput;
+
+
+        nodes.back().Outputs.emplace_back(GetNextId(), "RGB", PinType::Float3);
+
+        for (auto& e : nodes.back().Outputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+
 
     Node* MaterialNodes::SpawnTextureSampleNode()
     {
@@ -1143,6 +1237,23 @@ R"(
         nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeNormal, PinType::Float3);
         nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeOpacity, PinType::Float);
 
+
+        for (auto& e : nodes.back().Inputs)
+            e.Color = ImColor(220, 220, 220);
+
+
+        BuildNode(&nodes.back());
+
+        return &nodes.back();
+    }
+
+    Node* MaterialNodes::SpawnMaterialResultNode_PPV()
+    {
+        nodes.emplace_back(GetNextId(), OutputNodeName, ImColor(222, 184, 135));
+
+
+        nodes.back().Inputs.emplace_back(GetNextId(), OutputNodeEmissiveColor, PinType::Float3);
+     
 
         for (auto& e : nodes.back().Inputs)
             e.Color = ImColor(220, 220, 220);
@@ -1620,14 +1731,32 @@ R"(
         if (nodeMap.count(node.ID.Get()) != 0)
             return;
 
+
+        std::string uvName = "input.uvsets";
+
+        switch (domainType)
+        {
+        case DOMAINTYPE::SURFACE:
+            uvName = "input.uvsets";
+            break;
+        case DOMAINTYPE::POSTPROCESS:
+            uvName = "uv";
+            break;
+        default:
+            assert(false);
+            break;
+        }
+
         if (node.Type == NodeType::PixelInput)
         {
             if(node.Name == TexCoordNodeName)
-                nodeMap.insert({ node.ID.Get(), "input.uvsets"});
+                nodeMap.insert({ node.ID.Get(), uvName });
             else if(node.Name == TimeNodeName)
                 nodeMap.insert({ node.ID.Get(), "GetFrame().time" });
             else if (node.Name == TimeDeltaNodeName)
                 nodeMap.insert({ node.ID.Get(), "GetFrame().delta_time" });
+            else if (node.Name == SceneTextureNodeName)
+                nodeMap.insert({ node.ID.Get(), "sceneTexture.Sample(sampler_objectshader, uv).rgb" });
 
         }
         else
@@ -1695,11 +1824,11 @@ R"(
             }
             else
             {
-                translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader,  input.uvsets.xy); \n";
+                translatedNode += "bindless_textures[texture" + std::to_string(node.ID.Get()) + "].Sample(sampler_objectshader," +uvName+ ".xy" + "); \n";
             }
 
-
-            //translatedNode += baseTranslatedNodeName + std::to_string(node.ID.Get())+".rgb" + " = " + "DEGAMMA(" + baseTranslatedNodeName + std::to_string(node.ID.Get()) + ".rgb)";
+            if(node.data.x != 0)
+                translatedNode += nodeMap[node.ID.Get()] +".rgb" + " = " + "DEGAMMA(" + nodeMap[node.ID.Get()] + ".rgb); \n";
         }
         else if (node.Name == FloatAddNodeName || node.Name == Float2AddNodeName || node.Name == Float3AddNodeName || node.Name == Float4AddNodeName ||
             node.Name == FloatMulNodeName || node.Name == Float2MulNodeName || node.Name == Float3MulNodeName || node.Name == Float4MulNodeName)

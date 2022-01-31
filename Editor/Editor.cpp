@@ -592,6 +592,14 @@ void Editor::ImGuiRender_PlaceActors()
 
 	}
 
+	if (DrawButton("Postprocess Volume", ImVec2(70, 20)))
+	{
+		static int a = 0; //temp
+
+		scene.Entity_CreatePostprocessVolume("Postprocess_Volume" + std::to_string(a++), frontCamPos);
+
+	}
+
 
 	EndPropertyGrid();
 
@@ -2279,6 +2287,25 @@ void EditorComponent::Update(float dt)
 							hovered = ap::scene::PickResult();
 							hovered.entity = entity;
 							hovered.distance = dis;
+						}
+					}
+				}
+				if (true) //pick postprocess volume
+				{
+					for (size_t i = 0; i < scene.ppvolumes.GetCount(); ++i)
+					{
+						Entity entity = scene.ppvolumes.GetEntity(i);
+						const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+						if (Sphere(transform.GetPosition(), 1).intersects(pickRay))
+						{
+							float dis = ap::math::Distance(transform.GetPosition(), pickRay.origin);
+							if (dis < hovered.distance)
+							{
+								hovered = ap::scene::PickResult();
+								hovered.entity = entity;
+								hovered.distance = dis;
+							}
 						}
 					}
 				}

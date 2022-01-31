@@ -107,6 +107,9 @@ namespace ap::renderer
 		ap::vector<uint32_t> visibleEmitters;
 		ap::vector<uint32_t> visibleHairs;
 
+		ap::vector<uint32_t> visiblePostprocessVolumes; //test
+
+
 		struct VisibleLight
 		{
 			uint16_t index;
@@ -127,6 +130,8 @@ namespace ap::renderer
 
 		void Clear()
 		{
+			visiblePostprocessVolumes.clear();
+
 			visibleObjects.clear();
 			visibleLights.clear();
 			visibleDecals.clear();
@@ -206,6 +211,13 @@ namespace ap::renderer
 		ap::enums::RENDERPASS renderPass,
 		ap::graphics::CommandList cmd,
 		uint32_t flags = DRAWSCENE_OPAQUE
+	);
+
+
+	void RenderPostprocessVolume(
+		const Visibility& vis,
+		const ap::graphics::Texture& input,
+		ap::graphics::CommandList cmd
 	);
 
 	// Render mip levels for textures that reqested it:
@@ -342,6 +354,9 @@ namespace ap::renderer
 		ap::graphics::CommandList cmd,
 		uint8_t instanceInclusionMask = 0xFF
 	);
+
+
+
 
 	void Postprocess_Blur_Gaussian(
 		const ap::graphics::Texture& input,

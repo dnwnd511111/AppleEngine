@@ -1631,6 +1631,8 @@ namespace ap::scene
 
 		RunProbeUpdateSystem(ctx);
 
+		RunPostprocessVolumeUpdateSystem(ctx);
+
 		RunForceUpdateSystem(ctx);
 
 		RunLightUpdateSystem(ctx);
@@ -1844,6 +1846,10 @@ namespace ap::scene
 		inverse_kinematics.Clear();
 		springs.Clear();
 
+		ppvolumes.Clear();
+		aabb_ppvolumes.Clear();
+
+
 		TLAS = RaytracingAccelerationStructure();
 		BVH.Clear();
 		waterRipples.clear();
@@ -1925,6 +1931,8 @@ namespace ap::scene
 		sounds.Remove(entity);
 		inverse_kinematics.Remove(entity);
 		springs.Remove(entity);
+		ppvolumes.Remove(entity);
+		aabb_ppvolumes.Remove(entity);
 	}
 	Entity Scene::Entity_FindByName(const std::string& name)
 	{
@@ -2181,6 +2189,29 @@ namespace ap::scene
 		TransformComponent& transform = transforms.Create(entity);
 		transform.Translate(position);
 		transform.UpdateTransform();
+
+		return entity;
+	}
+
+	ap::ecs::Entity Scene::Entity_CreatePostprocessVolume(const std::string& name, const XMFLOAT3& position)
+	{
+		Entity entity = CreateEntity();
+
+		names.Create(entity) = name;
+
+		layers.Create(entity);
+
+		TransformComponent& transform = transforms.Create(entity);
+		transform.Translate(position);
+		transform.UpdateTransform();
+
+		auto& material =materials.Create(entity);
+
+		material.materialNodes.domainType = ap::imgui::material::MaterialNodes::DOMAINTYPE::POSTPROCESS;
+
+		aabb_ppvolumes.Create(entity);
+
+		ppvolumes.Create(entity);
 
 		return entity;
 	}
@@ -3609,6 +3640,23 @@ namespace ap::scene
 					}
 				}
 			}
+		}
+	}
+	void Scene::RunPostprocessVolumeUpdateSystem(ap::jobsystem::context& ctx)
+	{
+
+		for (size_t volumeIndex = 0; volumeIndex < ppvolumes.GetCount(); ++volumeIndex)
+		{
+
+			PostProcessVolumeComponent& probe = ppvolumes[volumeIndex];
+			Entity entity = ppvolumes.GetEntity(volumeIndex);
+			const TransformComponent& transform = *transforms.GetComponent(entity);
+
+			AABB& aabb = aabb_ppvolumes[volumeIndex];
+			aabb.createFromHalfWidth(XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
+			aabb = aabb.transform(transform.world);
+
+
 		}
 	}
 	void Scene::RunForceUpdateSystem(ap::jobsystem::context& ctx)

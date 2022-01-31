@@ -342,6 +342,13 @@ struct MaterialNodeShader
 };
 std::unordered_map<std::string, MaterialNodeShader> psoMap;
 
+struct PostprocessVolumeShader
+{
+	std::string name;
+	ap::graphics::PipelineState pso;
+};
+std::unordered_map<std::string, PostprocessVolumeShader> ppvPsoMap;
+
 
 ap::vector<CustomShader> customShaders;
 int RegisterCustomShader(const CustomShader& customShader)
@@ -858,7 +865,7 @@ bool LoadMaterialNodeShaders()
 
 
 
-	std::vector<std::string> psoList;
+	std::vector<std::pair<std::string, ap::imgui::material::MaterialNodes::DOMAINTYPE>> psoList;
 
 	Scene& scene = ap::scene::GetScene();
 
@@ -866,7 +873,7 @@ bool LoadMaterialNodeShaders()
 	{
 		if (scene.materials[i].materialNodes.initialized)
 		{
-			psoList.push_back(scene.materials[i].materialNodes.materialName);
+			psoList.push_back({ scene.materials[i].materialNodes.materialName,scene.materials[i].materialNodes.domainType });
 		}
 
 	}
@@ -874,157 +881,188 @@ bool LoadMaterialNodeShaders()
 #if 1
 	for (int i = 0; i < psoList.size(); i++)
 	{
-		std::string main = psoList[i];
+		const auto& main = psoList[i];
 	
 
-		MaterialNodeShader materialNodeShader;
-		materialNodeShader.name = main;
-		
-
-		
-		for (int renderPass = 0; renderPass < RENDERPASS_COUNT ; ++renderPass)
+		switch (main.second)
 		{
-			for (int blendMode = 0; blendMode < BLENDMODE_COUNT; ++blendMode)
+		case ap::imgui::material::MaterialNodes::DOMAINTYPE::SURFACE:
+		{
+			MaterialNodeShader materialNodeShader;
+			materialNodeShader.name = main.first;
+
+			for (int renderPass = 0; renderPass < RENDERPASS_COUNT; ++renderPass)
 			{
-				for (int doublesided = 0; doublesided < OBJECTRENDERING_DOUBLESIDED_COUNT; ++doublesided)
+				for (int blendMode = 0; blendMode < BLENDMODE_COUNT; ++blendMode)
 				{
-					for (int tessellation = 0; tessellation < OBJECTRENDERING_TESSELLATION_COUNT; ++tessellation)
+					for (int doublesided = 0; doublesided < OBJECTRENDERING_DOUBLESIDED_COUNT; ++doublesided)
 					{
-						for (int alphatest = 0; alphatest < OBJECTRENDERING_ALPHATEST_COUNT; ++alphatest)
+						for (int tessellation = 0; tessellation < OBJECTRENDERING_TESSELLATION_COUNT; ++tessellation)
 						{
-
-							if (renderPass == RENDERPASS_VOXELIZE || renderPass == RENDERPASS_ENVMAPCAPTURE) //나중에 추가
-								continue;
-
-							const bool transparency = blendMode != BLENDMODE_OPAQUE;
-							SHADERTYPE realVS = GetVSTYPE((RENDERPASS)renderPass, tessellation, alphatest, transparency);
-							SHADERTYPE realHS = GetHSTYPE((RENDERPASS)renderPass, tessellation, alphatest);
-							SHADERTYPE realDS = GetDSTYPE((RENDERPASS)renderPass, tessellation, alphatest);
-							SHADERTYPE realGS = GetGSTYPE((RENDERPASS)renderPass, alphatest, transparency);
-
-							if (tessellation && (realHS == SHADERTYPE_COUNT || realDS == SHADERTYPE_COUNT))
+							for (int alphatest = 0; alphatest < OBJECTRENDERING_ALPHATEST_COUNT; ++alphatest)
 							{
-								continue;
-							}
 
-							PipelineStateDesc desc;
-							desc.vs = realVS < SHADERTYPE_COUNT ? &shaders[realVS] : nullptr;
-							desc.hs = realHS < SHADERTYPE_COUNT ? &shaders[realHS] : nullptr;
-							desc.ds = realDS < SHADERTYPE_COUNT ? &shaders[realDS] : nullptr;
-							desc.gs = realGS < SHADERTYPE_COUNT ? &shaders[realGS] : nullptr;
-							desc.ps = GetNodePSShader(main, (RENDERPASS)renderPass, alphatest, transparency);
+								if (renderPass == RENDERPASS_VOXELIZE || renderPass == RENDERPASS_ENVMAPCAPTURE) //나중에 추가
+									continue;
 
-							switch (blendMode)
-							{
-							case BLENDMODE_OPAQUE:
-								desc.bs = &blendStates[BSTYPE_OPAQUE];
-								break;
-							case BLENDMODE_ALPHA:
-								desc.bs = &blendStates[BSTYPE_TRANSPARENT];
-								break;
-							case BLENDMODE_ADDITIVE:
-								desc.bs = &blendStates[BSTYPE_ADDITIVE];
-								break;
-							case BLENDMODE_PREMULTIPLIED:
-								desc.bs = &blendStates[BSTYPE_PREMULTIPLIED];
-								break;
-							case BLENDMODE_MULTIPLY:
-								desc.bs = &blendStates[BSTYPE_MULTIPLY];
-								break;
-							default:
-								assert(0);
-								break;
-							}
+								const bool transparency = blendMode != BLENDMODE_OPAQUE;
+								SHADERTYPE realVS = GetVSTYPE((RENDERPASS)renderPass, tessellation, alphatest, transparency);
+								SHADERTYPE realHS = GetHSTYPE((RENDERPASS)renderPass, tessellation, alphatest);
+								SHADERTYPE realDS = GetDSTYPE((RENDERPASS)renderPass, tessellation, alphatest);
+								SHADERTYPE realGS = GetGSTYPE((RENDERPASS)renderPass, alphatest, transparency);
 
-							switch (renderPass)
-							{
-							case RENDERPASS_SHADOW:
-							case RENDERPASS_SHADOWCUBE:
-								desc.bs = &blendStates[transparency ? BSTYPE_TRANSPARENTSHADOW : BSTYPE_COLORWRITEDISABLE];
-								break;
-							default:
-								break;
-							}
-
-							switch (renderPass)
-							{
-							case RENDERPASS_SHADOW:
-							case RENDERPASS_SHADOWCUBE:
-								desc.dss = &depthStencils[transparency ? DSSTYPE_DEPTHREAD : DSSTYPE_SHADOW];
-								break;
-							case RENDERPASS_MAIN:
-								if (blendMode == BLENDMODE_ADDITIVE)
+								if (tessellation && (realHS == SHADERTYPE_COUNT || realDS == SHADERTYPE_COUNT))
 								{
-									desc.dss = &depthStencils[DSSTYPE_DEPTHREAD];
+									continue;
 								}
-								else
-								{
-									desc.dss = &depthStencils[transparency ? DSSTYPE_DEFAULT : DSSTYPE_DEPTHREADEQUAL];
-								}
-								break;
-							case RENDERPASS_ENVMAPCAPTURE:
-								desc.dss = &depthStencils[DSSTYPE_ENVMAP];
-								break;
-							case RENDERPASS_VOXELIZE:
-								desc.dss = &depthStencils[DSSTYPE_DEPTHDISABLED];
-								break;
-							default:
-								if (blendMode == BLENDMODE_ADDITIVE)
-								{
-									desc.dss = &depthStencils[DSSTYPE_DEPTHREAD];
-								}
-								else
-								{
-									desc.dss = &depthStencils[DSSTYPE_DEFAULT];
-								}
-								break;
-							}
 
-							switch (renderPass)
-							{
-							case RENDERPASS_SHADOW:
-							case RENDERPASS_SHADOWCUBE:
-								desc.rs = &rasterizers[doublesided ? RSTYPE_SHADOW_DOUBLESIDED : RSTYPE_SHADOW];
-								break;
-							case RENDERPASS_VOXELIZE:
-								desc.rs = &rasterizers[RSTYPE_VOXELIZE];
-								break;
-							default:
-								switch (doublesided)
+								PipelineStateDesc desc;
+								desc.vs = realVS < SHADERTYPE_COUNT ? &shaders[realVS] : nullptr;
+								desc.hs = realHS < SHADERTYPE_COUNT ? &shaders[realHS] : nullptr;
+								desc.ds = realDS < SHADERTYPE_COUNT ? &shaders[realDS] : nullptr;
+								desc.gs = realGS < SHADERTYPE_COUNT ? &shaders[realGS] : nullptr;
+								desc.ps = GetNodePSShader(main.first, (RENDERPASS)renderPass, alphatest, transparency);
+
+								switch (blendMode)
 								{
+								case BLENDMODE_OPAQUE:
+									desc.bs = &blendStates[BSTYPE_OPAQUE];
+									break;
+								case BLENDMODE_ALPHA:
+									desc.bs = &blendStates[BSTYPE_TRANSPARENT];
+									break;
+								case BLENDMODE_ADDITIVE:
+									desc.bs = &blendStates[BSTYPE_ADDITIVE];
+									break;
+								case BLENDMODE_PREMULTIPLIED:
+									desc.bs = &blendStates[BSTYPE_PREMULTIPLIED];
+									break;
+								case BLENDMODE_MULTIPLY:
+									desc.bs = &blendStates[BSTYPE_MULTIPLY];
+									break;
 								default:
-								case OBJECTRENDERING_DOUBLESIDED_DISABLED:
-									desc.rs = &rasterizers[RSTYPE_FRONT];
-									break;
-								case OBJECTRENDERING_DOUBLESIDED_ENABLED:
-									desc.rs = &rasterizers[RSTYPE_DOUBLESIDED];
-									break;
-								case OBJECTRENDERING_DOUBLESIDED_BACKSIDE:
-									desc.rs = &rasterizers[RSTYPE_BACK];
+									assert(0);
 									break;
 								}
-								break;
-							}
 
-							if (tessellation)
-							{
-								desc.pt = PrimitiveTopology::PATCHLIST;
-							}
-							else
-							{
-								desc.pt = PrimitiveTopology::TRIANGLELIST;
-							}
+								switch (renderPass)
+								{
+								case RENDERPASS_SHADOW:
+								case RENDERPASS_SHADOWCUBE:
+									desc.bs = &blendStates[transparency ? BSTYPE_TRANSPARENTSHADOW : BSTYPE_COLORWRITEDISABLE];
+									break;
+								default:
+									break;
+								}
+
+								switch (renderPass)
+								{
+								case RENDERPASS_SHADOW:
+								case RENDERPASS_SHADOWCUBE:
+									desc.dss = &depthStencils[transparency ? DSSTYPE_DEPTHREAD : DSSTYPE_SHADOW];
+									break;
+								case RENDERPASS_MAIN:
+									if (blendMode == BLENDMODE_ADDITIVE)
+									{
+										desc.dss = &depthStencils[DSSTYPE_DEPTHREAD];
+									}
+									else
+									{
+										desc.dss = &depthStencils[transparency ? DSSTYPE_DEFAULT : DSSTYPE_DEPTHREADEQUAL];
+									}
+									break;
+								case RENDERPASS_ENVMAPCAPTURE:
+									desc.dss = &depthStencils[DSSTYPE_ENVMAP];
+									break;
+								case RENDERPASS_VOXELIZE:
+									desc.dss = &depthStencils[DSSTYPE_DEPTHDISABLED];
+									break;
+								default:
+									if (blendMode == BLENDMODE_ADDITIVE)
+									{
+										desc.dss = &depthStencils[DSSTYPE_DEPTHREAD];
+									}
+									else
+									{
+										desc.dss = &depthStencils[DSSTYPE_DEFAULT];
+									}
+									break;
+								}
+
+								switch (renderPass)
+								{
+								case RENDERPASS_SHADOW:
+								case RENDERPASS_SHADOWCUBE:
+									desc.rs = &rasterizers[doublesided ? RSTYPE_SHADOW_DOUBLESIDED : RSTYPE_SHADOW];
+									break;
+								case RENDERPASS_VOXELIZE:
+									desc.rs = &rasterizers[RSTYPE_VOXELIZE];
+									break;
+								default:
+									switch (doublesided)
+									{
+									default:
+									case OBJECTRENDERING_DOUBLESIDED_DISABLED:
+										desc.rs = &rasterizers[RSTYPE_FRONT];
+										break;
+									case OBJECTRENDERING_DOUBLESIDED_ENABLED:
+										desc.rs = &rasterizers[RSTYPE_DOUBLESIDED];
+										break;
+									case OBJECTRENDERING_DOUBLESIDED_BACKSIDE:
+										desc.rs = &rasterizers[RSTYPE_BACK];
+										break;
+									}
+									break;
+								}
+
+								if (tessellation)
+								{
+									desc.pt = PrimitiveTopology::PATCHLIST;
+								}
+								else
+								{
+									desc.pt = PrimitiveTopology::TRIANGLELIST;
+								}
 
 
-							device->CreatePipelineState(&desc, &materialNodeShader.pso[renderPass][blendMode][doublesided][tessellation][alphatest]);
+								device->CreatePipelineState(&desc, &materialNodeShader.pso[renderPass][blendMode][doublesided][tessellation][alphatest]);
+							}
 						}
 					}
 				}
 			}
+
+			psoMap[main.first] = materialNodeShader;
+		}
+		break;
+		case ap::imgui::material::MaterialNodes::DOMAINTYPE::POSTPROCESS:
+		{
+			PostprocessVolumeShader ppvShader;
+			ppvShader.name	= main.first;
+
+			PipelineStateDesc desc;
+			desc.vs =  &shaders[VSTYPE_POSTPROCESS] ;
+			desc.ps = &shaderMap[main.first];
+			desc.rs = &rasterizers[RSTYPE_DOUBLESIDED];
+			
+			device->CreatePipelineState(&desc, &ppvShader.pso);
+
+
+			ppvPsoMap[main.first] = ppvShader;
+		}
+			break;
+		default:
+			assert(false);
+			break;
 		}
 
+		
+		
+		
+		
 
-		psoMap[main] = materialNodeShader;
+
+		
 
 	}
 #endif
@@ -3273,6 +3311,27 @@ void UpdateVisibility(Visibility& vis)
 			});
 	}
 
+	if (true)  // allow postprocess volumes
+	{
+		ap::jobsystem::Execute(ctx, [&](ap::jobsystem::JobArgs args) {
+			
+			XMFLOAT3 eye = vis.camera->Eye;
+
+			for (size_t i = 0; i < vis.scene->aabb_ppvolumes.GetCount(); ++i)
+			{
+				const AABB& aabb = vis.scene->aabb_ppvolumes[i];
+
+				
+
+				if ((aabb.layerMask & vis.layerMask) && aabb.intersects(eye))
+				{
+					vis.visiblePostprocessVolumes.push_back((uint32_t)i);
+				}
+			}
+			});
+	}
+
+
 	if (vis.flags & Visibility::ALLOW_EMITTERS)
 	{
 		ap::jobsystem::Execute(ctx, [&](ap::jobsystem::JobArgs args) {
@@ -4640,7 +4699,7 @@ void DrawVolumeLights(
 			}
 
 			device->BindPipelineState(&pso, cmd);
-
+			
 			for (size_t i = 0; i < vis.visibleLights.size(); ++i)
 			{
 				const uint32_t lightIndex = vis.visibleLights[i].index;
@@ -5329,6 +5388,42 @@ void DrawScene(
 
 }
 
+void RenderPostprocessVolume(const Visibility& vis, 
+	const Texture& input,
+	CommandList cmd)
+{
+	
+
+
+	BindCommonResources(cmd);
+	
+
+	for (int i = 0; i < vis.visiblePostprocessVolumes.size(); i++)
+	{
+		uint32_t entityID = vis.scene->ppvolumes.GetEntity(vis.visiblePostprocessVolumes[i]);
+		const MaterialComponent& material  = *vis.scene->materials.GetComponent(entityID);
+
+		if (ppvPsoMap.count(material.materialNodes.materialName) == 0)
+			continue;
+
+		std::vector<char> cBuffer = material.materialNodes.FillMaterialConstantBuffer();
+		device->BindDynamicConstantBuffer_Array(cBuffer.data(), cBuffer.size(), 5, cmd);
+		device->BindPipelineState(&ppvPsoMap[material.materialNodes.materialName].pso, cmd);
+
+		PostprocessVolumePush push;
+		push.sceneTexture_index = device->GetDescriptorIndex(&input, SubresourceType::SRV);
+		device->PushConstants(&push, sizeof(push), cmd);
+
+		device->Draw(3, 0, cmd); // full screen triangle
+
+
+		break; //일단 1개만
+		
+	}
+
+
+}
+
 void DrawDebugWorld(
 	const Scene& scene,
 	const CameraComponent& camera,
@@ -6001,6 +6096,41 @@ void DrawDebugWorld(
 		device->Draw(linecount * 2, 0, cmd);
 
 		renderableCapsules.clear();
+
+		device->EventEnd(cmd);
+	}
+
+	if (true)
+	{
+		device->EventBegin("Debug PostprocessVolumes", cmd);
+
+		device->BindPipelineState(&PSO_debug[DEBUGRENDERING_CUBE], cmd);
+
+		const GPUBuffer* vbs[] = {
+			&wirecubeVB,
+		};
+		const uint32_t strides[] = {
+			sizeof(XMFLOAT4) + sizeof(XMFLOAT4),
+		};
+		device->BindVertexBuffers(vbs, 0, arraysize(vbs), strides, nullptr, cmd);
+		device->BindIndexBuffer(&wirecubeIB, IndexBufferFormat::UINT16, 0, cmd);
+
+		MiscCB sb;
+
+		for (size_t i = 0; i < scene.ppvolumes.GetCount(); ++i)
+		{
+			const PostProcessVolumeComponent& probe = scene.ppvolumes[i];
+
+			Entity entity = scene.ppvolumes.GetEntity(i);
+			const TransformComponent& transform = *scene.transforms.GetComponent(entity);
+
+			XMStoreFloat4x4(&sb.g_xTransform, XMLoadFloat4x4(&transform.world) * camera.GetViewProjection());
+			sb.g_xColor = float4(0.8, 0.2, 1, 1);
+
+			device->BindDynamicConstantBuffer(sb, CB_GETBINDSLOT(MiscCB), cmd);
+
+			device->DrawIndexed(24, 0, 0, cmd);
+		}
 
 		device->EventEnd(cmd);
 	}

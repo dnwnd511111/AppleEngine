@@ -1838,10 +1838,13 @@ namespace Panel
 					BeginPropertyGrid();
 					PropertyGridSpacing();
 
-					std::string matName = materialName->name;
-					if (DrawInputText("Name", matName))
-						materialName->name = matName;
-					
+					if (materialName)
+					{
+						std::string matName = materialName->name;
+						if (DrawInputText("Name", matName))
+							materialName->name = matName;
+					}
+
 					ImGui::Separator();
 
 					if (DrawButton2("Open Material Editor", true))
