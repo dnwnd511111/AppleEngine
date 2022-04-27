@@ -35,6 +35,7 @@ This engine is based on Wicked, Hazel, Unreal Engine
   * PBR (Anisotropic, Sheen, ClearCoat)
   * Reversed Z
   * Forward+ 
+  * GI(voxel gi)
   * Hardware Occlusion
   * MSAA, TAA
   * VRS
@@ -65,6 +66,5 @@ This engine is based on Wicked, Hazel, Unreal Engine
 
   **Test Features**
   * Blend space
-
-
+  * Material Editor
 

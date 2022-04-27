@@ -1,19 +1,17 @@
 
 # Portfolio
 
-DX11 -> DX12 -> DX12(DX11 제외) 순으로 제작
+게임을 어떻게 만드는지 궁금해 하던 찰나에 DX11를 사용해서 게임을 만든다는 글을 보고 dx11(물방울)책을 사서 공부를 하다 그래픽스를 본격적으로 배우기로 마음먹었습니다.
+책이나 튜토리얼로 간단한 그래픽스 이론들을 접하고 게임 엔진을 만들려고 했지만 책에서는 전반적인 게임 엔진 구조에 대한 내용이 찾기 힘들어 오픈 소스를 열어보기로 했습니다.
+이때 깃헙에 별도 많고 개인이 만든 엔진인 Wicked Engine을 선택하고 구조나 피처들을 하나씩 공부했습니다. Graphics API(dx11, dx12 ...) 엔진 구조 등을 어느정도 파악한 후에 비교를 위해 다른 오픈 소스 엔진들을 열어보고 엔진에 기능을 추가했습니다. 엔진을 만들면서 엔진의 특정 피처에 집중할 시간이 부족하다는 것을 느끼고 AMD, NVIDIA에서 제공하는 후처리 라이브러리나 특정 피처 라이브러리를 (e.g FidelityFX, GameWorks ) 찾아보면서 공부하거나 엔진에 추가했습니다. 하지만 개인이 만든 오픈소스들은 구조적인 문제가 눈에 많이 보였기 때문에 엔진을 만드는 것을 접어두고 언리얼 엔진과 그래픽스 이론 공부를 하고 있습니다.
 
-처음에는 DX11로 엔진을 만들고 거기에 DX12를 지원하는 방향으로 엔진을 설계 했는데 이 방식을 사용하면 DX12의 Bindless 같이 11에 없는 기능을 사용할 때 코드가 배가 되기 때문에 
-로직에서 DX11을 지원하지 않는 방향으로 바꿨습니다.
+Wicked Engine의 전반적인 부분과, Hazel Engine의 GUI 부분을 기반으로 작성되었습니다.
 
-Vulkan, DX12, Metal 같은 low level api에 적합한 구조로 설계
-
-
-## 간단한 로직과 겪은 문제
+## 간단한 설명
 
 ### RHI
 
-- 최대한 기본 API랑 비슷하게 구성
+- Dx11을 제거하고 Dx12 Low Level Api 기반으로 작성
 - Command Queue를 3개로 나눠서 작업 (Graphics, Compute, Copy)
 - 멀티스레딩을 위해 대부분의 자원들은 (지연 프레임 * Commandlist * Queue ) 또는 (지연 프레임 * Commandlist) 개수로 준비, 삭제되는 자원들은 지연 프레임 이후에 삭제
 - C++쪽 Root Signature 생성 코드를 줄이고, 보기 쉽게 하기 위해 HLSL Root Signature를 사용
@@ -44,7 +42,6 @@ Cache Hit를 늘리려고 DOD방식인 ECS를 사용
 ### CPU 업데이트 
 gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 
-
  1. 네트워크 처리
  2. 스크립팅 처리
  3. Input 처리
@@ -66,12 +63,15 @@ gpu 자원의 업데이트에 사용할 데이터들을 업데이트
 
 
 ### 개선이 필요한 부분
-- 언리얼은 postprocess chain이 없고 postprocess volume을 써서 chain을 구성하기 때문에 훨씬 유연함
-문제는 언리얼 같이 유연한 postprocess volume을 구현하려면 material editor를 구현해야 한다. 이는 blueprint같은 비주얼 스크립팅과 이 스크립팅 노드들을 셰이더로 변환하는 부분을 구현하는 것을 의미해서 쉽지 않다.
 
+- material editor에서 비주얼 스크립팅 부분에 imgui node 라이브러리를 사용, 문제가 많이 생겨서 제거 필요
+- 언리얼은 postprocess chain이 없고 postprocess volume을 써서 chain을 구성하기 때문에 훨씬 유연함 
 - 정확도를 위해서 tiled를 clustered 교체 해야함
 - occupancy와 helper lane 등등의 이유로 인해 deferred로 교체해야 함
 - software occlusion culling 추가
 - nvidia의 waveworks가 DLL로 제공되서 수정이 불가능함
-- 언리얼처럼 지형을 쪼개서 관리하도록 해야함
+- 지형 관리 최적화가 필요함
+- 언리얼처럼 render pass, 자원, 베리어를 자동으로 관리하는 시스템 필요
+- ...
+
 
