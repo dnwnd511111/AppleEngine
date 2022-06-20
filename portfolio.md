@@ -21,6 +21,7 @@ Wicked Engine의 전반적인 부분과, Hazel Engine의 GUI 부분을 기반으
 - 중복적인 Bind를 막기위해 현재 Bind 상태를 기록
 - PSO를 중복해서 생성할 수 있기 때문에 해시 값을 이용해 Global로 관리
 - Upload 버퍼는 크게 할당해서 나눠쓰는 방식
+- 멀티 스레딩
 
 
 ### Shader
@@ -47,7 +48,7 @@ gpu 자원의 업데이트에 사용할 데이터들을 업데이트
  1. 네트워크 처리
  2. 스크립팅 처리
  3. Input 처리
- 4. Object의 Component들을 의존 관계에 따라 업데이트(여기에 Physics Simulation포함)
+ 4. Object의 Component들을 의존 관계에 따라 업데이트(여기에 Physics Simulation포함, Job단위로 스레드에 분배하여 처리(job System))
  5. Visibility 처리(Frustum Culling , Occlusion Query 결과 사용)
 
 
